@@ -1,1 +1,67 @@
+name: 打包安卓安装包
 
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+
+      - name: 生成安卓工程
+        run: |
+          mkdir -p www && cp index.html www/index.html
+          cat > package.json <<'EOF'
+          {"name":"xiaozhangben","version":"1.0.0","private":true,
+           "dependencies":{"@capacitor/android":"^7.0.0","@capacitor/app":"^7.0.0","@capacitor/core":"^7.0.0"},
+           "devDependencies":{"@capacitor/cli":"^7.0.0"}}
+          EOF
+          cat > capacitor.config.json <<'EOF'
+          {"appId":"com.xiaozhangben.app","appName":"小账本","webDir":"www",
+           "android":{"backgroundColor":"#F3F2EE","adjustMarginsForEdgeToEdge":"force"}}
+          EOF
+          npm install
+          npx cap add android
+          npx cap sync android
+
+      - name: 图标、相机权限、版本号
+        run: |
+          RES=android/app/src/main/res
+          rm -rf $RES/mipmap-anydpi-v26
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            for f in ic_launcher ic_launcher_round ic_launcher_foreground; do cp icon.png $RES/mipmap-$d/$f.png; done
+          done
+          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.CAMERA" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
+          sed -i -E "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]*\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+
+      - name: 打包并签名
+        run: |
+          cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon && cd ..
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          OUT=xiaozhangben-1.0.${{ github.run_number }}.apk
+          $BT/zipalign -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
+          $BT/apksigner sign --ks release.jks --ks-key-alias xiaozhangben --ks-pass pass:xzb-2026-key --key-pass pass:xzb-2026-key --out $OUT aligned.apk
+          $BT/apksigner verify $OUT
+
+      - name: 发布安装包
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: 小账本 v1.0.${{ github.run_number }}
+          body: 下载下面的 apk 文件，在手机上点开安装。装在旧版上面会保留数据。
+          files: xiaozhangben-1.0.${{ github.run_number }}.apk
+          make_latest: true
