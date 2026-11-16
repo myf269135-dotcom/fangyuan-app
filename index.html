@@ -1,0 +1,2363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#2D4B7C">
+<title>小账本</title>
+<style>
+/* ===================== 样式 ===================== */
+:root{
+  --bg:#F3F2EE; --card:#FFFFFF; --ink:#1E2430; --sub:#8B909A; --line:#ECEAE5;
+  --pri:#2D4B7C; --pri2:#1E3358; --pri-soft:#E8EEF8; --acc:#F0A232;
+  --tr:#5B7DB8; --danger:#E5484D;
+  --r:16px;
+  --green:#17A673; --orange:#EC6A3C; --green-soft:#EEF7F2; --orange-soft:#FDEEE7;
+  --exp:var(--green); --inc:var(--orange); --exp-soft:var(--green-soft); --inc-soft:var(--orange-soft);
+  --ink2:#3A404C; --inp:#FFFFFF; --seg-on:#FFFFFF; --tabbar:rgba(255,255,255,.96); --danger-soft:#FDECEC;
+  --dash:var(--dash); --faint:#B5B9C0; --warn-bg:#FFF4E0; --warn-ink:#8A5A00; --hd1:#2D4B7C; --hd2:#1E3358;
+}
+html[data-theme=dark]{
+  --bg:#121519; --card:#1C2026; --ink:#E6E8EB; --ink2:#C9CDD3; --sub:#8E959F; --line:#2A2F37;
+  --pri:#6E97E0; --pri2:#2A3F66; --pri-soft:#22314A; --inp:#15181D; --seg-on:#2E343D; --tabbar:rgba(28,32,38,.96);
+  --green:#2FBF89; --orange:#F07B4E; --green-soft:#16302A; --orange-soft:#3A251B; --danger-soft:#3A1F21;
+  --dash:#3A4A66; --faint:#5E646D; --warn-bg:#3A2E14; --warn-ink:#F2CF85; --hd1:#2A4170; --hd2:#18233A;
+}
+html[data-colors=swap]{--exp:var(--orange); --inc:var(--green); --exp-soft:var(--orange-soft); --inc-soft:var(--green-soft)}
+html[data-theme=dark] body{color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.45}
+body{max-width:520px;margin:0 auto;min-height:100vh}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.num,b,.ri-amt{font-variant-numeric:tabular-nums}
+[data-lp]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+svg{width:22px;height:22px;display:block}
+#main{padding-bottom:96px}
+
+/* 顶部 */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 8px}
+.topbar h1{font-size:22px;margin:0;font-weight:700}
+.ibtn{width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center}
+.ibtn:active{background:rgba(0,0,0,.06)}
+.ibtn.light{color:#fff}
+.ibtn.light:active{background:rgba(255,255,255,.15)}
+
+/* 卡片 */
+.card{background:var(--card);border-radius:var(--r);margin:12px 14px;box-shadow:0 1px 2px rgba(30,36,48,.04)}
+.card.pad{padding:14px}
+.card-h{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 6px;font-weight:600}
+.card-h small{color:var(--sub);font-weight:400}
+
+/* 首页头部 */
+.home-hd{background:linear-gradient(160deg,var(--hd1),var(--hd2));color:#fff;padding:12px 18px 34px;border-radius:0 0 26px 26px}
+.hd-top{display:flex;justify-content:space-between;align-items:center}
+.mnav{display:flex;align-items:center;gap:2px;font-weight:600;font-size:16px}
+.mnav button{width:32px;height:32px;border-radius:10px;color:#fff;font-size:20px}
+.mnav button:active{background:rgba(255,255,255,.15)}
+.hd-lbl{opacity:.75;font-size:13px;margin-top:10px}
+.hd-big{font-size:38px;font-weight:700;letter-spacing:.5px;line-height:1.15}
+.hd-big small{font-size:20px;opacity:.85}
+.hd-row{display:flex;gap:10px;margin-top:12px}
+.hd-row>div{flex:1;background:rgba(255,255,255,.1);border-radius:12px;padding:8px 12px}
+.hd-row span{display:block;font-size:12px;opacity:.75}
+.hd-row b{font-size:16px}
+.hd-row .over{color:#FFB4A0}
+.warn-bar{margin:10px 14px 0;padding:10px 12px;background:var(--warn-bg);color:var(--warn-ink);border-radius:12px;font-size:13px}
+
+/* 月历 */
+.cal{margin-top:-20px;position:relative;padding:10px 8px 8px}
+.cal-wk,.cal-g{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-wk div{text-align:center;font-size:12px;color:var(--sub);padding:4px 0 6px}
+.cd{min-height:58px;border-radius:12px;padding:5px 1px 4px;text-align:center;border:1.5px solid transparent}
+.cd:active{background:var(--bg)}
+.cd-n{font-size:15px;font-weight:600;width:26px;height:26px;line-height:26px;margin:0 auto;border-radius:50%}
+.cd.today .cd-n{background:var(--pri);color:#fff}
+.cd.sel{border-color:var(--pri);background:var(--pri-soft)}
+.cd-e,.cd-i{font-size:10.5px;line-height:1.25;white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
+.cd-e{color:var(--exp)} .cd-i{color:var(--inc)}
+.cd.blank{pointer-events:none}
+
+/* 当日明细 */
+.day-hd{display:flex;justify-content:space-between;align-items:baseline;padding:14px 16px 4px}
+.day-hd b{font-size:15px}
+.day-hd span{font-size:12px;color:var(--sub)}
+.empty{padding:26px 16px 22px;text-align:center;color:var(--sub);font-size:14px}
+.empty .btn{margin-top:12px}
+
+/* 记录行 */
+.ri{display:flex;align-items:center;gap:12px;padding:11px 16px;position:relative}
+.ri:active{background:var(--bg)}
+.ri+.ri::before{content:"";position:absolute;left:64px;right:0;top:0;border-top:1px solid var(--line)}
+.ri-ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none;background:var(--exp-soft)}
+.ri-ic.inc{background:var(--inc-soft)} .ri-ic.tr{background:var(--pri-soft)}
+.ri-mid{flex:1;min-width:0}
+.ri-t{font-weight:600;font-size:15px}
+.ri-s{font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ri-tags{margin-top:3px;display:flex;gap:4px;flex-wrap:wrap}
+.ri-tags span{font-size:11px;color:var(--pri);background:var(--pri-soft);padding:0 6px;border-radius:6px}
+.ri-amt{font-weight:700;font-size:16px;white-space:nowrap}
+.exp{color:var(--exp)} .inc{color:var(--inc)} .tr{color:var(--tr)}
+
+/* 底部导航 */
+.tabbar{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;height:64px;background:var(--tabbar);
+  backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;align-items:center;z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--sub)}
+.tabbar button.on{color:var(--pri);font-weight:600}
+.tabbar .plus{flex:none;width:58px;height:58px;border-radius:50%;background:var(--acc);color:#fff;margin:-26px 10px 0;
+  box-shadow:0 6px 16px rgba(240,162,50,.45);justify-content:center}
+.tabbar .plus svg{width:30px;height:30px}
+.tabbar .plus:active{transform:scale(.94)}
+
+/* 按钮 */
+.btn{height:44px;padding:0 18px;border-radius:12px;background:var(--bg);font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn:active{filter:brightness(.95)}
+.btn.pri{background:var(--pri);color:#fff}
+.btn.danger{background:var(--danger);color:#fff}
+.btn.danger-o{color:var(--danger);background:var(--danger-soft)}
+.btn.sm{height:36px;padding:0 14px;font-size:14px;border-radius:10px}
+.btn.grow{flex:1}
+.btn.block{width:100%}
+
+/* 标签式选择 chips */
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+.chips::-webkit-scrollbar{display:none}
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+.chip{flex:none;padding:7px 13px;border-radius:20px;background:var(--bg);font-size:14px;border:1.5px solid transparent;white-space:nowrap}
+.chip.on{background:var(--pri-soft);border-color:var(--pri);color:var(--pri);font-weight:600}
+.chip.add{color:var(--pri);border:1.5px dashed var(--dash);background:transparent}
+.chip.strong{font-weight:700}
+.chip.dim{opacity:.55}
+
+/* 分段 */
+.seg{display:inline-flex;background:var(--bg);border-radius:12px;padding:3px}
+.seg button{white-space:nowrap;padding:6px 12px;border-radius:9px;font-size:14px;color:var(--sub);font-weight:600}
+.seg button.on{background:var(--seg-on);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.seg button.on.expense{color:var(--exp)} .seg button.on.income{color:var(--inc)} .seg button.on.transfer{color:var(--tr)}
+.seg.full{display:flex} .seg.full button{flex:1}
+
+/* 图层：页面 / 弹窗 / 底部菜单 */
+.layer{position:fixed;inset:0;z-index:50}
+.page{position:absolute;inset:0;max-width:520px;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease}
+.layer.show .page{transform:none}
+.pg-head{display:flex;align-items:center;gap:6px;padding:8px 8px;background:var(--card);border-bottom:1px solid var(--line);flex:none}
+.pg-head h2{flex:1;margin:0;font-size:17px;text-align:center}
+.pg-right{min-width:40px;display:flex;justify-content:flex-end}
+.pg-body{flex:1;overflow-y:auto;padding-bottom:30px;-webkit-overflow-scrolling:touch}
+.mask{position:absolute;inset:0;background:rgba(15,20,30,.42);opacity:0;transition:opacity .2s}
+.layer.show .mask{opacity:1}
+.dlg{position:absolute;left:50%;top:50%;width:min(88vw,380px);max-height:84vh;overflow-y:auto;background:var(--card);border-radius:20px;padding:20px 18px 16px;
+  transform:translate(-50%,-46%);opacity:0;transition:.2s}
+.layer.show .dlg{transform:translate(-50%,-50%);opacity:1}
+.dlg h3{margin:0 0 12px;font-size:17px;text-align:center}
+.dlg-body{font-size:14.5px;color:var(--ink2)}
+.dlg-body p{margin:0 0 8px}
+.dlg-btns{display:flex;gap:10px;margin-top:16px}
+.dlg-btns .btn{flex:1}
+.as{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:var(--card);border-radius:20px 20px 0 0;padding:8px 12px calc(12px + env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:transform .22s;max-height:80vh;overflow-y:auto}
+.layer.show .as{transform:none}
+.as-t{text-align:center;color:var(--sub);font-size:13px;padding:8px 0 6px}
+.as-i{display:block;width:100%;padding:14px;text-align:center;font-size:16px;border-radius:12px}
+.as-i:active{background:var(--bg)}
+.as-i.danger{color:var(--danger)}
+.as-i.cancel{margin-top:6px;background:var(--bg);font-weight:600}
+.as-i small{display:block;color:var(--sub);font-size:12px}
+
+/* 表单 */
+.fld{padding:10px 16px}
+.fld>label{display:block;font-size:13px;color:var(--sub);margin-bottom:6px}
+.fld>label small{color:var(--faint)}
+.fld.row{display:flex;align-items:center;gap:12px}
+.fld.row>label{margin:0;width:44px;flex:none}
+.fld.row input{flex:1}
+.inp,.fld input:not([type=radio]):not([type=file]),.fld select,textarea{width:100%;height:42px;border:1.5px solid var(--line);border-radius:12px;padding:0 12px;background:var(--inp);outline:none}
+textarea{height:120px;padding:10px 12px;resize:vertical;font-size:12px}
+.inp:focus,.fld input:focus,.fld select:focus,textarea:focus{border-color:var(--pri)}
+.tip{font-size:12.5px;color:var(--sub);margin:8px 0 0}
+.radio{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14.5px}
+.radio input{width:18px;height:18px;accent-color:var(--pri)}
+.radio select{height:36px;border:1.5px solid var(--line);border-radius:10px;padding:0 8px;background:var(--inp);flex:1}
+
+.form-page .fp-head{display:flex;align-items:center;justify-content:space-between;padding:8px;background:var(--card);flex:none}
+.tbtn{padding:8px 12px;border-radius:10px;color:var(--pri);font-weight:600}
+.tbtn:active{background:var(--pri-soft)}
+.fp-body{flex:1;overflow-y:auto;background:var(--card);padding-bottom:20px}
+.fp-foot{display:flex;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);flex:none}
+.amt-box{margin:6px 16px 0;padding:12px 14px;border-radius:16px;background:var(--bg);display:flex;align-items:center;gap:10px}
+.amt-cat{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px;max-width:42%;flex:none}
+.amt-cat .ic{font-size:22px}
+.amt-cat .ph{color:var(--sub);font-weight:400}
+.amt-in{flex:1;display:flex;align-items:center;justify-content:flex-end;min-width:0}
+.amt-in span{font-size:22px;font-weight:700;margin-right:4px}
+.amt-in input{width:100%;border:0;background:transparent;outline:none;text-align:right;font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;min-width:0}
+.amt-box.expense .amt-in{color:var(--exp)} .amt-box.income .amt-in{color:var(--inc)} .amt-box.transfer .amt-in{color:var(--tr)}
+.ferr{color:var(--danger);font-size:13px;padding:4px 18px 0;min-height:4px;display:none}
+.ferr.show{display:block}
+
+.catbox{margin:10px 0 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cat-tabs{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;scrollbar-width:none}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tabs button{flex:none;font-size:13px;padding:5px 10px;border-radius:14px;background:var(--bg)}
+.cat-scroll{position:relative;max-height:262px;overflow-y:auto;padding:0 8px 8px}
+.cg-h{font-size:12.5px;color:var(--sub);padding:10px 8px 4px;font-weight:600}
+.cg-g{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+.ci{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;border-radius:12px}
+.ci:active{background:var(--bg)}
+.ci-ic{width:40px;height:40px;border-radius:13px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;border:1.5px solid transparent}
+.ci-nm{font-size:12px;text-align:center;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci.on .ci-ic{background:var(--pri-soft);border-color:var(--pri)}
+.ci.on .ci-nm{color:var(--pri);font-weight:600}
+.ci.add .ci-ic{background:transparent;border:1.5px dashed var(--dash);color:var(--pri);font-size:20px}
+.ci.add .ci-nm{color:var(--pri)}
+.cat-tip{font-size:11.5px;color:var(--faint);text-align:center;padding:6px 0 2px}
+
+.photos{display:flex;flex-wrap:wrap;gap:8px}
+.ph{width:72px;height:72px;border-radius:12px;overflow:hidden;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--sub)}
+.ph img{width:100%;height:100%;object-fit:cover}
+.ph.add{flex-direction:column;gap:2px;border:1.5px dashed var(--dash);background:transparent;color:var(--pri);font-size:11px;cursor:pointer}
+.viewer{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.viewer img{max-width:100%;max-height:78vh}
+.vw-btns{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom));display:flex;gap:12px}
+
+.emo-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:170px;overflow-y:auto;padding:2px}
+.emo{font-size:21px;height:38px;border-radius:10px;border:1.5px solid transparent}
+.emo.on{background:var(--pri-soft);border-color:var(--pri)}
+
+/* 明细 */
+.range{display:flex;align-items:center;gap:8px;margin-top:10px}
+.range input{flex:1;min-width:0;height:38px;border:1.5px solid var(--line);border-radius:10px;padding:0 8px;background:var(--inp)}
+.srch{display:flex;gap:8px;margin-top:10px}
+.srch-in{flex:1;display:flex;align-items:center;gap:6px;background:var(--bg);border-radius:10px;padding:0 10px;color:var(--sub)}
+.srch-in svg{width:18px;height:18px;flex:none}
+.srch-in input{flex:1;border:0;background:transparent;outline:none;height:36px;min-width:0;color:var(--ink)}
+.fsum{font-size:12.5px;color:var(--sub);margin-top:10px;line-height:1.6}
+.fsum a{color:var(--pri);font-weight:600;margin-left:6px}
+.grp-h{display:flex;justify-content:space-between;padding:12px 16px 4px;font-size:13px;color:var(--sub)}
+.sumbar{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;background:var(--card);border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:8px;padding:9px 16px;font-size:13px;z-index:19;box-shadow:0 -2px 8px rgba(0,0,0,.03)}
+.sumbar b{font-size:14px}
+.more-tip{text-align:center;font-size:12px;color:var(--sub);padding:12px}
+.detail-pad{height:44px}
+
+/* 筛选页 */
+.fsec{background:var(--card);margin:10px 0;padding:12px 16px}
+.fsec>h4{margin:0 0 10px;font-size:14px}
+.fgrp{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.fgrp:last-child{border-bottom:0}
+.minmax{display:flex;align-items:center;gap:8px}
+.minmax input{flex:1;min-width:0}
+
+/* 报表 */
+.rp-ctl{display:flex;flex-direction:column;gap:10px}
+.rp-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pnav{display:flex;align-items:center;gap:4px;font-weight:600}
+.pnav button{width:32px;height:32px;border-radius:10px;background:var(--bg);font-size:18px}
+.rp-row select{height:34px;border:1.5px solid var(--line);border-radius:10px;padding:0 8px;background:var(--inp);font-size:13.5px;max-width:48%}
+.donut{width:200px;height:200px;margin:4px auto 0;display:block}
+.d-l{font-size:12px;fill:var(--sub)}
+.d-v{font-size:22px;font-weight:700;fill:var(--ink)}
+.lg{display:flex;align-items:center;gap:10px;padding:9px 16px}
+.lg:active{background:var(--bg)}
+.lg .dot{width:10px;height:10px;border-radius:3px;flex:none}
+.lg-ic{font-size:18px;flex:none}
+.lg-mid{flex:1;min-width:0}
+.lg-t{display:flex;justify-content:space-between;font-size:14px}
+.lg-t span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lg-t span:last-child{color:var(--sub);font-size:12.5px;flex:none;margin-left:6px}
+.bar{height:5px;background:var(--bg);border-radius:3px;margin-top:4px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px}
+.lg-r{text-align:right;flex:none}
+.lg-r b{display:block;font-size:14px}
+.lg-r small{color:var(--sub);font-size:11.5px}
+.trend{width:100%;height:auto;display:block;padding:0 8px}
+.t-x{font-size:9px;fill:var(--sub)}
+.legend2{display:flex;gap:14px;justify-content:center;font-size:12px;color:var(--sub);padding:2px 0 8px}
+.legend2 i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+table.tb{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.tb th,.tb td{padding:8px 16px;text-align:right;border-top:1px solid var(--line)}
+.tb th{color:var(--sub);font-weight:500}
+.tb th:first-child,.tb td:first-child{text-align:left}
+
+/* 账户 / 管理列表 */
+.net{padding:18px 16px}
+.net span{font-size:13px;color:var(--sub)}
+.net b{display:block;font-size:30px;margin-top:2px}
+.mrow{display:flex;align-items:center;gap:12px;padding:12px 16px;position:relative;min-height:56px}
+.mrow:active{background:var(--bg)}
+.mrow+.mrow::before{content:"";position:absolute;left:16px;right:0;top:0;border-top:1px solid var(--line)}
+.mrow .ic{width:36px;height:36px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+.mrow .nm{flex:1;min-width:0;font-weight:500}
+.mrow .nm small{display:block;color:var(--sub);font-weight:400;font-size:12px}
+.mrow .val{font-weight:700;white-space:nowrap}
+.mrow.sub{padding-left:40px}
+.mrow.dim .ic,.mrow.dim .nm{opacity:.45}
+.badge{font-size:11px;color:var(--sub);background:var(--bg);border-radius:6px;padding:1px 6px;margin-left:6px;font-weight:400}
+.more{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--sub);flex:none}
+.more:active{background:var(--line)}
+.chev{color:var(--faint);flex:none}
+.chev svg{width:18px;height:18px}
+.list-tip{font-size:12.5px;color:var(--sub);padding:4px 18px 10px;line-height:1.6}
+.addline{display:flex;align-items:center;justify-content:center;gap:6px;color:var(--pri);font-weight:600;padding:14px;border-top:1px solid var(--line)}
+
+/* 年月选择 / 首页浏览 */
+.mtitle{display:inline-flex;align-items:center;gap:3px;color:#fff;font-weight:700;font-size:17px;padding:4px 10px;border-radius:10px;background:rgba(255,255,255,.14)}
+.mnav .mtitle{width:auto;height:34px;white-space:nowrap;font-size:17px}
+.mtitle small{font-size:11px;opacity:.85}
+.ptitle{min-width:130px;white-space:nowrap;text-align:center;font-weight:600;padding:5px 8px;border-radius:10px;background:var(--pri-soft);color:var(--pri)}
+@keyframes slL{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes slR{from{transform:translateX(-40px);opacity:0}to{transform:none;opacity:1}}
+.anim-l{animation:slL .22s ease}.anim-r{animation:slR .22s ease}
+.cal-tip{text-align:center;font-size:11px;color:var(--faint);padding:4px 0 2px}
+.day-grp{scroll-margin-top:12px;transition:box-shadow .2s}
+.day-grp.hl{box-shadow:0 0 0 2px var(--pri)}
+.prev-month{display:flex;width:calc(100% - 28px);margin:6px 14px 0;background:var(--card);color:var(--pri)}
+.yv-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 4px}
+.yv-hd .nav{width:42px;height:42px;border-radius:12px;background:var(--card);font-size:20px}
+.yv-t{font-size:22px;font-weight:700;padding:4px 12px;border-radius:10px;color:var(--pri)}
+.yv-t:active{background:var(--pri-soft)}
+.yv-sum{text-align:center;font-size:13px;color:var(--sub);padding-bottom:6px}
+.mgrid,.ygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px 14px}
+.mc{background:var(--card);border-radius:14px;padding:12px;min-height:86px;border:1.5px solid transparent;display:flex;flex-direction:column;gap:2px}
+.mc:active,.yc:active{filter:brightness(.96)}
+.mc b{font-size:18px}
+.mc span{font-size:12px;font-variant-numeric:tabular-nums}
+.mc.sel,.yc.sel{border-color:var(--pri);background:var(--pri-soft)}
+.mc.cur b{color:var(--pri)}
+.mc.cur b::after{content:" 本月";font-size:11px;font-weight:500}
+.yc{background:var(--card);border-radius:14px;padding:14px 8px;text-align:center;border:1.5px solid transparent}
+.yc b{display:block;font-size:19px}
+.yc small{color:var(--sub);font-size:11.5px}
+
+/* 第二阶段 */
+.qk{display:flex;gap:8px;margin-top:12px}
+.qk button{flex:1;background:rgba(255,255,255,.1);border-radius:12px;padding:7px 0 6px;color:#fff;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:1px}
+.qk button:active{background:rgba(255,255,255,.2)}
+.qk .e{font-size:18px;line-height:1.2}
+.hd-row small{display:block;font-size:11px;color:#FFB4A0;margin-top:1px}
+.banner{margin:10px 14px 0;padding:10px 12px;border-radius:12px;font-size:13.5px;display:flex;align-items:center;gap:8px;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.banner span{flex:1}
+.banner .x{color:var(--sub);padding:4px 8px;font-size:16px}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;cursor:pointer}
+.switch-row b{font-weight:600;font-size:14.5px}
+.switch-row small{display:block;color:var(--sub);font-size:12px;margin-top:2px;font-weight:400}
+.switch-row input[type=checkbox]{appearance:none;-webkit-appearance:none;width:48px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;transition:.2s;cursor:pointer;margin:0}
+.switch-row input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.switch-row input[type=checkbox]:checked{background:var(--pri)}
+.switch-row input[type=checkbox]:checked::after{left:23px}
+.kvs{margin-top:12px}
+.kvs>div,.kv{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.kvs span,.kv span{color:var(--sub);flex:none}
+.kvs b,.kv b{text-align:right}
+.stat3{display:flex;gap:6px}
+.stat3>div{flex:1;text-align:center}
+.stat3 span{display:block;font-size:12px;color:var(--sub)}
+.stat3 b{font-size:16px}
+.bgline{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;color:var(--sub)}
+.bgline b{color:var(--ink)}
+.bgrow{padding:11px 16px;border-top:1px solid var(--line)}
+.bgrow:active{background:var(--bg)}
+.bg-t{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;gap:8px}
+.bg-t span:last-child{font-size:13px;color:var(--sub);flex:none}
+.bg-s{font-size:12px;color:var(--sub);margin-top:4px}
+.rb+.rb{border-top:1px solid var(--line)}
+.rb-a{display:flex;align-items:center;gap:8px;padding:0 16px 10px}
+.rb-a span{flex:1;font-size:12px;color:var(--sub)}
+.pickbtn{text-align:left;display:block;line-height:39px;cursor:pointer}
+.rec-tip{font-size:12.5px;color:var(--pri);background:var(--pri-soft);margin:8px 16px 0;padding:8px 10px;border-radius:10px}
+.ri-t small.b{white-space:nowrap;display:inline-block;font-size:10.5px;color:var(--sub);background:var(--bg);border-radius:5px;padding:0 5px;font-weight:400;margin-left:4px;vertical-align:1px}
+.sample{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 3px 0 8px;vertical-align:0}
+
+.hid-note{margin:2px 16px 8px;padding:9px 12px;border-radius:10px;background:var(--warn-bg);color:var(--warn-ink);font-size:13px;text-align:center;line-height:1.5}
+.hid-note b{color:inherit}
+
+/* 报表 2 */
+.sum3{display:flex;gap:8px}
+.sc{flex:1;min-width:0;text-align:left;background:var(--bg);border-radius:12px;padding:9px 10px;border:1.5px solid transparent}
+.sc span{display:block;font-size:12px;color:var(--sub);white-space:nowrap}
+.sc b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.sc b small{font-size:11px}
+.sc.on{border-color:var(--acc);background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.tgl{display:flex;gap:8px;flex:1;min-width:0}
+.tgl button{flex:1;min-width:0;text-align:left;padding:6px 10px;border-radius:12px;border:1.5px dashed var(--dash);color:var(--sub);background:transparent}
+.tgl button span{display:block;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tgl button small{display:block;font-size:11px}
+.tgl button.on{border:1.5px solid var(--pri);background:var(--pri-soft);color:var(--pri)}
+.tgl.light{margin-top:10px}
+.tgl.light button{border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.75)}
+.tgl.light button span{color:#fff}
+.tgl.light button.on{background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.8);color:#fff}
+.rp-tg{display:flex;gap:8px;align-items:stretch}
+.fbtn{flex:none;width:44px;height:auto;border-radius:12px;background:var(--bg);position:relative;color:var(--sub)}
+.fbtn.on{color:var(--pri);background:var(--pri-soft)}
+.fbtn i{position:absolute;top:4px;right:5px;font-style:normal;font-size:10px;background:var(--pri);color:#fff;border-radius:8px;min-width:15px;height:15px;line-height:15px;text-align:center}
+.prange{font-weight:600;font-size:14px;padding:6px 0}
+.back-chip{position:absolute;left:0;font-size:12px;color:var(--pri);background:var(--pri-soft);padding:5px 8px;border-radius:9px}
+.lvl-btn{font-size:12.5px;color:var(--pri);background:var(--pri-soft);padding:4px 10px;border-radius:9px;font-weight:500}
+.bar-info{margin:0 14px 6px;padding:8px 10px;border-radius:10px;font-size:12.5px;color:var(--sub);background:var(--bg);display:flex;align-items:center;gap:8px;min-height:38px}
+.bar-info>div{flex:1;line-height:1.55}
+.bar-info.on{color:var(--ink);background:var(--pri-soft)}
+.t-v{font-size:8.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.tb tr[data-act]:active{background:var(--bg)}
+
+/* 提示 */
+#toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:rgba(20,24,32,.88);color:#fff;padding:10px 18px;border-radius:12px;font-size:14px;
+  z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;max-width:80vw;text-align:center}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="main"></div>
+<nav class="tabbar" id="tabbar"></nav>
+<div id="layers"></div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   小账本 · 网页版（第一阶段）
+   代码分四层，以后打包 APK 时只需要替换「存储层」：
+   1. 工具函数   2. 存储层 Storage（现在用浏览器 IndexedDB）
+   3. 数据层 Store（业务规则）   4. 界面层 UI
+   ===================================================================== */
+
+/* ========== 1. 工具函数 ========== */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let _uidc = 0;
+const uid = () => Date.now().toString(36) + (_uidc++).toString(36) + Math.random().toString(36).slice(2, 6);
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = () => ymd(new Date());
+const ymOf = s => s.slice(0, 7);
+const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0);
+function addMonth(ym, n) { let [y, m] = ym.split('-').map(Number); m += n; while (m > 12) { m -= 12; y++; } while (m < 1) { m += 12; y--; } return `${y}-${pad(m)}`; }
+function monthRange(ym) { const [y, m] = ym.split('-').map(Number); return [`${ym}-01`, `${ym}-${pad(new Date(y, m, 0).getDate())}`]; }
+const money = c => (c < 0 ? '-' : '') + (Math.abs(c) / 100).toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+function short(c) { const v = Math.abs(c) / 100; const s = c < 0 ? '-' : ''; if (v >= 10000) return s + (v / 10000).toFixed(v >= 100000 ? 0 : 1) + '万'; return s + (Number.isInteger(v) ? String(v) : v.toFixed(2)); }
+const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
+const TYPE_NAME = {expense: '支出', income: '收入', transfer: '转账'};
+function dateLabel(s) {
+  const d = new Date(s + 'T00:00:00'), t = today(), y = ymd(new Date(Date.now() - 864e5));
+  const tag = s === t ? ' · 今天' : s === y ? ' · 昨天' : '';
+  const yr = s.slice(0, 4) !== t.slice(0, 4) ? d.getFullYear() + '年' : '';
+  return `${yr}${d.getMonth() + 1}月${d.getDate()}日 星期${WEEK[d.getDay()]}${tag}`;
+}
+/** 金额校验：返回 {cents} 或 {err} */
+function parseAmount(s) {
+  s = String(s ?? '').trim().replace(/[,，\s]/g, '').replace(/^[¥￥]/, '').replace(/。/g, '.');
+  if (!s) return {err: '请输入金额'};
+  if (s.startsWith('-')) return {err: '金额不能是负数'};
+  if (!/^(\d+(\.\d*)?|\.\d+)$/.test(s)) return {err: '金额必须是数字'};
+  if (/\.\d{3,}$/.test(s)) return {err: '金额最多两位小数'};
+  const c = Math.round(parseFloat(s) * 100);
+  if (!(c > 0)) return {err: '金额必须大于 0'};
+  if (c > 99999999999) return {err: '金额太大了'};
+  return {cents: c};
+}
+function toast(msg, ms = 1800) {
+  const t = $('#toast'); t.textContent = String(msg?.message ?? msg); t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+/** 照片压缩：长边最大 1280px，JPEG 质量 0.72 */
+function compressImage(file, max = 1280, q = 0.72) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      let w = img.naturalWidth, h = img.naturalHeight; const s = Math.min(1, max / Math.max(w, h));
+      w = Math.round(w * s); h = Math.round(h * s);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h); URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('这张图片读取失败')); };
+    img.src = url;
+  });
+}
+const sv = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const IC = {
+  home: sv('<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'),
+  list: sv('<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>'),
+  pie: sv('<path d="M12 3v9h9A9 9 0 1 1 12 3z"/><path d="M15 3.4A9 9 0 0 1 20.6 9H15z"/>'),
+  wallet: sv('<rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M3 10h18M16 15h2M6 6V5a1 1 0 0 1 1-1h10"/>'),
+  plus: sv('<path d="M12 5v14M5 12h14"/>'),
+  search: sv('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+  set: sv('<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>'),
+  back: sv('<path d="m15 18-6-6 6-6"/>'),
+  close: sv('<path d="M6 6l12 12M18 6 6 18"/>'),
+  camera: sv('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
+  more: sv('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),
+  chev: sv('<path d="m9 6 6 6-6 6"/>'),
+  filter: sv('<path d="M4 5h16l-6 7.5V19l-4 1.5v-8z"/>'),
+};
+
+/* ========== 2. 存储层（打包 APK 时替换这一段即可） ========== */
+const Storage = (() => {
+  const NAME = 'xiaozhangben', VER = 2;
+  const STORES = ['categories', 'accounts', 'tags', 'templates', 'records', 'photos', 'meta', 'recurring'];
+  let db = null; const mem = {}; STORES.forEach(s => mem[s] = new Map());
+  const rp = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const done = tx => new Promise((res, rej) => { tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error || new Error('写入被中断')); });
+  return {
+    persistent: false, STORES,
+    async open() {
+      try {
+        if (!window.indexedDB) throw new Error('no idb');
+        db = await new Promise((res, rej) => {
+          const r = indexedDB.open(NAME, VER);
+          r.onupgradeneeded = () => { const d = r.result; STORES.forEach(s => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, {keyPath: 'id'}); }); };
+          r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error('blocked'));
+          setTimeout(() => rej(new Error('timeout')), 4000);
+        });
+        this.persistent = true;
+      } catch (e) { db = null; this.persistent = false; }
+    },
+    async getAll(s) { if (!db) return [...mem[s].values()].map(x => structuredClone(x)); return rp(db.transaction(s).objectStore(s).getAll()); },
+    async get(s, id) { if (!db) return mem[s].get(id); return rp(db.transaction(s).objectStore(s).get(id)); },
+    async put(s, obj) { if (!db) { mem[s].set(obj.id, structuredClone(obj)); return; } const tx = db.transaction(s, 'readwrite'); tx.objectStore(s).put(obj); return done(tx); },
+    async putMany(s, arr) { if (!db) { arr.forEach(o => mem[s].set(o.id, structuredClone(o))); return; } const tx = db.transaction(s, 'readwrite'); const st = tx.objectStore(s); arr.forEach(o => st.put(o)); return done(tx); },
+    async del(s, id) { if (!db) { mem[s].delete(id); return; } const tx = db.transaction(s, 'readwrite'); tx.objectStore(s).delete(id); return done(tx); },
+    async clear(s) { if (!db) { mem[s].clear(); return; } const tx = db.transaction(s, 'readwrite'); tx.objectStore(s).clear(); return done(tx); },
+  };
+})();
+const PHOTO_CACHE = new Map();
+function persist(store, obj) { return Storage.put(store, JSON.parse(JSON.stringify(obj))).catch(e => toast('保存失败：' + (e?.message || e))); }
+function unpersist(store, id) { return Storage.del(store, id).catch(e => toast('删除失败：' + (e?.message || e))); }
+
+/* ========== 3. 数据层（业务规则都在这里） ========== */
+const DEFAULT_EXP = [
+  ['餐饮', '🍚', [['早餐', '🥐'], ['午餐', '🍱'], ['晚餐', '🍲'], ['夜宵', '🍢'], ['外卖', '🛵'], ['买菜', '🥬'], ['水果零食', '🍎'], ['饮料奶茶', '🧋'], ['烟酒茶', '🍵']]],
+  ['服饰美容', '👗', [['衣服', '👕'], ['鞋包', '👟'], ['配饰', '💍'], ['美妆护肤', '💄'], ['理发美容', '💇']]],
+  ['住房', '🏠', [['房租', '🔑'], ['房贷', '🏦'], ['物业费', '🏢'], ['水费', '💧'], ['电费', '⚡'], ['燃气费', '🔥'], ['取暖费', '♨️'], ['维修', '🔧'], ['装修', '🧱']]],
+  ['日用家居', '🧺', [['日用品', '🧻'], ['家电', '📺'], ['家具', '🛋️'], ['厨房用品', '🍳'], ['清洁用品', '🧽'], ['快递费', '📦']]],
+  ['交通', '🚗', [['公交地铁', '🚇'], ['打车', '🚕'], ['火车高铁', '🚄'], ['飞机', '✈️'], ['加油', '⛽'], ['充电', '🔌'], ['停车', '🅿️'], ['过路费', '🛣️'], ['车辆保养维修', '🛠️'], ['车险', '🛡️']]],
+  ['通讯网络', '📱', [['话费', '📞'], ['宽带', '🌐'], ['会员订阅', '🎬']]],
+  ['文教娱乐', '🎓', [['书籍', '📚'], ['课程培训', '📝'], ['考试', '✏️'], ['旅游', '🏖️'], ['电影演出', '🎭'], ['游戏', '🎮'], ['运动健身', '🏃'], ['数码产品', '💻']]],
+  ['医疗健康', '🏥', [['门诊', '🩺'], ['药品', '💊'], ['体检', '📋'], ['住院', '🛏️'], ['保健品', '🌿']]],
+  ['人情往来', '🧧', [['红包礼金', '🧧'], ['请客吃饭', '🍻'], ['送礼', '🎁'], ['孝敬长辈', '👴']]],
+  ['子女', '👶', [['学费', '🎒'], ['兴趣班', '🎨'], ['子女用品', '🧸'], ['零花钱', '🪙']]],
+  ['宠物', '🐾', [['宠物食品', '🦴'], ['宠物用品', '🧶'], ['宠物医疗', '💉']]],
+  ['金融保险', '💳', [['保险', '☂️'], ['手续费', '🧾'], ['利息支出', '📉'], ['罚款', '🚫']]],
+  ['其他', '📌', [['其他支出', '📌']]],
+];
+const DEFAULT_INC = [['工资', '💼'], ['奖金', '🏆'], ['兼职副业', '💡'], ['理财收益', '📈'], ['租金收入', '🏘️'], ['红包礼金', '🧧'], ['报销款', '🧾'], ['退款', '↩️'], ['其他收入', '💰']];
+const DEFAULT_ACC = [['现金', '💵'], ['微信', '💚'], ['支付宝', '🔷'], ['银行卡', '💳']];
+const EMOJIS = ['🍚','🥐','🍱','🍲','🍢','🛵','🥬','🍎','🧋','🍵','🍻','☕','🍜','🍔','🍰','🥩','👗','👕','👟','👜','💍','💄','💇','🧴','🏠','🔑','🏦','🏢','💧','⚡','🔥','♨️','🔧','🧱','🛋️','📺','🧻','🍳','🧽','📦','🧺','🚗','🚇','🚕','🚄','✈️','⛽','🔌','🅿️','🛣️','🛠️','🛡️','🚲','📱','📞','🌐','🎬','🎵','☁️','🎓','📚','📝','✏️','🏖️','🎭','🎮','🏃','💻','📷','🏥','🩺','💊','📋','🛏️','🌿','🧧','🎁','👴','🤝','👶','🎒','🎨','🧸','🪙','🐾','🦴','🧶','💉','💳','☂️','🧾','📉','🚫','📈','💼','🏆','💡','🏘️','↩️','💰','💵','💚','🔷','🏧','📌','⭐','❤️','🎉'];
+
+const DEFAULT_SETTINGS = () => ({id: 'settings', budget: 0, catBudgets: {}, introDone: false, lastAccountId: null, lastBackup: null, lastBackupTs: null,
+  incFixed: false, incBig: false, theme: 'system', colors: 'default', remind: {on: true, time: '20:30'}, remindDismissed: null, backupSnooze: null});
+const S = {categories: [], accounts: [], tags: [], templates: [], records: [], recurring: [], settings: DEFAULT_SETTINGS()};
+const IDX = {cat: new Map(), acc: new Map(), tag: new Map()};
+function reindex() { IDX.cat = new Map(S.categories.map(c => [c.id, c])); IDX.acc = new Map(S.accounts.map(a => [a.id, a])); IDX.tag = new Map(S.tags.map(t => [t.id, t])); }
+const errOf = e => String(e?.message ?? e);
+
+const Store = {
+  async init() {
+    await Storage.open();
+    for (const k of ['categories', 'accounts', 'tags', 'templates', 'records', 'recurring']) S[k] = await Storage.getAll(k);
+    const st = (await Storage.getAll('meta')).find(x => x.id === 'settings'); if (st) Object.assign(S.settings, st);
+    if (!S.categories.length && !S.accounts.length) await this.seed();
+    reindex();
+  },
+  async seed() {
+    const cats = [];
+    DEFAULT_EXP.forEach(([n, ic, ch], i) => {
+      const pid = uid(); cats.push({id: pid, type: 'expense', parentId: null, name: n, icon: ic, order: i, hidden: false});
+      ch.forEach(([cn, cic], j) => cats.push({id: uid(), type: 'expense', parentId: pid, name: cn, icon: cic, order: j, hidden: false}));
+    });
+    DEFAULT_INC.forEach(([n, ic], i) => cats.push({id: uid(), type: 'income', parentId: null, name: n, icon: ic, order: i, hidden: false}));
+    const accs = DEFAULT_ACC.map(([n, ic], i) => ({id: uid(), name: n, icon: ic, init: 0, order: i, hidden: false}));
+    S.categories = cats; S.accounts = accs; S.tags = []; S.templates = []; S.records = []; S.recurring = [];
+    await Storage.putMany('categories', cats); await Storage.putMany('accounts', accs);
+    reindex();
+  },
+  saveSettings() { persist('meta', S.settings); },
+
+  /* ---- 查询 ---- */
+  cat: id => IDX.cat.get(id), acc: id => IDX.acc.get(id), tag: id => IDX.tag.get(id),
+  parents(type, all) { return S.categories.filter(c => c.type === type && !c.parentId && (all || !c.hidden)).sort(byOrder); },
+  children(pid, all) { return S.categories.filter(c => c.parentId === pid && (all || !c.hidden)).sort(byOrder); },
+  isLeaf(c) { return !!c.parentId || this.children(c.id).length === 0; },
+  /** 可以记账的分类：二级分类 + 没有可见二级的一级分类 */
+  leafCats(type, all) { const out = []; this.parents(type, all).forEach(p => { const ch = this.children(p.id, all); if (ch.length) out.push(...ch); else out.push(p); }); return out; },
+  catName(id) { return this.cat(id)?.name ?? '未分类'; },
+  catFull(id) { const c = this.cat(id); if (!c) return '未分类'; const p = c.parentId && this.cat(c.parentId); return p ? `${p.name} · ${c.name}` : c.name; },
+  catIcon(id) { return this.cat(id)?.icon || '❔'; },
+  topOf(id) { const c = this.cat(id); if (!c) return null; return c.parentId ? (this.cat(c.parentId) || c) : c; },
+  accounts(all) { return S.accounts.filter(a => all || !a.hidden).sort(byOrder); },
+  accName(id) { return this.acc(id)?.name ?? '未知账户'; },
+  tags() { return [...S.tags].sort(byOrder); },
+  live() { return S.records.filter(r => !r.deletedAt); },
+  balances() {
+    const m = new Map(S.accounts.map(a => [a.id, a.init || 0])); const add = (id, v) => m.set(id, (m.get(id) || 0) + v);
+    for (const r of S.records) {
+      if (r.deletedAt) continue;
+      if (r.type === 'expense') add(r.accountId, -r.amount);
+      else if (r.type === 'income') add(r.accountId, r.amount);
+      else { add(r.accountId, -r.amount); add(r.toAccountId, r.amount); }
+    }
+    return m;
+  },
+  recentCats(type, n = 10) {
+    const seen = new Set(), out = [];
+    const rs = this.live().filter(r => r.type === type).sort((a, b) => b.createdAt - a.createdAt);
+    for (const r of rs) {
+      if (seen.has(r.categoryId)) continue; seen.add(r.categoryId);
+      const c = this.cat(r.categoryId); if (!c || c.hidden) continue;
+      if (c.parentId && this.cat(c.parentId)?.hidden) continue;
+      if (!this.isLeaf(c)) continue;
+      out.push(c); if (out.length >= n) break;
+    }
+    return out;
+  },
+
+  /* ---- 记录 ---- */
+  saveRecord(d) {
+    const now = Date.now(); let r = d.id ? S.records.find(x => x.id === d.id) : null;
+    if (!r) { r = {id: uid(), createdAt: now}; S.records.push(r); }
+    const isT = d.type === 'transfer';
+    Object.assign(r, {type: d.type, amount: d.amount, categoryId: isT ? null : d.categoryId, accountId: d.accountId,
+      toAccountId: isT ? d.toAccountId : null, date: d.date, note: d.note || '', tagIds: d.tagIds || [], photoIds: d.photoIds || [], big: d.type === 'expense' && !!d.big, updatedAt: now});
+    persist('records', r); return r;
+  },
+  /** 删除 = 放进回收站（第二阶段做找回界面） */
+  deleteRecord(id) { const r = S.records.find(x => x.id === id); if (!r) return; r.deletedAt = Date.now(); persist('records', r); },
+
+  /* ---- 通用：排序 ---- */
+  move(list, item, dir, store) {
+    list.forEach((x, k) => x.order = k);
+    const i = list.indexOf(item), j = i + dir; if (j < 0 || j >= list.length) return false;
+    [list[i].order, list[j].order] = [list[j].order, list[i].order];
+    list.forEach(x => persist(store, x)); return true;
+  },
+
+  /* ---- 分类 ---- */
+  catSiblings(c) { return S.categories.filter(x => x.type === c.type && (x.parentId || null) === (c.parentId || null)).sort(byOrder); },
+  saveCategory({id, type, parentId = null, name, icon}) {
+    name = (name || '').trim();
+    if (!name) throw '请输入分类名称';
+    if (name.length > 12) throw '分类名称最多 12 个字';
+    const old = id && this.cat(id);
+    if (old) { type = old.type; parentId = old.parentId; }
+    if (S.categories.some(c => c.id !== id && c.type === type && (c.parentId || null) === (parentId || null) && c.name === name)) throw `同一级下已经有「${name}」了`;
+    let c = old;
+    if (c) { c.name = name; if (icon) c.icon = icon; }
+    else {
+      const sib = S.categories.filter(x => x.type === type && (x.parentId || null) === (parentId || null));
+      c = {id: uid(), type, parentId: parentId || null, name, icon: icon || '📌', order: sib.length ? Math.max(...sib.map(x => x.order ?? 0)) + 1 : 0, hidden: false};
+      S.categories.push(c);
+    }
+    reindex(); persist('categories', c); return c;
+  },
+  catTreeIds(id) { return [id, ...S.categories.filter(c => c.parentId === id).map(c => c.id)]; },
+  countCatRecords(ids) { const set = new Set(ids); return S.records.filter(r => set.has(r.categoryId)).length; },
+  /** 删除分类：有记录时必须给 targetId，记录会转过去 */
+  deleteCategory(id, targetId) {
+    const ids = new Set(this.catTreeIds(id));
+    if (targetId && ids.has(targetId)) throw '不能转到要删除的分类里';
+    const bills = S.recurring.filter(b => ids.has(b.categoryId));
+    const need = S.records.some(r => ids.has(r.categoryId)) || bills.length > 0;
+    if (need && !targetId) throw '这个分类下有记录，请先选择转到哪个分类';
+    bills.forEach(b => { b.categoryId = targetId; persist('recurring', b); });
+    const cb = S.settings.catBudgets || {}; let cbch = false; ids.forEach(i => { if (cb[i] != null) { delete cb[i]; cbch = true; } }); if (cbch) this.saveSettings();
+    S.records.forEach(r => { if (ids.has(r.categoryId)) { r.categoryId = targetId; r.updatedAt = Date.now(); persist('records', r); } });
+    S.templates.forEach(t => { if (ids.has(t.categoryId)) { t.categoryId = targetId || null; persist('templates', t); } });
+    S.categories = S.categories.filter(c => !ids.has(c.id)); ids.forEach(i => unpersist('categories', i));
+    reindex();
+  },
+
+  /* ---- 账户 ---- */
+  saveAccount({id, name, init = 0, icon}) {
+    name = (name || '').trim();
+    if (!name) throw '请输入账户名称';
+    if (name.length > 12) throw '账户名称最多 12 个字';
+    if (S.accounts.some(a => a.id !== id && a.name === name)) throw `已经有叫「${name}」的账户了`;
+    let a = id && this.acc(id);
+    if (a) Object.assign(a, {name, init, icon: icon || a.icon});
+    else { a = {id: uid(), name, init, icon: icon || '💳', order: S.accounts.length ? Math.max(...S.accounts.map(x => x.order ?? 0)) + 1 : 0, hidden: false}; S.accounts.push(a); }
+    reindex(); persist('accounts', a); return a;
+  },
+  countAccRecords(id) { return S.records.filter(r => r.accountId === id || r.toAccountId === id).length; },
+  deleteAccount(id, targetId) {
+    if (targetId === id) throw '不能转到要删除的账户';
+    if (S.accounts.length <= 1) throw '至少要保留一个账户';
+    const bills = S.recurring.filter(b => b.accountId === id);
+    const need = this.countAccRecords(id) > 0 || bills.length > 0;
+    if (need && !targetId) throw '这个账户有记录，请先选择转到哪个账户';
+    bills.forEach(b => { b.accountId = targetId; persist('recurring', b); });
+    S.records.forEach(r => {
+      let ch = false;
+      if (r.accountId === id) { r.accountId = targetId; ch = true; }
+      if (r.toAccountId === id) { r.toAccountId = targetId; ch = true; }
+      if (ch) { r.updatedAt = Date.now(); persist('records', r); }
+    });
+    S.templates.forEach(t => { let ch = false; if (t.accountId === id) { t.accountId = targetId || null; ch = true; } if (t.toAccountId === id) { t.toAccountId = targetId || null; ch = true; } if (ch) persist('templates', t); });
+    if (S.settings.lastAccountId === id) { S.settings.lastAccountId = targetId || null; this.saveSettings(); }
+    S.accounts = S.accounts.filter(a => a.id !== id); unpersist('accounts', id); reindex();
+  },
+
+  /* ---- 标签 ---- */
+  saveTag({id, name}) {
+    name = (name || '').trim().replace(/^#/, '');
+    if (!name) throw '请输入标签名称';
+    if (name.length > 12) throw '标签最多 12 个字';
+    if (S.tags.some(t => t.id !== id && t.name === name)) throw `已经有「${name}」这个标签了`;
+    let t = id && this.tag(id);
+    if (t) t.name = name;
+    else { t = {id: uid(), name, order: S.tags.length ? Math.max(...S.tags.map(x => x.order ?? 0)) + 1 : 0}; S.tags.push(t); }
+    reindex(); persist('tags', t); return t;
+  },
+  deleteTag(id) {
+    S.records.forEach(r => { if (r.tagIds?.includes(id)) { r.tagIds = r.tagIds.filter(x => x !== id); persist('records', r); } });
+    S.templates.forEach(t => { if (t.tagIds?.includes(id)) { t.tagIds = t.tagIds.filter(x => x !== id); persist('templates', t); } });
+    S.tags = S.tags.filter(t => t.id !== id); unpersist('tags', id); reindex();
+  },
+
+  /* ---- 模板 ---- */
+  saveTemplate(d) {
+    let t = d.id && S.templates.find(x => x.id === d.id);
+    if (t) Object.assign(t, d);
+    else { t = {...d, id: uid(), order: S.templates.length}; S.templates.push(t); }
+    persist('templates', t); return t;
+  },
+  deleteTemplate(id) { S.templates = S.templates.filter(t => t.id !== id); unpersist('templates', id); },
+
+  /* ---- 备份 ---- */
+  async exportAll() {
+    const photos = await Storage.getAll('photos');
+    return JSON.stringify({app: 'xiaozhangben', version: 1, exportedAt: new Date().toISOString(),
+      data: {categories: S.categories, accounts: S.accounts, tags: S.tags, templates: S.templates, records: S.records, recurring: S.recurring, settings: S.settings}, photos});
+  },
+  async importAll(obj) {
+    if (!obj || obj.app !== 'xiaozhangben' || !obj.data) throw '这不是本 App 的备份文件';
+    for (const k of ['categories', 'accounts', 'tags', 'templates', 'records', 'recurring']) {
+      S[k] = Array.isArray(obj.data[k]) ? obj.data[k] : [];
+      await Storage.clear(k); if (S[k].length) await Storage.putMany(k, S[k]);
+    }
+    await Storage.clear('photos'); PHOTO_CACHE.clear();
+    if (Array.isArray(obj.photos) && obj.photos.length) await Storage.putMany('photos', obj.photos);
+    S.settings = {...DEFAULT_SETTINGS(), ...(obj.data.settings || {}), id: 'settings', introDone: true}; this.saveSettings();
+    reindex();
+  },
+  async clearAll() {
+    for (const k of Storage.STORES) await Storage.clear(k);
+    PHOTO_CACHE.clear();
+    S.settings = {...DEFAULT_SETTINGS(), introDone: true}; this.saveSettings();
+    await this.seed();
+  },
+};
+
+/* 支出的两种"特殊账"：
+   固定 = 周期账每一期自动记的支出（月供、话费、会员…）
+   大额 = 周期账的首付/提前结清，以及记账时手动标了「大额」的支出
+   全局开关 incFixed / incBig 决定首页、预算、报表、明细合计算不算它们；收入永远照算 */
+const isFixed = r => r.type === 'expense' && !!r.recurId && r.recurPeriod > 0;
+const isBig = r => r.type === 'expense' && (!!r.big || (!!r.recurId && (r.recurPeriod === 0 || r.recurPeriod === -1)));
+const countsExp = r => r.type === 'expense' && (!isFixed(r) || S.settings.incFixed) && (!isBig(r) || S.settings.incBig);
+function toggleChips(fx, bg, light) {
+  const st = S.settings, one = (on, act, ic, name, amt) => `<button class="${on ? 'on' : ''}" data-act="${act}"><span>${ic} ${name}${amt ? ' ' + short(amt) : ''}</span><small>${on ? '✓ 已计入' : '未计入'}</small></button>`;
+  return `<div class="tgl ${light ? 'light' : ''}">${one(st.incFixed, 'togFixed', '🔁', '固定支出', fx)}${one(st.incBig, 'togBig', '💰', '大额支出', bg)}</div>`;
+}
+
+/* ========== 4. 界面层 ========== */
+const ACT = {};   // 点击动作：data-act
+const LP = {};    // 长按动作：data-lp
+const IN = {};    // 输入动作：data-in
+const CH = {};    // 变更动作：data-ch
+const SW = {};    // 左右滑动：data-swipe（dir=1 往后，-1 往前）
+const UI = {
+  tab: 'home', homeMonth: ymOf(today()), selDay: today(),
+  filter: null, fd: null, cmType: 'expense',
+  rp: {gran: 'month', ym: ymOf(today()), year: +today().slice(0, 4), wk: weekStartOf(today()), q: Math.floor((+today().slice(5, 7) - 1) / 3) + 1,
+    start: today().slice(0, 8) + '01', end: today(), view: 'expense', level: 1, tag: '', accs: [], sel: null, back: []},
+};
+ACT.togFixed = () => { S.settings.incFixed = !S.settings.incFixed; Store.saveSettings(); refreshAll(); toast(S.settings.incFixed ? '固定支出：已计入' : '固定支出：不计入', 1200); };
+ACT.togBig = () => { S.settings.incBig = !S.settings.incBig; Store.saveSettings(); refreshAll(); toast(S.settings.incBig ? '大额支出：已计入' : '大额支出：不计入', 1200); };
+const PERIODS = [['month', '本月'], ['lastmonth', '上月'], ['year', '今年'], ['all', '全部'], ['custom', '自定义']];
+function periodRange(p) {
+  const t = today(), ym = ymOf(t), y = t.slice(0, 4);
+  if (p === 'month') return monthRange(ym);
+  if (p === 'lastmonth') return monthRange(addMonth(ym, -1));
+  if (p === 'year') return [`${y}-01-01`, `${y}-12-31`];
+  if (p === 'all') return ['', ''];
+  return null;
+}
+function defaultFilter(p = 'month') { const [s, e] = periodRange(p) || ['', '']; return {period: p, start: s, end: e, type: 'all', cats: [], accs: [], tags: [], min: null, max: null, kw: ''}; }
+UI.filter = defaultFilter();
+
+/* ---- 图层管理（全屏页面 / 弹窗 / 底部菜单） ---- */
+const Layers = {
+  stack: [],
+  open(html, {cls = '', onClose} = {}) {
+    const el = document.createElement('div'); el.className = 'layer ' + cls; el.innerHTML = html;
+    $('#layers').appendChild(el); void el.offsetWidth; el.classList.add('show');
+    const L = {el, onClose}; this.stack.push(L); return el;
+  },
+  get(el) { return this.stack.find(l => l.el === el); },
+  closeEl(el) {
+    const i = this.stack.findIndex(l => l.el === el); if (i < 0) return;
+    const [L] = this.stack.splice(i, 1); el.classList.remove('show'); setTimeout(() => el.remove(), 240);
+    L.onClose && L.onClose();
+  },
+  closeTop() { const L = this.stack[this.stack.length - 1]; if (L) { this.closeEl(L.el); return true; } return false; },
+};
+/* 安卓返回键：先关最上面的弹窗/页面；没有弹窗时，不在首页就回首页，在首页就退到后台 */
+window.appBack = () => Layers.closeTop();
+const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const APP_VERSION = '1.0';
+try {
+  const AppPlugin = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (AppPlugin) AppPlugin.addListener('backButton', () => {
+    if (Layers.closeTop()) return;
+    if (UI.tab !== 'home') { UI.tab = 'home'; renderMain(); window.scrollTo(0, 0); return; }
+    AppPlugin.minimizeApp ? AppPlugin.minimizeApp() : AppPlugin.exitApp();
+  });
+} catch (_) {}
+ACT.layerBack = el => Layers.closeEl(el.closest('.layer'));
+
+function dialog({title = '', html = '', buttons = [{text: '好的', cls: 'pri'}], onOpen} = {}) {
+  return new Promise(resolve => {
+    const el = Layers.open(`<div class="mask" data-act="dlgMask"></div><div class="dlg">${title ? `<h3>${title}</h3>` : ''}<div class="dlg-body">${html}</div>
+      <div class="dlg-btns">${buttons.map((b, i) => `<button class="btn ${b.cls || ''}" data-act="dlgBtn" data-i="${i}">${b.text}</button>`).join('')}</div></div>`,
+      {cls: 'dialog', onClose: () => resolve(null)});
+    el._dlg = {buttons, resolve}; onOpen && onOpen(el);
+  });
+}
+ACT.dlgBtn = async el => {
+  const L = el.closest('.layer'); const {buttons, resolve} = L._dlg; const b = buttons[+el.dataset.i];
+  let v = null;
+  if (b.onClick) { try { v = await b.onClick(L); } catch (e) { toast(errOf(e)); return; } if (v === false) return; }
+  resolve(v); Layers.closeEl(L);
+};
+ACT.dlgMask = el => Layers.closeEl(el.closest('.layer'));
+const confirmDlg = (text, ok = '确定', danger = false) =>
+  dialog({title: '请确认', html: `<p style="text-align:center">${text}</p>`, buttons: [{text: '取消'}, {text: ok, cls: danger ? 'danger' : 'pri', onClick: () => true}]});
+function promptDlg(title, {value = '', placeholder = '', maxlength = 20, inputmode = '', tip = '', onOk} = {}) {
+  return dialog({title, html: `<input id="dIn" class="inp" value="${esc(value)}" placeholder="${esc(placeholder)}" maxlength="${maxlength}" ${inputmode ? `inputmode="${inputmode}"` : ''} autocomplete="off">${tip ? `<p class="tip">${tip}</p>` : ''}`,
+    buttons: [{text: '取消'}, {text: '确定', cls: 'pri', onClick: L => { const v = $('#dIn', L).value; return onOk ? onOk(v) : v; }}]});
+}
+function actionSheet(title, items) {
+  return new Promise(resolve => {
+    const el = Layers.open(`<div class="mask" data-act="dlgMask"></div><div class="as">${title ? `<div class="as-t">${esc(title)}</div>` : ''}
+      ${items.map((it, i) => `<button class="as-i ${it.danger ? 'danger' : ''}" data-act="asItem" data-i="${i}">${it.html || esc(it.t)}</button>`).join('')}
+      <button class="as-i cancel" data-act="dlgMask">取消</button></div>`, {cls: 'sheet', onClose: () => resolve(null)});
+    el._as = {items, resolve};
+  });
+}
+ACT.asItem = el => { const L = el.closest('.layer'); const {items, resolve} = L._as; resolve(items[+el.dataset.i].v); Layers.closeEl(L); };
+function iconGrid(sel) { return `<div class="emo-grid" data-val="${sel}">${EMOJIS.map(e => `<button type="button" class="emo ${e === sel ? 'on' : ''}" data-act="pickEmo" data-e="${e}">${e}</button>`).join('')}</div>`; }
+ACT.pickEmo = el => { const g = el.closest('.emo-grid'); g.querySelectorAll('.on').forEach(x => x.classList.remove('on')); el.classList.add('on'); g.dataset.val = el.dataset.e; };
+const emoVal = L => $('.emo-grid', L)?.dataset.val;
+
+function openPage(title, bodyFn, {right = '', foot = ''} = {}) {
+  const el = Layers.open(`<div class="page"><div class="pg-head"><button class="ibtn" data-act="layerBack">${IC.back}</button><h2>${title}</h2><div class="pg-right">${right}</div></div>
+    <div class="pg-body"></div>${foot}</div>`, {cls: 'page-layer'});
+  const body = el.querySelector('.pg-body'), L = Layers.get(el);
+  L.refresh = () => { const st = body.scrollTop; body.innerHTML = bodyFn(); body.scrollTop = st; };
+  L.refresh(); return L;
+}
+function refreshAll() { reindex(); renderMain(); Layers.stack.forEach(l => l.refresh && l.refresh()); }
+
+/* ---- 记录行 ---- */
+function recItem(r) {
+  const isT = r.type === 'transfer', cls = r.type === 'expense' ? 'exp' : r.type === 'income' ? 'inc' : 'tr';
+  const sub = isT ? [`${esc(Store.accName(r.accountId))} → ${esc(Store.accName(r.toAccountId))}`] : [esc(Store.accName(r.accountId))];
+  if (r.note) sub.push(esc(r.note));
+  const tags = (r.tagIds || []).map(id => Store.tag(id)).filter(Boolean);
+  const sign = r.type === 'expense' ? '-' : r.type === 'income' ? '+' : '';
+  return `<div class="ri" data-act="editRec" data-id="${r.id}">
+    <div class="ri-ic ${cls}">${isT ? '🔁' : Store.catIcon(r.categoryId)}</div>
+    <div class="ri-mid"><div class="ri-t">${isT ? '转账' : esc(Store.catName(r.categoryId))}${r.photoIds?.length ? ' <small>📷</small>' : ''}${isFixed(r) ? '<small class="b">🔁 固定</small>' : r.recurId && r.type === 'income' ? '<small class="b">🔁 周期</small>' : ''}${isBig(r) ? '<small class="b">💰 大额</small>' : ''}</div>
+      <div class="ri-s">${sub.join(' · ')}</div>${tags.length ? `<div class="ri-tags">${tags.map(t => `<span>#${esc(t.name)}</span>`).join('')}</div>` : ''}</div>
+    <div class="ri-amt ${cls}">${sign}${money(r.amount)}</div></div>`;
+}
+ACT.editRec = el => { const r = S.records.find(x => x.id === el.dataset.id); if (r) openRecordForm({record: r}); };
+
+/* ---- 底部导航 ---- */
+function renderTabbar() {
+  const t = (k, ic, n) => `<button data-act="tab" data-t="${k}">${ic}<span>${n}</span></button>`;
+  $('#tabbar').innerHTML = t('home', IC.home, '首页') + t('detail', IC.list, '明细') +
+    `<button class="plus" data-act="addRec" aria-label="记一笔">${IC.plus}</button>` + t('report', IC.pie, '报表') + t('accounts', IC.wallet, '账户');
+}
+ACT.tab = el => { UI.tab = el.dataset.t; renderMain(); window.scrollTo(0, 0); };
+ACT.addRec = () => openRecordForm({date: today()});
+
+function renderMain() {
+  reindex();
+  const t = UI.tab;
+  $('#main').innerHTML = t === 'home' ? renderHome() : t === 'detail' ? renderDetail() : t === 'report' ? renderReport() : renderAccounts();
+  if (t === 'detail') renderDetailList();
+  document.querySelectorAll('#tabbar [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+}
+
+/* ================= 首页 ================= */
+function renderHome() {
+  const ym = UI.homeMonth, [a, b] = monthRange(ym), [y, m] = ym.split('-').map(Number);
+  let exp = 0, inc = 0, fx = 0, bg = 0; const byDay = {};
+  for (const r of S.records) {
+    if (r.deletedAt || r.type === 'transfer' || r.date < a || r.date > b) continue;
+    if (r.type === 'expense') { if (isFixed(r)) fx += r.amount; if (isBig(r)) bg += r.amount; if (!countsExp(r)) continue; }
+    const d = byDay[r.date] || (byDay[r.date] = {e: 0, i: 0});
+    if (r.type === 'expense') { d.e += r.amount; exp += r.amount; } else { d.i += r.amount; inc += r.amount; }
+  }
+  const budget = S.settings.budget || 0, left = budget - exp;
+  const catOver = budgetStatus(ym).filter(o => o.sp > o.amt).length;
+  const [ei, ed] = money(exp).split('.');
+  const t = today(), first = new Date(y, m - 1, 1).getDay(), offset = (first + 6) % 7, days = new Date(y, m, 0).getDate();
+  let cells = '';
+  for (let i = 0; i < offset; i++) cells += '<div class="cd blank"></div>';
+  for (let d = 1; d <= days; d++) {
+    const ds = `${ym}-${pad(d)}`, v = byDay[ds];
+    cells += `<div class="cd ${ds === t ? 'today' : ''} ${ds === UI.selDay ? 'sel' : ''}" data-act="pickDay" data-d="${ds}"><div class="cd-n">${d}</div>
+      ${v?.e ? `<div class="cd-e">${short(v.e)}</div>` : ''}${v?.i ? `<div class="cd-i">${short(v.i)}</div>` : ''}</div>`;
+  }
+  // 本月全部记录，按天分组，从新到旧（向上滑浏览）
+  const monthRs = S.records.filter(r => !r.deletedAt && r.date >= a && r.date <= b).sort((p, q) => p.date < q.date ? 1 : p.date > q.date ? -1 : q.createdAt - p.createdAt);
+  const groups = []; monthRs.forEach(r => { const g = groups[groups.length - 1]; if (g && g.date === r.date) g.list.push(r); else groups.push({date: r.date, list: [r]}); });
+  const feed = groups.map(g => {
+    let ge = 0, gi = 0; g.list.forEach(r => { if (countsExp(r)) ge += r.amount; else if (r.type === 'income') gi += r.amount; });
+    return `<div class="card day-grp ${g.date === UI.selDay ? 'hl' : ''}" id="g-${g.date}"><div class="day-hd"><b>${dateLabel(g.date)}</b><span>${ge ? '支 ' + money(ge) : ''}${ge && gi ? '　' : ''}${gi ? '收 ' + money(gi) : ''}</span></div>${g.list.map(recItem).join('')}<div style="height:6px"></div></div>`;
+  }).join('');
+  const prevYm = addMonth(ym, -1);
+  const isCur = ym === ymOf(t);
+  const anim = UI.anim ? (UI.anim > 0 ? 'anim-l' : 'anim-r') : ''; UI.anim = 0;
+  return `<div class="home-hd">
+    <div class="hd-top"><div class="mnav"><button data-act="hmPrev">‹</button><button class="mtitle" data-act="hmPick">${y}年${m}月<small>▾</small></button><button data-act="hmNext">›</button>
+      ${isCur ? '' : '<button data-act="hmNow" style="font-size:12px;width:auto;padding:0 8px;margin-left:4px;background:rgba(255,255,255,.15)">回今天</button>'}</div>
+      <button class="ibtn light" data-act="goDetail" aria-label="查询">${IC.search}</button></div>
+    <div class="hd-lbl">${isCur ? '本月' : m + '月'}支出</div>
+    <div class="hd-big">${ei}<small>.${ed}</small></div>
+    ${fx || bg || S.settings.incFixed || S.settings.incBig ? toggleChips(fx, bg, true) : ''}
+    <div class="hd-row"><div><span>${isCur ? '本月' : m + '月'}收入</span><b>${money(inc)}</b></div>
+      <div data-act="openBudget"><span>预算剩余</span>${budget ? `<b class="${left < 0 ? 'over' : ''}">${left < 0 ? '超支 ' + money(-left) : money(left)}</b>` : '<b style="opacity:.7;font-weight:500">点此设置</b>'}${catOver ? `<small>${catOver} 个分类超支</small>` : ''}</div></div>
+    <div class="qk"><button data-act="openRecur"><span class="e">🔁</span>周期账</button><button data-act="openBudget"><span class="e">🎯</span>预算</button>
+      <button data-act="openRecycle"><span class="e">🗑️</span>回收站</button><button data-act="openSettings"><span class="e">⚙️</span>设置</button></div>
+  </div>
+  ${Storage.persistent ? '' : '<div class="warn-bar">⚠️ 当前环境无法保存数据，关闭页面后记录会丢失。</div>'}
+  <div class="card cal" data-swipe="hmSwipe"><div class="cal-wk">${['一', '二', '三', '四', '五', '六', '日'].map(w => `<div>${w}</div>`).join('')}</div><div class="cal-g ${anim}">${cells}</div>
+    <div class="cal-tip">左右滑动换月 · 点上方月份可直接跳到任意年月</div></div>
+  ${homeBanners()}
+  ${feed || `<div class="card"><div class="empty">${m}月还没有记录<br><button class="btn sm pri" data-act="addOnDay">＋ 记一笔</button></div></div>`}
+  <button class="btn prev-month" data-act="hmPrev">看 ${prevYm.slice(0, 4) !== String(y) ? prevYm.slice(0, 4) + '年' : ''}${+prevYm.slice(5)}月 的记录 ›</button>`;
+}
+function setHomeMonth(ym, dir = 0) { UI.homeMonth = ym; UI.selDay = ym === ymOf(today()) ? today() : ''; UI.anim = dir; renderMain(); window.scrollTo(0, 0); }
+ACT.hmPrev = () => setHomeMonth(addMonth(UI.homeMonth, -1), -1);
+ACT.hmNext = () => setHomeMonth(addMonth(UI.homeMonth, 1), 1);
+ACT.hmNow = () => setHomeMonth(ymOf(today()));
+ACT.hmPick = () => openMonthPicker({ym: UI.homeMonth, onPick: ym => setHomeMonth(ym)});
+SW.hmSwipe = (el, dir) => setHomeMonth(addMonth(UI.homeMonth, dir), dir);
+/* 点日历某天：有记录就滑到那天；没记录就问要不要给这天记一笔 */
+ACT.pickDay = async el => {
+  const d = el.dataset.d; UI.selDay = d; renderMain();
+  const g = document.getElementById('g-' + d);
+  if (g) { g.scrollIntoView({behavior: 'smooth', block: 'start'}); return; }
+  const ok = await dialog({title: dateLabel(d), html: '<p style="text-align:center">这天还没有记录</p>', buttons: [{text: '取消'}, {text: '给这天记一笔', cls: 'pri', onClick: () => true}]});
+  if (ok) openRecordForm({date: d});
+};
+ACT.addOnDay = () => openRecordForm({date: UI.homeMonth === ymOf(today()) ? today() : UI.homeMonth + '-01'});
+
+/* ================= 年月选择器（年视图：12 个月一屏，左右滑换年；点年份可直接选年） ================= */
+function openMonthPicker({ym, onPick, yearOnly = false}) {
+  const st = {year: +ym.slice(0, 4), sel: ym, view: yearOnly ? 'years' : 'months', yearOnly, anim: 0};
+  const L = openPage(yearOnly ? '选择年份' : '选择月份', () => monthPickerBody(st));
+  L.mp = {st, onPick};
+}
+function yearTotals(year) {
+  const m = {}; let e = 0, i = 0; const y = String(year);
+  for (const r of S.records) {
+    if (r.deletedAt || r.type === 'transfer' || r.date.slice(0, 4) !== y) continue;
+    const k = r.date.slice(0, 7), o = m[k] || (m[k] = {e: 0, i: 0});
+    if (r.type === 'expense') { o.e += r.amount; e += r.amount; } else { o.i += r.amount; i += r.amount; }
+  }
+  return {m, e, i};
+}
+function monthPickerBody(st) {
+  const curY = +today().slice(0, 4), curYm = ymOf(today());
+  if (st.view === 'years') {
+    const years = S.records.map(r => +r.date.slice(0, 4)).filter(Boolean);
+    const lo = Math.min(curY - 10, ...years), hi = Math.max(curY + 1, ...years), cnt = {};
+    S.records.forEach(r => { if (!r.deletedAt) cnt[r.date.slice(0, 4)] = (cnt[r.date.slice(0, 4)] || 0) + 1; });
+    let cells = ''; for (let y = hi; y >= lo; y--) cells += `<div class="yc ${y === st.year ? 'sel' : ''}" data-act="mpPickYear" data-y="${y}"><b>${y}</b><small>${cnt[y] ? cnt[y] + ' 笔' : '　'}</small></div>`;
+    return `<div class="yv-sum" style="padding-top:14px">点一个年份${st.yearOnly ? '' : '，再选月份'}</div><div class="ygrid">${cells}</div>`;
+  }
+  const t = yearTotals(st.year), anim = st.anim ? (st.anim > 0 ? 'anim-l' : 'anim-r') : ''; st.anim = 0;
+  let cells = '';
+  for (let k = 1; k <= 12; k++) {
+    const ym = `${st.year}-${pad(k)}`, o = t.m[ym];
+    cells += `<div class="mc ${ym === st.sel ? 'sel' : ''} ${ym === curYm ? 'cur' : ''}" data-act="mpPick" data-ym="${ym}"><b>${k}月</b>
+      ${o?.e ? `<span class="exp">支 ${short(o.e)}</span>` : ''}${o?.i ? `<span class="inc">收 ${short(o.i)}</span>` : ''}${!o ? '<span style="color:var(--faint)">—</span>' : ''}</div>`;
+  }
+  return `<div data-swipe="mpSwipe" style="min-height:70vh">
+    <div class="yv-hd"><button class="nav" data-act="mpYear" data-d="-1">‹</button><button class="yv-t" data-act="mpYears">${st.year}年 ▾</button><button class="nav" data-act="mpYear" data-d="1">›</button></div>
+    <div class="yv-sum">全年 支出 <b class="exp">${money(t.e)}</b>　收入 <b class="inc">${money(t.i)}</b></div>
+    <div class="mgrid ${anim}">${cells}</div>
+    <div class="list-tip" style="text-align:center">左右滑动换年 · 点「${st.year}年」可直接选年份</div></div>`;
+}
+const mpOf = el => Layers.get(el.closest('.layer'));
+function mpShiftYear(L, d) { L.mp.st.year += d; L.mp.st.anim = d; L.refresh(); }
+ACT.mpYear = el => mpShiftYear(mpOf(el), +el.dataset.d);
+SW.mpSwipe = (el, dir) => mpShiftYear(mpOf(el), dir);
+ACT.mpYears = el => { const L = mpOf(el); L.mp.st.view = 'years'; L.refresh(); L.el.querySelector('.pg-body').scrollTop = 0; };
+ACT.mpPickYear = el => {
+  const L = mpOf(el), y = +el.dataset.y;
+  if (L.mp.st.yearOnly) { Layers.closeEl(L.el); L.mp.onPick(y); return; }
+  L.mp.st.year = y; L.mp.st.view = 'months'; L.refresh();
+};
+ACT.mpPick = el => { const L = mpOf(el); Layers.closeEl(L.el); L.mp.onPick(el.dataset.ym); };
+ACT.goDetail = () => { UI.tab = 'detail'; renderMain(); setTimeout(() => $('[data-in="kw"]')?.focus(), 50); };
+ACT.setBudget = async () => {
+  const v = await promptDlg('每月总预算', {value: S.settings.budget ? (S.settings.budget / 100).toString() : '', placeholder: '比如 5000', inputmode: 'decimal', tip: '留空或填 0 表示不设预算。按分类单独设预算在第二阶段做。',
+    onOk: v => { v = v.trim(); if (!v || v === '0') return 0; const p = parseAmount(v); if (p.err) { toast(p.err); return false; } return p.cents; }});
+  if (v === null) return; S.settings.budget = v; Store.saveSettings(); renderMain(); toast(v ? '预算已设置' : '已取消预算');
+};
+
+/* ================= 记一笔（也用于编辑模板） ================= */
+let F = null;
+function firstAcc() { return Store.accounts()[0]?.id || null; }
+function openRecordForm(opts = {}) {
+  const r = opts.record, t = opts.tpl, isTpl = opts.mode === 'template';
+  const src = r || t || {};
+  const lastAcc = Store.acc(S.settings.lastAccountId) && !Store.acc(S.settings.lastAccountId).hidden ? S.settings.lastAccountId : firstAcc();
+  F = {
+    mode: isTpl ? 'template' : 'record', id: r?.id || null, tplId: t?.id || null, tplName: t?.name || '',
+    type: src.type || 'expense', amount: src.amount != null ? (src.amount / 100).toString() : '',
+    categoryId: src.categoryId || null, accountId: (src.accountId && Store.acc(src.accountId)) ? src.accountId : (isTpl && t ? null : lastAcc),
+    toAccountId: src.toAccountId || null, date: r?.date || opts.date || today(), note: src.note || '',
+    tagIds: [...(src.tagIds || [])].filter(id => Store.tag(id)), photoIds: [...(r?.photoIds || [])], newPhotos: [], removedPhotos: [],
+    recurId: r?.recurId || null, recurPeriod: r?.recurPeriod, big: !!src.big,
+  };
+  if (isTpl && !t) F.accountId = lastAcc;
+  const el = Layers.open('<div class="page form-page"></div>', {cls: 'page-layer', onClose: () => { if (F && F.el === el) F = null; }});
+  F.el = el;
+  Layers.get(el).refresh = () => { if (F && F.el === el) renderFormParts(true); };
+  renderForm();
+}
+function renderForm() {
+  const tpl = F.mode === 'template', isT = F.type === 'transfer';
+  F.el.querySelector('.page').innerHTML = `
+  <div class="fp-head"><button class="ibtn" data-act="layerBack" aria-label="关闭">${IC.close}</button>
+    <div class="seg">${['expense', 'income', 'transfer'].map(t => `<button class="${F.type === t ? 'on ' + t : ''}" data-act="fType" data-t="${t}">${TYPE_NAME[t]}</button>`).join('')}</div>
+    ${tpl ? '<span style="width:52px"></span>' : '<button class="tbtn" data-act="fTpl">模板</button>'}</div>
+  <div class="fp-body">
+    ${tpl ? `<div class="fld"><label>模板名称</label><input data-in="fTplName" value="${esc(F.tplName)}" placeholder="比如：早餐、地铁通勤" maxlength="20"></div>` : ''}
+    <div class="amt-box ${F.type}"><div class="amt-cat" id="fSelCat"></div>
+      <div class="amt-in"><span>¥</span><input id="fAmt" data-in="fAmount" inputmode="decimal" placeholder="${tpl ? '可不填' : '0.00'}" value="${esc(F.amount)}" autocomplete="off"></div></div>
+    <div class="ferr" id="fErr"></div>
+    ${F.recurId ? `<div class="rec-tip">🔁 这笔来自周期账「${esc(S.recurring.find(b => b.id === F.recurId)?.name || '已删除的周期账')}」${F.recurPeriod > 0 ? `第 ${F.recurPeriod} 期` : F.recurPeriod === 0 ? '首付' : ''}。在这里修改只影响这一笔。</div>` : ''}
+    ${isT ? `<div class="fld"><label>从哪个账户转出</label><div class="chips" id="fAccFrom"></div></div><div class="fld"><label>转入哪个账户</label><div class="chips" id="fAccTo"></div></div>`
+          : `<div class="catbox" id="fCat"></div><div class="fld"><label>账户</label><div class="chips" id="fAccFrom"></div></div>`}
+    ${tpl ? '' : `<div class="fld row"><label>日期</label><input type="date" data-in="fDate" value="${F.date}"></div>`}
+    <div class="fld row"><label>备注</label><input data-in="fNote" value="${esc(F.note)}" placeholder="写点什么（可不填）" maxlength="100"></div>
+    ${F.type === 'expense' && !F.recurId ? `<div style="padding:4px 16px"><label class="switch-row"><div><b>大额支出</b><small>买车、装修这类一次性的大钱。是否计入统计跟着「大额支出」开关走</small></div><input type="checkbox" data-ch="fBig" ${F.big ? 'checked' : ''}></label></div>` : ''}
+    <div class="fld"><label>标签 <small>可多选，可不选</small></label><div class="chips wrap" id="fTags"></div></div>
+    ${tpl ? '' : '<div class="fld"><label>照片 <small>最多 9 张，会自动压缩</small></label><div class="photos" id="fPhotos"></div></div>'}
+  </div>
+  <div class="fp-foot">
+    ${F.id && !tpl ? '<button class="btn danger-o" data-act="fDelete">删除</button>' : ''}
+    ${tpl && F.tplId ? '<button class="btn danger-o" data-act="tplDelete">删除</button>' : ''}
+    ${!F.id && !tpl ? '<button class="btn" data-act="fSave" data-again="1">再记一笔</button>' : ''}
+    <button class="btn pri grow" data-act="fSave">${tpl ? '保存模板' : F.id ? '保存修改' : '保存'}</button>
+  </div>`;
+  renderFormParts();
+}
+function renderFormParts(keepScroll) {
+  if (!F) return;
+  renderSelCat(); if (F.type !== 'transfer') renderCatBox(keepScroll);
+  renderAccChips(); renderTagChips(); if (F.mode !== 'template') renderPhotos();
+}
+function renderSelCat() {
+  const box = $('#fSelCat', F.el); if (!box) return;
+  if (F.type === 'transfer') { box.innerHTML = '<span class="ic">🔁</span>转账'; return; }
+  const c = Store.cat(F.categoryId);
+  box.innerHTML = c ? `<span class="ic">${c.icon}</span><span>${esc(c.name)}</span>` : '<span class="ph">请选分类 ↓</span>';
+}
+function renderCatBox(keepScroll) {
+  const box = $('#fCat', F.el); if (!box) return;
+  const oldSc = box.querySelector('.cat-scroll')?.scrollTop || 0;
+  const type = F.type, recent = Store.recentCats(type), sections = []; let loose = null;
+  for (const p of Store.parents(type)) {
+    const ch = Store.children(p.id);
+    if (ch.length) { loose = null; sections.push({p, items: ch}); }
+    else { if (!loose) { loose = {p: null, items: []}; sections.push(loose); } loose.items.push(p); }
+  }
+  const item = c => `<div class="ci ${F.categoryId === c.id ? 'on' : ''}" data-act="fPickCat" data-lp="catMenu" data-id="${c.id}"><div class="ci-ic">${c.icon}</div><div class="ci-nm">${esc(c.name)}</div></div>`;
+  const tabs = (recent.length ? '<button data-act="catJump" data-k="recent">⏱ 最近</button>' : '') +
+    sections.filter(s => s.p).map(s => `<button data-act="catJump" data-k="${s.p.id}">${s.p.icon} ${esc(s.p.name)}</button>`).join('');
+  box.innerHTML = `${tabs ? `<div class="cat-tabs">${tabs}</div>` : ''}<div class="cat-scroll">
+    ${recent.length ? `<div class="cg" data-k="recent"><div class="cg-h">最近常用</div><div class="cg-g">${recent.map(item).join('')}</div></div>` : ''}
+    ${sections.map(s => `<div class="cg" data-k="${s.p ? s.p.id : 'loose'}">${s.p ? `<div class="cg-h" data-lp="catMenu" data-id="${s.p.id}">${s.p.icon} ${esc(s.p.name)}</div>` : ''}<div class="cg-g">${s.items.map(item).join('')}</div></div>`).join('')}
+    <div class="cg"><div class="cg-g"><div class="ci add" data-act="addCategory"><div class="ci-ic">＋</div><div class="ci-nm">添加分类</div></div></div></div>
+    <div class="cat-tip">长按分类可以编辑、排序、隐藏、删除</div></div>`;
+  if (keepScroll) box.querySelector('.cat-scroll').scrollTop = oldSc;
+}
+function renderAccChips() {
+  const accs = Store.accounts();
+  const mk = f => {
+    const list = [...accs]; const cur = F[f] && Store.acc(F[f]);
+    if (cur && cur.hidden) list.unshift(cur);
+    return list.map(a => `<div class="chip ${F[f] === a.id ? 'on' : ''}" data-act="fPickAcc" data-f="${f}" data-lp="accMenu" data-id="${a.id}">${a.icon} ${esc(a.name)}${a.hidden ? '（已隐藏）' : ''}</div>`).join('')
+      + `<div class="chip add" data-act="addAccount" data-f="${f}">＋ 添加账户</div>`;
+  };
+  $('#fAccFrom', F.el).innerHTML = mk('accountId');
+  const to = $('#fAccTo', F.el); if (to) to.innerHTML = mk('toAccountId');
+}
+function renderTagChips() {
+  $('#fTags', F.el).innerHTML = Store.tags().map(t => `<div class="chip ${F.tagIds.includes(t.id) ? 'on' : ''}" data-act="fToggleTag" data-lp="tagMenu" data-id="${t.id}">#${esc(t.name)}</div>`).join('')
+    + '<div class="chip add" data-act="addTag">＋ 添加标签</div>';
+}
+function renderPhotos() {
+  const box = $('#fPhotos', F.el); if (!box) return;
+  const missing = F.photoIds.filter(id => !PHOTO_CACHE.has(id));
+  if (missing.length) {
+    const f0 = F;
+    Promise.all(missing.map(id => Storage.get('photos', id).then(p => PHOTO_CACHE.set(id, p?.data || '')).catch(() => PHOTO_CACHE.set(id, ''))))
+      .then(() => { if (F === f0) renderPhotos(); });
+  }
+  const items = [...F.photoIds.map(id => ({k: 'o', id, src: PHOTO_CACHE.get(id)})), ...F.newPhotos.map((src, i) => ({k: 'n', id: i, src}))];
+  box.innerHTML = items.map(it => `<div class="ph" data-act="fViewPhoto" data-k="${it.k}" data-id="${it.id}">${it.src ? `<img src="${it.src}" alt="">` : '<span>…</span>'}</div>`).join('')
+    + (items.length < 9 ? `<label class="ph add">${IC.camera}<span>拍照</span><input type="file" accept="image/*" capture="environment" data-ch="fPhotoFile" hidden></label>
+       <label class="ph add"><span style="font-size:20px">🖼️</span><span>相册</span><input type="file" accept="image/*" multiple data-ch="fPhotoFile" hidden></label>` : '');
+}
+IN.fAmount = el => { F.amount = el.value; $('#fErr', F.el).classList.remove('show'); };
+IN.fNote = el => { F.note = el.value; };
+CH.fBig = el => { F.big = el.checked; };
+IN.fDate = el => { F.date = el.value; };
+IN.fTplName = el => { F.tplName = el.value; };
+ACT.fType = el => {
+  const t = el.dataset.t; if (t === F.type) return;
+  F.type = t;
+  const c = Store.cat(F.categoryId); if (c && c.type !== t) F.categoryId = null;
+  if (t === 'transfer' && (!F.toAccountId || F.toAccountId === F.accountId)) F.toAccountId = Store.accounts().find(a => a.id !== F.accountId)?.id || null;
+  renderForm();
+};
+ACT.fPickCat = el => {
+  F.categoryId = el.dataset.id;
+  F.el.querySelectorAll('.ci.on').forEach(x => x.classList.remove('on'));
+  F.el.querySelectorAll(`.ci[data-id="${el.dataset.id}"]`).forEach(x => x.classList.add('on'));
+  renderSelCat(); $('#fErr', F.el).classList.remove('show');
+};
+ACT.catJump = el => {
+  const sc = F.el.querySelector('.cat-scroll'), g = sc.querySelector(`.cg[data-k="${el.dataset.k}"]`);
+  if (g) sc.scrollTo({top: g.offsetTop, behavior: 'smooth'});
+};
+ACT.fPickAcc = el => { F[el.dataset.f] = el.dataset.id; renderAccChips(); };
+ACT.fToggleTag = el => { const id = el.dataset.id; F.tagIds = F.tagIds.includes(id) ? F.tagIds.filter(x => x !== id) : [...F.tagIds, id]; renderTagChips(); };
+CH.fPhotoFile = async inp => {
+  const files = [...inp.files]; inp.value = ''; if (!F) return;
+  const f0 = F, room = 9 - F.photoIds.length - F.newPhotos.length;
+  if (files.length > room) toast('最多 9 张照片');
+  toast('正在处理照片…', 8000);
+  for (const f of files.slice(0, Math.max(0, room))) { try { f0.newPhotos.push(await compressImage(f)); } catch (e) { toast(errOf(e)); } }
+  toast('照片已添加', 900);
+  if (F === f0) renderPhotos();
+};
+ACT.fViewPhoto = el => {
+  const k = el.dataset.k, id = el.dataset.id, src = k === 'o' ? PHOTO_CACHE.get(id) : F.newPhotos[+id]; if (!src) return;
+  Layers.open(`<div class="viewer"><img src="${src}" alt=""><div class="vw-btns"><button class="btn" data-act="layerBack">关闭</button>
+    <button class="btn danger-o" data-act="phDel" data-k="${k}" data-id="${id}">删除这张</button></div></div>`, {cls: 'dialog'});
+};
+ACT.phDel = el => {
+  const k = el.dataset.k, id = el.dataset.id;
+  if (k === 'o') { F.photoIds = F.photoIds.filter(x => x !== id); F.removedPhotos.push(id); } else F.newPhotos.splice(+id, 1);
+  Layers.closeEl(el.closest('.layer')); renderPhotos();
+};
+function fErr(m) { const e = $('#fErr', F.el); e.textContent = m; e.classList.add('show'); toast(m); }
+ACT.fSave = async el => {
+  if (!F || F.saving) return;
+  if (F.mode === 'template') return saveTplFromForm();
+  const again = !!el.dataset.again, p = parseAmount(F.amount);
+  if (p.err) return fErr(p.err);
+  if (F.type !== 'transfer' && !Store.cat(F.categoryId)) return fErr('请选择分类');
+  if (!Store.acc(F.accountId)) return fErr(F.type === 'transfer' ? '请选择转出账户' : '请选择账户');
+  if (F.type === 'transfer') { if (!Store.acc(F.toAccountId)) return fErr('请选择转入账户'); if (F.toAccountId === F.accountId) return fErr('转出和转入不能是同一个账户'); }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(F.date)) return fErr('请选择日期');
+  F.saving = true;
+  try {
+    for (const id of F.removedPhotos) { await Storage.del('photos', id).catch(() => {}); PHOTO_CACHE.delete(id); }
+    const newIds = [];
+    for (const src of F.newPhotos) { const id = uid(); await Storage.put('photos', {id, data: src}); PHOTO_CACHE.set(id, src); newIds.push(id); }
+    F.savedRec = Store.saveRecord({id: F.id, type: F.type, amount: p.cents, categoryId: F.categoryId, accountId: F.accountId, toAccountId: F.toAccountId,
+      date: F.date, note: F.note.trim(), tagIds: [...F.tagIds], photoIds: [...F.photoIds, ...newIds], big: F.type === 'expense' && F.big});
+    S.settings.lastAccountId = F.accountId; Store.saveSettings();
+  } catch (e) { F.saving = false; return fErr('保存失败：' + errOf(e)); }
+  const wasEdit = !!F.id; checkBudget(F.savedRec);
+  if (!wasEdit) { UI.homeMonth = ymOf(F.date); UI.selDay = F.date; }
+  toast(wasEdit ? '已保存修改' : '已记一笔 ✓', 1200);
+  if (again) {
+    Object.assign(F, {saving: false, amount: '', note: '', categoryId: null, tagIds: [], photoIds: [], newPhotos: [], removedPhotos: [], big: false});
+    renderForm(); setTimeout(() => $('#fAmt', F?.el)?.focus(), 50);
+  } else Layers.closeEl(F.el);
+  refreshAll();
+};
+ACT.fDelete = async () => {
+  if (!F?.id) return; const f0 = F;
+  if (!await confirmDlg('确定删除这条记录吗？', '删除', true)) return;
+  Store.deleteRecord(f0.id); Layers.closeEl(f0.el); toast('已删除'); refreshAll();
+};
+
+/* ---- 模板 ---- */
+function tplSummary(t) {
+  const parts = [TYPE_NAME[t.type]];
+  if (t.type === 'transfer') parts.push(`${t.accountId ? Store.accName(t.accountId) : '?'} → ${t.toAccountId ? Store.accName(t.toAccountId) : '?'}`);
+  else { if (t.categoryId) parts.push(Store.catName(t.categoryId)); if (t.accountId) parts.push(Store.accName(t.accountId)); }
+  if (t.amount != null) parts.push('¥' + money(t.amount));
+  if (t.note) parts.push(t.note);
+  return parts.join(' · ');
+}
+function saveTplFromForm() {
+  const name = F.tplName.trim(); if (!name) return fErr('请填写模板名称');
+  let cents = null; if (F.amount.trim()) { const p = parseAmount(F.amount); if (p.err) return fErr(p.err); cents = p.cents; }
+  if (F.type === 'transfer' && F.accountId && F.accountId === F.toAccountId) return fErr('转出和转入不能是同一个账户');
+  if (S.templates.some(t => t.name === name && t.id !== F.tplId)) return fErr('已经有同名的模板了');
+  Store.saveTemplate({id: F.tplId, name, type: F.type, amount: cents, categoryId: F.type === 'transfer' ? null : F.categoryId,
+    accountId: F.accountId, toAccountId: F.type === 'transfer' ? F.toAccountId : null, note: F.note.trim(), tagIds: [...F.tagIds]});
+  toast('模板已保存'); Layers.closeEl(F.el); refreshAll();
+}
+ACT.tplDelete = async () => { const f0 = F; if (!await confirmDlg(`删除模板「${esc(f0.tplName)}」？`, '删除', true)) return; Store.deleteTemplate(f0.tplId); Layers.closeEl(f0.el); refreshAll(); };
+ACT.fTpl = async () => {
+  const tpls = [...S.templates].sort(byOrder);
+  const v = await actionSheet(tpls.length ? '点一下套用模板' : '还没有模板',
+    [...tpls.map(t => ({html: `${esc(t.name)}<small>${esc(tplSummary(t))}</small>`, v: t.id})), {t: '＋ 把现在填的内容存为模板', v: '__save'}]);
+  if (!v || !F) return;
+  if (v === '__save') {
+    let cents = null; if (F.amount.trim()) { const p = parseAmount(F.amount); if (p.err) return fErr(p.err); cents = p.cents; }
+    const f0 = F;
+    const name = await promptDlg('模板名称', {placeholder: '比如：工作日早餐', maxlength: 20, onOk: n => { n = n.trim(); if (!n) { toast('请填写名称'); return false; } if (S.templates.some(t => t.name === n)) { toast('已经有同名的模板了'); return false; } return n; }});
+    if (!name) return;
+    Store.saveTemplate({name, type: f0.type, amount: cents, categoryId: f0.type === 'transfer' ? null : f0.categoryId, accountId: f0.accountId,
+      toAccountId: f0.type === 'transfer' ? f0.toAccountId : null, note: f0.note.trim(), tagIds: [...f0.tagIds]});
+    toast('已存为模板'); return;
+  }
+  const t = S.templates.find(x => x.id === v); if (!t) return;
+  F.type = t.type; if (t.amount != null) F.amount = (t.amount / 100).toString();
+  F.categoryId = Store.cat(t.categoryId) ? t.categoryId : null;
+  if (Store.acc(t.accountId)) F.accountId = t.accountId;
+  F.toAccountId = Store.acc(t.toAccountId) ? t.toAccountId : F.toAccountId;
+  F.note = t.note || ''; F.tagIds = (t.tagIds || []).filter(id => Store.tag(id));
+  renderForm(); toast('已套用「' + t.name + '」');
+};
+
+/* ================= 分类：添加 / 编辑 / 排序 / 隐藏 / 删除 ================= */
+async function categoryDialog({c, type, parentId}) {
+  if (c) {
+    return dialog({title: '编辑分类', html: `<div class="fld" style="padding:0 0 10px"><label>名称</label><input id="dName" maxlength="12" value="${esc(c.name)}"></div>
+      <div class="fld" style="padding:0"><label>图标</label>${iconGrid(c.icon)}</div><p class="tip">改名后，历史记录会自动显示新名字。</p>`,
+      buttons: [{text: '取消'}, {text: '保存', cls: 'pri', onClick: L => Store.saveCategory({id: c.id, name: $('#dName', L).value, icon: emoVal(L)})}]});
+  }
+  const parents = Store.parents(type, true);
+  const lvl2Default = parentId || (type === 'expense' && parents.length);
+  const pid = parentId || parents[0]?.id;
+  const html = `<div class="fld" style="padding:0 0 10px"><label>名称</label><input id="dName" maxlength="12" placeholder="分类名称"></div>
+    <div class="fld" style="padding:0 0 10px"><label>级别</label>
+      ${parents.length ? `<label class="radio"><input type="radio" name="lvl" value="2" ${lvl2Default ? 'checked' : ''}>二级分类（小类），属于：</label>
+        <div style="padding:0 0 6px 26px"><select id="dPar" class="inp" style="height:38px">${parents.map(p => `<option value="${p.id}" ${p.id === pid ? 'selected' : ''}>${p.icon} ${esc(p.name)}</option>`).join('')}</select></div>` : ''}
+      <label class="radio"><input type="radio" name="lvl" value="1" ${lvl2Default ? '' : 'checked'}>一级分类（大类）</label></div>
+    <div class="fld" style="padding:0"><label>图标</label>${iconGrid('📌')}</div>`;
+  return dialog({title: `添加${TYPE_NAME[type]}分类`, html, buttons: [{text: '取消'}, {text: '添加', cls: 'pri', onClick: L => {
+    const lvl = L.querySelector('input[name=lvl]:checked')?.value || '1';
+    return Store.saveCategory({type, parentId: lvl === '2' ? $('#dPar', L).value : null, name: $('#dName', L).value, icon: emoVal(L)});
+  }}]});
+}
+ACT.addCategory = async () => {
+  const c = await categoryDialog({type: F?.type || UI.cmType});
+  if (!c) return; toast('已添加「' + c.name + '」');
+  if (F && c.type === F.type && Store.isLeaf(c)) F.categoryId = c.id;
+  if (F && c.parentId && F.categoryId === c.parentId) F.categoryId = c.id;
+  refreshAll();
+  if (F) setTimeout(() => { const n = F?.el.querySelector(`.ci[data-id="${c.id}"]`); n?.scrollIntoView({block: 'nearest'}); }, 30);
+};
+async function catMenu(id) {
+  const c = Store.cat(id); if (!c) return;
+  const items = [{t: '编辑名称和图标', v: 'edit'}, {t: '上移', v: 'up'}, {t: '下移', v: 'down'},
+    {t: c.hidden ? '取消隐藏' : '隐藏（记账时不显示，历史和报表照常）', v: 'hide'}];
+  if (!c.parentId) items.push({t: '在它下面添加二级分类', v: 'addsub'});
+  items.push({t: '删除', v: 'del', danger: true});
+  const v = await actionSheet(`${c.icon} ${c.name}${c.parentId ? '' : '（一级分类）'}`, items);
+  if (!v) return;
+  if (v === 'edit') { if (await categoryDialog({c})) { toast('已保存'); refreshAll(); } }
+  else if (v === 'up' || v === 'down') { if (!Store.move(Store.catSiblings(c), c, v === 'up' ? -1 : 1, 'categories')) toast(v === 'up' ? '已经是第一个了' : '已经是最后一个了'); refreshAll(); }
+  else if (v === 'hide') { c.hidden = !c.hidden; persist('categories', c); if (c.hidden && F?.categoryId === c.id) F.categoryId = null; toast(c.hidden ? '已隐藏' : '已取消隐藏'); refreshAll(); }
+  else if (v === 'addsub') { const n = await categoryDialog({type: c.type, parentId: c.id}); if (n) { toast('已添加'); refreshAll(); } }
+  else if (v === 'del') deleteCategoryFlow(c);
+}
+LP.catMenu = el => catMenu(el.dataset.id);
+async function deleteCategoryFlow(c) {
+  const ids = Store.catTreeIds(c.id), nr = Store.countCatRecords(ids), nb = S.recurring.filter(b => ids.includes(b.categoryId)).length, n = nr + nb;
+  const childNote = ids.length > 1 ? `（连同下面 ${ids.length - 1} 个二级分类）` : '';
+  if (!n) {
+    if (!await confirmDlg(`删除分类「${esc(c.name)}」${childNote}？`, '删除', true)) return;
+    Store.deleteCategory(c.id, null);
+  } else {
+    const targets = Store.leafCats(c.type, true).filter(x => !ids.includes(x.id));
+    if (!targets.length) { toast('没有其他分类可以接收这些记录，请先添加一个分类'); return; }
+    const groups = {};
+    targets.forEach(t => { const p = t.parentId ? Store.cat(t.parentId) : null; const k = p ? p.id : '_'; (groups[k] = groups[k] || {p, list: []}).list.push(t); });
+    const opts = Object.values(groups).map(g => g.p ? `<optgroup label="${esc(g.p.name)}">${g.list.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</optgroup>`
+      : g.list.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')).join('');
+    const ok = await dialog({title: '删除分类', html: `<p>「${esc(c.name)}」${childNote}${nr ? `下面有 <b>${nr}</b> 条记录（含回收站）` : ''}${nb ? `${nr ? '，' : ''}有 <b>${nb}</b> 个周期账在用它` : ''}，不能直接删除。</p><p>请选择把这些记录转到：</p>
+      <div class="fld" style="padding:4px 0 0"><select id="dSel">${opts}</select></div>`,
+      buttons: [{text: '取消'}, {text: '转移并删除', cls: 'danger', onClick: L => { Store.deleteCategory(c.id, $('#dSel', L).value); return true; }}]});
+    if (!ok) return;
+  }
+  if (F && ids.includes(F.categoryId)) F.categoryId = null;
+  toast('已删除'); refreshAll();
+}
+
+/* ================= 账户：添加 / 编辑 / 排序 / 隐藏 / 删除 ================= */
+function accountDialog(a) {
+  return dialog({title: a ? '编辑账户' : '添加账户', html: `<div class="fld" style="padding:0 0 10px"><label>名称</label><input id="dName" maxlength="12" value="${esc(a?.name || '')}" placeholder="比如：招行储蓄卡"></div>
+    <div class="fld" style="padding:0 0 10px"><label>初始余额</label><input id="dInit" inputmode="decimal" value="${a && a.init ? (a.init / 100).toString() : ''}" placeholder="0（信用卡欠款可填负数）"></div>
+    <div class="fld" style="padding:0"><label>图标</label>${iconGrid(a?.icon || '💳')}</div>`,
+    buttons: [{text: '取消'}, {text: '保存', cls: 'pri', onClick: L => {
+      const s = $('#dInit', L).value.trim().replace(/[,，]/g, ''); let init = 0;
+      if (s) { if (!/^-?(\d+(\.\d{0,2})?|\.\d{1,2})$/.test(s)) { toast('初始余额要填数字，最多两位小数'); return false; } init = Math.round(parseFloat(s) * 100); }
+      return Store.saveAccount({id: a?.id, name: $('#dName', L).value, init, icon: emoVal(L)});
+    }}]});
+}
+ACT.addAccount = async el => {
+  const a = await accountDialog(); if (!a) return;
+  toast('已添加「' + a.name + '」');
+  if (F && el.dataset.f) F[el.dataset.f] = a.id;
+  refreshAll();
+};
+async function accMenu(id) {
+  const a = Store.acc(id); if (!a) return;
+  const v = await actionSheet(`${a.icon} ${a.name}`, [{t: '编辑名称、初始余额、图标', v: 'edit'}, {t: '查看这个账户的明细', v: 'view'}, {t: '上移', v: 'up'}, {t: '下移', v: 'down'},
+    {t: a.hidden ? '取消隐藏' : '隐藏（记账时不显示，历史照常）', v: 'hide'}, {t: '删除', v: 'del', danger: true}]);
+  if (!v) return;
+  if (v === 'edit') { if (await accountDialog(a)) { toast('已保存'); refreshAll(); } }
+  else if (v === 'view') { while (Layers.stack.length) Layers.closeTop(); showDetail({...defaultFilter('all'), accs: [a.id]}); }
+  else if (v === 'up' || v === 'down') { if (!Store.move(Store.accounts(true), a, v === 'up' ? -1 : 1, 'accounts')) toast(v === 'up' ? '已经是第一个了' : '已经是最后一个了'); refreshAll(); }
+  else if (v === 'hide') { a.hidden = !a.hidden; persist('accounts', a); toast(a.hidden ? '已隐藏' : '已取消隐藏'); refreshAll(); }
+  else if (v === 'del') deleteAccountFlow(a);
+}
+LP.accMenu = el => accMenu(el.dataset.id);
+async function deleteAccountFlow(a) {
+  if (S.accounts.length <= 1) return toast('至少要保留一个账户');
+  const nr = Store.countAccRecords(a.id), nb = S.recurring.filter(b => b.accountId === a.id).length, n = nr + nb;
+  if (!n) { if (!await confirmDlg(`删除账户「${esc(a.name)}」？`, '删除', true)) return; Store.deleteAccount(a.id, null); }
+  else {
+    const others = Store.accounts(true).filter(x => x.id !== a.id);
+    const ok = await dialog({title: '删除账户', html: `<p>「${esc(a.name)}」${nr ? `有 <b>${nr}</b> 条记录（含回收站）` : ''}${nb ? `${nr ? '，' : ''}有 <b>${nb}</b> 个周期账在用它` : ''}，不能直接删除。</p><p>请选择把这些记录转到：</p>
+      <div class="fld" style="padding:4px 0 0"><select id="dSel">${others.map(x => `<option value="${x.id}">${x.icon} ${esc(x.name)}</option>`).join('')}</select></div>
+      <p class="tip">初始余额不会转移，删除后余额以目标账户为准。</p>`,
+      buttons: [{text: '取消'}, {text: '转移并删除', cls: 'danger', onClick: L => { Store.deleteAccount(a.id, $('#dSel', L).value); return true; }}]});
+    if (!ok) return;
+  }
+  if (F) { if (F.accountId === a.id) F.accountId = firstAcc(); if (F.toAccountId === a.id) F.toAccountId = null; }
+  toast('已删除'); refreshAll();
+}
+
+/* ================= 标签 ================= */
+ACT.addTag = async () => {
+  const t = await promptDlg('添加标签', {placeholder: '比如：2026国庆旅行', maxlength: 12, tip: '标签用来跨分类统计，比如一次旅行的总花费。', onOk: v => Store.saveTag({name: v})});
+  if (!t) return; toast('已添加 #' + t.name);
+  if (F && !F.tagIds.includes(t.id)) F.tagIds.push(t.id);
+  refreshAll();
+};
+async function tagMenu(id) {
+  const t = Store.tag(id); if (!t) return;
+  const v = await actionSheet('#' + t.name, [{t: '改名', v: 'edit'}, {t: '查看这个标签的全部明细', v: 'view'}, {t: '上移', v: 'up'}, {t: '下移', v: 'down'}, {t: '删除', v: 'del', danger: true}]);
+  if (!v) return;
+  if (v === 'edit') { const r = await promptDlg('标签改名', {value: t.name, maxlength: 12, onOk: n => Store.saveTag({id: t.id, name: n})}); if (r) { toast('已改名'); refreshAll(); } }
+  else if (v === 'view') { while (Layers.stack.length) Layers.closeTop(); showDetail({...defaultFilter('all'), tags: [t.id]}); }
+  else if (v === 'up' || v === 'down') { Store.move(Store.tags(), t, v === 'up' ? -1 : 1, 'tags'); refreshAll(); }
+  else if (v === 'del') {
+    const n = S.records.filter(r => r.tagIds?.includes(t.id)).length;
+    if (!await confirmDlg(`删除标签 #${esc(t.name)}？${n ? `<br><small>有 ${n} 条记录用了它，删除后这些记录只是去掉这个标签，记录本身不受影响。</small>` : ''}`, '删除', true)) return;
+    if (F) F.tagIds = F.tagIds.filter(x => x !== t.id);
+    Store.deleteTag(t.id); toast('已删除'); refreshAll();
+  }
+}
+LP.tagMenu = el => tagMenu(el.dataset.id);
+
+/* ================= 明细查询 ================= */
+function filterRecords(f) {
+  let catSet = null;
+  if (f.cats.length) { catSet = new Set(); f.cats.forEach(id => { catSet.add(id); Store.children(id, true).forEach(c => catSet.add(c.id)); }); }
+  const kw = (f.kw || '').trim().toLowerCase();
+  return S.records.filter(r => !r.deletedAt && (!f.start || r.date >= f.start) && (!f.end || r.date <= f.end)
+    && (f.type === 'all' || r.type === f.type) && (!catSet || catSet.has(r.categoryId))
+    && (!f.accs.length || f.accs.includes(r.accountId) || f.accs.includes(r.toAccountId))
+    && (!f.tags.length || (r.tagIds || []).some(t => f.tags.includes(t)))
+    && (f.min == null || r.amount >= f.min) && (f.max == null || r.amount <= f.max)
+    && (!kw || (r.note || '').toLowerCase().includes(kw)));
+}
+function activeCount(f) { return (f.type !== 'all') + (f.cats.length > 0) + (f.accs.length > 0) + (f.tags.length > 0) + (f.min != null || f.max != null); }
+function filterSummary(f) {
+  const names = (ids, fn) => { const n = ids.map(fn).filter(Boolean); return n.slice(0, 3).join('、') + (n.length > 3 ? ` 等${n.length}个` : ''); };
+  const p = [];
+  if (f.type !== 'all') p.push('类型：' + TYPE_NAME[f.type]);
+  if (f.cats.length) p.push('分类：' + names(f.cats, id => Store.cat(id)?.name));
+  if (f.accs.length) p.push('账户：' + names(f.accs, id => Store.acc(id)?.name));
+  if (f.tags.length) p.push('标签：' + names(f.tags, id => Store.tag(id) && '#' + Store.tag(id).name));
+  if (f.min != null || f.max != null) p.push(`金额：${f.min != null ? money(f.min) : '不限'} ~ ${f.max != null ? money(f.max) : '不限'}`);
+  return esc(p.join('；'));
+}
+function showDetail(f) { UI.filter = f; UI.tab = 'detail'; renderMain(); window.scrollTo(0, 0); }
+function renderDetail() {
+  const f = UI.filter, n = activeCount(f);
+  return `<div class="topbar"><h1>明细</h1></div>
+  <div class="card pad" style="margin-top:4px">
+    <div class="chips">${PERIODS.map(([k, t]) => `<div class="chip ${f.period === k ? 'on' : ''}" data-act="period" data-p="${k}">${t}</div>`).join('')}</div>
+    ${f.period === 'custom' ? `<div class="range"><input type="date" data-ch="fStart" value="${f.start}"><span>至</span><input type="date" data-ch="fEnd" value="${f.end}"></div>` : ''}
+    <div class="srch"><div class="srch-in">${IC.search}<input data-in="kw" placeholder="搜备注关键词" value="${esc(f.kw)}" autocomplete="off"></div>
+      <button class="btn sm ${n ? 'pri' : ''}" data-act="openFilter">筛选${n ? ' · ' + n : ''}</button></div>
+    ${n ? `<div class="fsum">${filterSummary(f)}<a data-act="clearFilter">清除筛选</a></div>` : ''}
+  </div>
+  <div id="dList"></div><div class="detail-pad"></div><div class="sumbar" id="dSum"></div>`;
+}
+function renderDetailList() {
+  const box = $('#dList'), sum = $('#dSum'); if (!box) return;
+  const rs = filterRecords(UI.filter).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.createdAt - a.createdAt);
+  let e = 0, i = 0, ex = 0; rs.forEach(r => { if (r.type === 'income') i += r.amount; else if (r.type === 'expense') { if (countsExp(r)) e += r.amount; else ex += r.amount; } });
+  const LIMIT = 500, shown = rs.slice(0, LIMIT), groups = [];
+  shown.forEach(r => { const g = groups[groups.length - 1]; if (g && g.date === r.date) g.list.push(r); else groups.push({date: r.date, list: [r]}); });
+  box.innerHTML = rs.length ? groups.map(g => {
+    let ge = 0, gi = 0; g.list.forEach(r => { if (countsExp(r)) ge += r.amount; else if (r.type === 'income') gi += r.amount; });
+    return `<div class="card"><div class="grp-h"><span>${dateLabel(g.date)}</span><span>${ge ? '支 ' + money(ge) : ''}${ge && gi ? '　' : ''}${gi ? '收 ' + money(gi) : ''}</span></div>${g.list.map(recItem).join('')}<div style="height:4px"></div></div>`;
+  }).join('') + (rs.length > LIMIT ? `<div class="more-tip">只显示最近 ${LIMIT} 条，底部合计按全部 ${rs.length} 条计算</div>` : '')
+    : '<div class="card"><div class="empty">没有符合条件的记录</div></div>';
+  sum.innerHTML = `<span>共 <b>${rs.length}</b> 笔</span><span>支出 <b class="exp">${money(e)}</b>${ex ? `<small style="color:var(--sub)"> +未计入${short(ex)}</small>` : ''}</span><span>收入 <b class="inc">${money(i)}</b></span>`;
+}
+ACT.period = el => {
+  const p = el.dataset.p, f = UI.filter; f.period = p;
+  const r = periodRange(p);
+  if (r) [f.start, f.end] = r; else if (!f.start || !f.end) [f.start, f.end] = monthRange(ymOf(today()));
+  renderMain();
+};
+CH.fStart = el => { UI.filter.start = el.value; renderDetailList(); };
+CH.fEnd = el => { UI.filter.end = el.value; renderDetailList(); };
+IN.kw = el => { UI.filter.kw = el.value; renderDetailList(); };
+ACT.clearFilter = () => { const f = UI.filter; Object.assign(f, {type: 'all', cats: [], accs: [], tags: [], min: null, max: null}); renderMain(); };
+ACT.openFilter = () => {
+  const f = UI.filter;
+  UI.fd = {...JSON.parse(JSON.stringify(f)), minS: f.min != null ? (f.min / 100).toString() : '', maxS: f.max != null ? (f.max / 100).toString() : ''};
+  openPage('筛选', filterBody, {foot: '<div class="fp-foot"><button class="btn" data-act="fdReset">重置</button><button class="btn pri grow" data-act="fdApply">查看结果</button></div>'});
+};
+function filterBody() {
+  const d = UI.fd, chip = (k, id, label, extra = '') => `<div class="chip ${extra} ${d[k].includes(id) ? 'on' : ''}" data-act="fdToggle" data-k="${k}" data-id="${id}">${label}</div>`;
+  const catSec = type => Store.parents(type, true).map(p => {
+    const ch = Store.children(p.id, true);
+    return `<div class="fgrp">${chip('cats', p.id, `${p.icon} ${esc(p.name)}${ch.length ? '（全部）' : ''}`, 'strong' + (p.hidden ? ' dim' : ''))}${ch.map(c => chip('cats', c.id, esc(c.name), c.hidden ? 'dim' : '')).join('')}</div>`;
+  }).join('');
+  const types = d.type === 'all' ? ['expense', 'income'] : d.type === 'transfer' ? [] : [d.type];
+  return `<div class="fsec"><h4>类型</h4><div class="seg full">${[['all', '全部'], ['expense', '支出'], ['income', '收入'], ['transfer', '转账']].map(([k, t]) => `<button class="${d.type === k ? 'on ' + k : ''}" data-act="fdType" data-t="${k}">${t}</button>`).join('')}</div></div>
+    ${types.length ? `<div class="fsec"><h4>分类 <small style="color:var(--sub);font-weight:400">可多选，选大类=包含下面所有小类</small></h4>${types.map(t => (types.length > 1 ? `<div style="font-size:12px;color:var(--sub);margin:6px 0 2px">${TYPE_NAME[t]}</div>` : '') + catSec(t)).join('')}</div>` : ''}
+    <div class="fsec"><h4>账户</h4><div class="chips wrap">${Store.accounts(true).map(a => chip('accs', a.id, `${a.icon} ${esc(a.name)}`, a.hidden ? 'dim' : '')).join('')}</div></div>
+    <div class="fsec"><h4>标签</h4>${S.tags.length ? `<div class="chips wrap">${Store.tags().map(t => chip('tags', t.id, '#' + esc(t.name))).join('')}</div>` : '<div style="color:var(--sub);font-size:13px">还没有标签，记账时可以添加</div>'}</div>
+    <div class="fsec"><h4>金额区间</h4><div class="minmax fld" style="padding:0"><input data-in="fdMin" inputmode="decimal" placeholder="最低" value="${esc(d.minS)}"><span>~</span><input data-in="fdMax" inputmode="decimal" placeholder="最高" value="${esc(d.maxS)}"></div></div>`;
+}
+const fdRefresh = el => Layers.get(el.closest('.layer'))?.refresh();
+ACT.fdType = el => { const d = UI.fd; d.type = el.dataset.t; if (d.type !== 'all') d.cats = d.cats.filter(id => Store.cat(id)?.type === d.type); fdRefresh(el); };
+ACT.fdToggle = el => { const d = UI.fd, k = el.dataset.k, id = el.dataset.id; d[k] = d[k].includes(id) ? d[k].filter(x => x !== id) : [...d[k], id]; el.classList.toggle('on'); };
+IN.fdMin = el => { UI.fd.minS = el.value; };
+IN.fdMax = el => { UI.fd.maxS = el.value; };
+ACT.fdReset = el => { Object.assign(UI.fd, {type: 'all', cats: [], accs: [], tags: [], minS: '', maxS: ''}); fdRefresh(el); };
+ACT.fdApply = el => {
+  const d = UI.fd, num = s => { s = s.trim(); if (!s) return null; const v = parseFloat(s); if (!/^\d+(\.\d{0,2})?$/.test(s) || isNaN(v)) throw '金额区间要填不小于 0 的数字'; return Math.round(v * 100); };
+  let min, max; try { min = num(d.minS); max = num(d.maxS); } catch (e) { return toast(e); }
+  if (min != null && max != null && min > max) return toast('最低金额不能大于最高金额');
+  const {minS, maxS, ...rest} = d; UI.filter = {...rest, min, max};
+  Layers.closeEl(el.closest('.layer')); renderMain(); window.scrollTo(0, 0);
+};
+
+/* ================= 报表 ================= */
+const PALETTE = ['#2D6BCF', '#17A673', '#F0A232', '#EC6A3C', '#8E5BD6', '#14A3B8', '#D9468C', '#7A9A2E', '#C2843B', '#5C6B8A'];
+const GRAN_NAME = {year: '年', month: '月', week: '周', all: '全部', quarter: '季', last7: '近7天', last30: '近30天', last365: '近1年', custom: '自定义'};
+function weekStartOf(ds) { const d = new Date(ds + 'T00:00:00'); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return ymd(d); }
+function addDays(ds, n) { const d = new Date(ds + 'T00:00:00'); d.setDate(d.getDate() + n); return ymd(d); }
+function daysBetween(a, b) { return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 864e5); }
+const md = ds => `${+ds.slice(5, 7)}/${+ds.slice(8)}`;
+function rpRange() {
+  const rp = UI.rp, t = today();
+  switch (rp.gran) {
+    case 'year': return [`${rp.year}-01-01`, `${rp.year}-12-31`];
+    case 'month': return monthRange(rp.ym);
+    case 'week': return [rp.wk, addDays(rp.wk, 6)];
+    case 'quarter': { const m0 = (rp.q - 1) * 3 + 1; return [`${rp.year}-${pad(m0)}-01`, monthRange(`${rp.year}-${pad(m0 + 2)}`)[1]]; }
+    case 'last7': return [addDays(t, -6), t];
+    case 'last30': return [addDays(t, -29), t];
+    case 'last365': return [addDays(t, -364), t];
+    case 'all': {
+      let lo = null, hi = null; S.records.forEach(r => { if (r.deletedAt) return; if (!lo || r.date < lo) lo = r.date; if (!hi || r.date > hi) hi = r.date; });
+      return lo ? [lo, hi > t ? hi : t] : [t, t];
+    }
+    default: return rp.start <= rp.end ? [rp.start, rp.end] : [rp.end, rp.start];
+  }
+}
+/** 柱子的时间粒度：月/周/近7天/近30天按天，年/季/近1年按月，全部和自定义看跨度 */
+function rpBuckets(a, b) {
+  const g = UI.rp.gran, n = daysBetween(a, b) + 1;
+  const unit = ['month', 'week', 'last7', 'last30'].includes(g) ? 'day' : ['year', 'quarter', 'last365'].includes(g) ? 'month' : (n <= 62 ? 'day' : n <= 1100 ? 'month' : 'year');
+  const out = [];
+  if (unit === 'day') for (let d = a; d <= b; d = addDays(d, 1)) { const wd = new Date(d + 'T00:00:00').getDay(); out.push({unit, key: d, start: d, end: d, label: String(+d.slice(8)), wd, full: `${+d.slice(5, 7)}月${+d.slice(8)}日 星期${WEEK[wd]}`, e: 0, i: 0}); }
+  else if (unit === 'month') for (let ym = ymOf(a); ym <= ymOf(b); ym = addMonth(ym, 1)) { const [s, e] = monthRange(ym); out.push({unit, key: ym, start: s < a ? a : s, end: e > b ? b : e, label: +ym.slice(5) + '月', full: `${ym.slice(0, 4)}年${+ym.slice(5)}月`, e: 0, i: 0}); }
+  else for (let y = +a.slice(0, 4); y <= +b.slice(0, 4); y++) { const s = `${y}-01-01`, e = `${y}-12-31`; out.push({unit, key: String(y), start: s < a ? a : s, end: e > b ? b : e, label: String(y), full: y + '年', e: 0, i: 0}); }
+  return out;
+}
+function rpBase(a, b) {
+  const rp = UI.rp;
+  return S.records.filter(r => !r.deletedAt && r.type !== 'transfer' && r.date >= a && r.date <= b
+    && (!rp.tag || r.tagIds?.includes(rp.tag)) && (!rp.accs.length || rp.accs.includes(r.accountId)));
+}
+function rpComputeBuckets(a, b, base) {
+  const bk = rpBuckets(a, b), idx = new Map(bk.map((x, i) => [x.key, i])), unit = bk[0]?.unit;
+  base.forEach(r => {
+    const o = bk[idx.get(unit === 'day' ? r.date : unit === 'month' ? ymOf(r.date) : r.date.slice(0, 4))]; if (!o) return;
+    if (r.type === 'income') o.i += r.amount; else if (countsExp(r)) o.e += r.amount;
+  });
+  return bk;
+}
+const cardNum = c => { const [i, d] = (Math.abs(c) / 100).toFixed(2).split('.'); return `${c < 0 ? '-' : ''}${i}<small>.${d}</small>`; };
+function renderReport() {
+  const rp = UI.rp, [a, b] = rpRange(), base = rpBase(a, b);
+  let E = 0, I = 0, nE = 0, nI = 0, fx = 0, bg = 0;
+  base.forEach(r => {
+    if (r.type === 'income') { I += r.amount; nI++; return; }
+    if (isFixed(r)) fx += r.amount; if (isBig(r)) bg += r.amount;
+    if (countsExp(r)) { E += r.amount; nE++; }
+  });
+  // 时间选择
+  const isMore = !['year', 'month', 'week'].includes(rp.gran);
+  const gseg = `<div class="seg full">${['year', 'month', 'week'].map(k => `<button class="${rp.gran === k ? 'on' : ''}" data-act="rpGran" data-g="${k}">${GRAN_NAME[k]}</button>`).join('')}
+    <button class="${isMore ? 'on' : ''}" data-act="rpMore">${isMore ? GRAN_NAME[rp.gran] : '更多'} ▾</button></div>`;
+  const label = rp.gran === 'year' ? `${rp.year}年` : rp.gran === 'month' ? `${rp.ym.replace('-', '年')}月` : rp.gran === 'week' ? `${md(a)} - ${md(b)}`
+    : rp.gran === 'quarter' ? `${rp.year}年 第${rp.q}季度` : `${a.replace(/-/g, '/')} - ${b.replace(/-/g, '/')}`;
+  const pickable = rp.gran === 'year' || rp.gran === 'month';
+  const nav = rp.gran === 'custom'
+    ? `<div class="range" style="margin:0;flex:1"><input type="date" data-ch="rpStart" value="${rp.start}"><span>至</span><input type="date" data-ch="rpEnd" value="${rp.end}"></div>`
+    : ['year', 'month', 'week', 'quarter'].includes(rp.gran)
+      ? `<div class="pnav"><button data-act="rpPrev">‹</button><button class="ptitle" ${pickable ? 'data-act="rpPick"' : ''}>${label}${pickable ? ' ▾' : ''}</button><button data-act="rpNext">›</button></div>`
+      : `<div class="prange">${label}</div>`;
+  const back = rp.back.length ? `<button class="back-chip" data-act="rpBack">‹ 返回${rp.back[rp.back.length - 1].label}</button>` : '';
+  // 三张卡片
+  const cards = `<div class="sum3">${[['balance', '结余', I - E, ''], ['expense', `支出(${nE})`, E, 'exp'], ['income', `收入(${nI})`, I, 'inc']].map(([k, t, v, c]) =>
+    `<button class="sc ${rp.view === k ? 'on' : ''}" data-act="rpView" data-v="${k}"><span>${t}</span><b class="${c}">${cardNum(v)}</b></button>`).join('')}</div>`;
+  const fCount = (rp.tag ? 1 : 0) + (rp.accs.length ? 1 : 0);
+  const fSum = fCount ? `<div class="fsum" style="margin:8px 2px 0">筛选：${[rp.tag && Store.tag(rp.tag) ? '#' + esc(Store.tag(rp.tag).name) : '', rp.accs.map(id => esc(Store.accName(id))).join('、')].filter(Boolean).join(' · ')}<a data-act="rpClearF">清除</a></div>` : '';
+  // 饼图（结余没有分类，不画饼图）
+  let pie = '';
+  if (rp.view !== 'balance') {
+    const rs = base.filter(r => rp.view === 'income' ? r.type === 'income' : countsExp(r));
+    const g = new Map(); let total = 0;
+    rs.forEach(r => { const c = rp.level === 1 ? Store.topOf(r.categoryId) : Store.cat(r.categoryId), key = c?.id || 'none'; const o = g.get(key) || {key, c, sum: 0, n: 0}; o.sum += r.amount; o.n++; total += r.amount; g.set(key, o); });
+    const list = [...g.values()].sort((x, y) => y.sum - x.sum);
+    list.forEach((o, i) => o.col = i < 9 ? PALETTE[i % PALETTE.length] : '#C3C6CC');
+    const slices = list.length > 9 ? [...list.slice(0, 9), {sum: list.slice(9).reduce((s, o) => s + o.sum, 0), col: '#C3C6CC'}] : list;
+    const lbl = o => !o.c ? '未分类' : (rp.level === 2 ? Store.catFull(o.c.id) : o.c.name);
+    pie = `<div class="card"><div class="card-h"><span>${TYPE_NAME[rp.view]}构成</span><button class="lvl-btn" data-act="rpLevelTog">${rp.level === 1 ? '按大类' : '按小类'} ⇄</button></div>
+      ${donutSvg(slices, total)}
+      ${list.length ? list.map(o => { const pct = total ? o.sum / total * 100 : 0; return `<div class="lg" data-act="rpDrill" data-id="${o.key}"><span class="dot" style="background:${o.col}"></span><span class="lg-ic">${o.c?.icon || '❔'}</span>
+        <div class="lg-mid"><div class="lg-t"><span>${esc(lbl(o))}</span><span>${pct.toFixed(1)}%</span></div><div class="bar"><i style="width:${pct}%;background:${o.col}"></i></div></div>
+        <div class="lg-r"><b>${money(o.sum)}</b><small>${o.n} 笔</small></div></div>`; }).join('') + '<div class="list-tip" style="text-align:center;padding-top:8px">点某一项可以查看对应明细 · 右上角切换大类/小类</div>'
+        : `<div class="empty">这段时间没有${TYPE_NAME[rp.view]}记录</div>`}</div>`;
+  }
+  // 收支柱状图
+  const bk = rpComputeBuckets(a, b, base), unit = bk[0]?.unit || 'day', uName = {day: '天', month: '月', year: '年'}[unit];
+  if (rp.sel != null && rp.sel >= bk.length) rp.sel = null;
+  const sx = rp.sel != null ? bk[rp.sel] : null;
+  const info = sx ? `<div class="bar-info on"><div><b>${sx.full}</b><br>收入 <b class="inc">${money(sx.i)}</b> · 支出 <b class="exp">${money(sx.e)}</b> · 结余 <b>${money(sx.i - sx.e)}</b></div>
+      <button class="btn sm pri" data-act="rpBarGo">${unit === 'day' ? '看当天明细' : unit === 'month' ? '进入这个月' : '进入这一年'} ›</button></div>`
+    : `<div class="bar-info">点柱子看每${uName}收支，再点一次${unit === 'day' ? '看当天明细' : '进入详细'}</div>`;
+  const rows = [...bk.map((x, k) => ({...x, k}))].reverse().filter(x => x.e || x.i);
+  const table = `<table class="tb"><tr><th>${unit === 'day' ? '日期' : unit === 'month' ? '月份' : '年份'}</th><th>支出</th><th>收入</th><th>结余</th></tr>
+    ${rows.map(x => `<tr data-act="rpRow" data-k="${x.k}"><td>${unit === 'day' ? md(x.key) + ' ' + WEEK[x.wd] : unit === 'month' ? x.key.replace('-', '/') : x.key}</td><td class="exp">${money(x.e)}</td><td class="inc">${money(x.i)}</td><td>${money(x.i - x.e)}</td></tr>`).join('')}</table>
+    ${rows.length < bk.length ? `<div class="list-tip" style="text-align:center;padding-top:6px">表格只列有收支的${unit === 'day' ? '日子' : unit === 'month' ? '月份' : '年份'}</div>` : ''}`;
+  return `<div class="topbar"><h1>报表</h1></div>
+  <div class="card pad rp-ctl" style="margin-top:4px">${gseg}
+    <div class="rp-row" style="justify-content:center;position:relative">${back}${nav}</div>
+    ${cards}
+    <div class="rp-tg">${toggleChips(fx, bg)}<button class="ibtn fbtn ${fCount ? 'on' : ''}" data-act="rpFilter" aria-label="筛选">${IC.filter}${fCount ? `<i>${fCount}</i>` : ''}</button></div>
+    ${fSum}
+  </div>
+  ${pie}
+  <div class="card">
+    <div class="card-h"><span>${rp.view === 'balance' ? '收支对比' : '收支趋势'}</span><small>每${uName}</small></div>
+    <div class="legend2"><span><i style="background:var(--inc)"></i>收入</span><span><i style="background:var(--exp)"></i>支出</span><span style="opacity:.8">高出的一截 = 结余 / 超支</span></div>
+    ${info}
+    ${barsSvg(bk, rp.sel)}
+    ${table}<div style="height:6px"></div>
+  </div>`;
+}
+function donutSvg(slices, total) {
+  const R = 70, C = 2 * Math.PI * R; let off = 0;
+  const segs = slices.map(s => { const len = total ? s.sum / total * C : 0; const t = `<circle r="${R}" cx="100" cy="100" fill="none" stroke="${s.col}" stroke-width="30" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-off}" transform="rotate(-90 100 100)"/>`; off += len; return t; }).join('');
+  return `<svg viewBox="0 0 200 200" class="donut">${total ? segs : `<circle r="${R}" cx="100" cy="100" fill="none" stroke="var(--line)" stroke-width="30"/>`}
+    <text x="100" y="94" text-anchor="middle" class="d-l">${TYPE_NAME[UI.rp.view] || ''}</text><text x="100" y="120" text-anchor="middle" class="d-v">${short(total)}</text></svg>`;
+}
+/** 收支叠放柱状图：后面宽的是较大的一方，前面窄的是较小的一方，高出的一截就是结余（收入高）或超支（支出高） */
+function barsSvg(bk, sel) {
+  const n = Math.max(1, bk.length), few = n <= 12, W = 340, H = few ? 200 : 186, pl = 4, pr = 4, pt = few ? 26 : 16, pb = 22, ch = H - pt - pb;
+  // 某一根特别高（比如发工资那天）时，按支出的高度来定比例，超出的柱子截断并标出金额，免得其他柱子被压扁
+  const me = Math.max(0, ...bk.map(x => x.e)), mi = Math.max(0, ...bk.map(x => x.i));
+  let max = Math.max(1, me, mi), clipped = false;
+  if (me > 0 && mi > me * 2.5) { max = me * 1.25; clipped = true; }
+  else if (mi > 0 && me > mi * 2.5 && bk[0]?.unit === 'day') { max = mi * 1.25; clipped = true; }
+  const gw = (W - pl - pr) / n, bw = Math.max(3, Math.min(gw * 0.72, 34)), fw = Math.max(2, bw * 0.55);
+  const every = bk[0]?.unit === 'day' ? null : Math.ceil(n / 12);
+  let s = '';
+  bk.forEach((x, k) => {
+    const x0 = pl + gw * k, cx = x0 + gw / 2, big = Math.max(x.e, x.i), small = Math.min(x.e, x.i), cut = big > max;
+    const hb = ch * Math.min(big, max) / max, hf = ch * Math.min(small, max) / max;
+    const incBack = x.i >= x.e;
+    if (x.unit === 'day' && (x.wd === 0 || x.wd === 6)) s += `<rect x="${x0}" y="${pt - 4}" width="${gw}" height="${ch + 4}" fill="var(--bg)" opacity=".7"/>`;
+    if (k === sel) s += `<rect x="${x0 + .6}" y="1" width="${gw - 1.2}" height="${H - pb + 1}" rx="5" fill="var(--pri-soft)" stroke="var(--pri)" stroke-width="1.4"/>`;
+    if (hb > 0) s += `<rect x="${cx - bw / 2}" y="${H - pb - hb}" width="${bw}" height="${hb}" rx="${Math.min(3, bw / 3)}" fill="${incBack ? 'var(--inc)' : 'var(--exp)'}"/>`;
+    if (hf > 0) s += `<rect x="${cx - fw / 2}" y="${H - pb - hf}" width="${fw}" height="${hf}" rx="${Math.min(2, fw / 3)}" fill="${incBack ? 'var(--exp)' : 'var(--inc)'}" stroke="var(--card)" stroke-width=".8"/>`;
+    if (cut) {
+      const yb = pt + 10, w2 = bw / 2 + 1.5;
+      s += `<path d="M${cx - w2} ${yb + 3} L${cx + w2} ${yb - 1} M${cx - w2} ${yb + 7} L${cx + w2} ${yb + 3}" stroke="var(--card)" stroke-width="2.2"/>`;
+      if (!few) s += `<text x="${cx}" y="${pt - 2}" text-anchor="middle" class="t-v" fill="${incBack ? 'var(--inc)' : 'var(--exp)'}">${short(big)}</text>`;
+    }
+    if (few && big > 0) {
+      const top = H - pb - hb;
+      s += x.i ? `<text x="${cx}" y="${top - (x.e ? 12 : 3)}" text-anchor="middle" class="t-v" fill="var(--inc)">${short(x.i)}</text>` : '';
+      s += x.e ? `<text x="${cx}" y="${top - 3}" text-anchor="middle" class="t-v" fill="var(--exp)">${short(x.e)}</text>` : '';
+    }
+    const showLbl = every ? k % every === 0 : (n <= 16 || +x.label === 1 || +x.label % 5 === 0);
+    if (showLbl) s += `<text x="${cx}" y="${H - 7}" text-anchor="middle" class="t-x">${x.label}${x.unit === 'day' && n <= 7 ? ' ' + WEEK[x.wd] : ''}</text>`;
+    s += `<rect x="${x0}" y="0" width="${gw}" height="${H}" fill="transparent" data-act="rpBar" data-k="${k}"/>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" class="trend"><line x1="${pl}" x2="${W - pr}" y1="${H - pb}" y2="${H - pb}" stroke="var(--line)"/>${s}
+    ${few || clipped ? '' : `<text x="${W - pr}" y="9" text-anchor="end" class="t-x">最高 ${short(max)}</text>`}</svg>`;
+}
+function rpSnapshot() { const rp = UI.rp; const lbl = rp.gran === 'year' ? rp.year + '年' : rp.gran === 'month' ? +rp.ym.slice(5) + '月' : GRAN_NAME[rp.gran]; return {gran: rp.gran, ym: rp.ym, year: rp.year, wk: rp.wk, q: rp.q, start: rp.start, end: rp.end, label: lbl}; }
+function goBucket(k) {
+  const [a, b] = rpRange(), x = rpBuckets(a, b)[k], rp = UI.rp; if (!x) return;
+  if (x.unit === 'day') { showDetail({...defaultFilter('custom'), start: x.start, end: x.end, tags: rp.tag ? [rp.tag] : [], accs: [...rp.accs]}); return; }
+  rp.back.push(rpSnapshot());
+  if (x.unit === 'month') { rp.gran = 'month'; rp.ym = x.key; } else { rp.gran = 'year'; rp.year = +x.key; }
+  rp.sel = null; renderMain(); window.scrollTo(0, 0);
+}
+ACT.rpBar = el => { const k = +el.dataset.k; if (UI.rp.sel === k) return goBucket(k); UI.rp.sel = k; renderMain(); };
+ACT.rpBarGo = () => goBucket(UI.rp.sel);
+ACT.rpRow = el => goBucket(+el.dataset.k);
+ACT.rpBack = () => { const rp = UI.rp, s = rp.back.pop(); if (!s) return; const {label, ...rest} = s; Object.assign(rp, rest); rp.sel = null; renderMain(); };
+function setGran(g) {
+  const rp = UI.rp, t = today(); rp.back = []; rp.sel = null;
+  if (g === 'week' && rp.gran !== 'week') rp.wk = weekStartOf(rp.gran === 'month' && rp.ym !== ymOf(t) ? rp.ym + '-01' : t);
+  if (g === 'quarter') { const ym = rp.gran === 'month' ? rp.ym : ymOf(t); rp.year = +ym.slice(0, 4); rp.q = Math.floor((+ym.slice(5) - 1) / 3) + 1; }
+  if (g === 'custom' && rp.gran !== 'custom') { const [a, b] = rpRange(); rp.start = a; rp.end = b > t ? t : b; }
+  rp.gran = g; renderMain();
+}
+ACT.rpGran = el => setGran(el.dataset.g);
+ACT.rpMore = async () => {
+  const v = await actionSheet('选择时间范围', ['all', 'quarter', 'last7', 'last30', 'last365', 'custom'].map(k => ({t: GRAN_NAME[k] + (k === 'all' ? '（从第一笔账到今天）' : ''), v: k})));
+  if (v) setGran(v);
+};
+ACT.rpPrev = () => rpShift(-1);
+ACT.rpNext = () => rpShift(1);
+function rpShift(d) {
+  const rp = UI.rp; rp.sel = null; rp.back = [];
+  if (rp.gran === 'month') rp.ym = addMonth(rp.ym, d);
+  else if (rp.gran === 'year') rp.year += d;
+  else if (rp.gran === 'week') rp.wk = addDays(rp.wk, 7 * d);
+  else if (rp.gran === 'quarter') { rp.q += d; if (rp.q > 4) { rp.q = 1; rp.year++; } if (rp.q < 1) { rp.q = 4; rp.year--; } }
+  renderMain();
+}
+ACT.rpPick = () => {
+  const rp = UI.rp; rp.back = []; rp.sel = null;
+  if (rp.gran === 'month') openMonthPicker({ym: rp.ym, onPick: ym => { rp.ym = ym; renderMain(); }});
+  else openMonthPicker({ym: rp.year + '-01', yearOnly: true, onPick: y => { rp.year = y; renderMain(); }});
+};
+ACT.rpView = el => { UI.rp.view = el.dataset.v; renderMain(); };
+ACT.rpLevelTog = () => { UI.rp.level = UI.rp.level === 1 ? 2 : 1; renderMain(); };
+ACT.rpClearF = () => { UI.rp.tag = ''; UI.rp.accs = []; renderMain(); };
+CH.rpStart = el => { UI.rp.start = el.value || today(); UI.rp.sel = null; renderMain(); };
+CH.rpEnd = el => { UI.rp.end = el.value || today(); UI.rp.sel = null; renderMain(); };
+ACT.rpFilter = () => openPage('报表筛选', () => {
+  const rp = UI.rp;
+  return `<div class="fsec"><h4>标签 <small style="color:var(--sub);font-weight:400">只看带这个标签的账，比如一次旅行</small></h4><div class="chips wrap">
+      <div class="chip ${!rp.tag ? 'on' : ''}" data-act="rfTag" data-id="">全部</div>${Store.tags().map(t => `<div class="chip ${rp.tag === t.id ? 'on' : ''}" data-act="rfTag" data-id="${t.id}">#${esc(t.name)}</div>`).join('')}</div></div>
+    <div class="fsec"><h4>账户 <small style="color:var(--sub);font-weight:400">可多选，不选 = 全部账户</small></h4><div class="chips wrap">${Store.accounts(true).map(a => `<div class="chip ${rp.accs.includes(a.id) ? 'on' : ''}" data-act="rfAccT" data-id="${a.id}">${a.icon} ${esc(a.name)}</div>`).join('')}</div></div>
+    <div class="fsec"><h4>饼图分类</h4><div class="seg full">${[[1, '按大类（一级）'], [2, '按小类（二级）']].map(([k, t]) => `<button class="${rp.level === k ? 'on' : ''}" data-act="rfLvl" data-l="${k}">${t}</button>`).join('')}</div></div>`;
+}, {foot: '<div class="fp-foot"><button class="btn" data-act="rfReset">重置</button><button class="btn pri grow" data-act="layerBack">完成</button></div>'});
+ACT.rfTag = el => { UI.rp.tag = el.dataset.id; fdRefresh(el); renderMain(); };
+ACT.rfAccT = el => { const rp = UI.rp, id = el.dataset.id; rp.accs = rp.accs.includes(id) ? rp.accs.filter(x => x !== id) : [...rp.accs, id]; fdRefresh(el); renderMain(); };
+ACT.rfLvl = el => { UI.rp.level = +el.dataset.l; fdRefresh(el); renderMain(); };
+ACT.rfReset = el => { Object.assign(UI.rp, {tag: '', accs: [], level: 1}); fdRefresh(el); renderMain(); };
+ACT.rpDrill = el => {
+  const [a, b] = rpRange(), id = el.dataset.id, rp = UI.rp;
+  showDetail({...defaultFilter('custom'), start: a, end: b, type: rp.view, cats: id !== 'none' ? [id] : [], tags: rp.tag ? [rp.tag] : [], accs: [...rp.accs]});
+};
+
+/* ================= 账户页 ================= */
+function renderAccounts() {
+  const bal = Store.balances(), accs = Store.accounts(true);
+  const net = accs.reduce((s, a) => s + (bal.get(a.id) || 0), 0);
+  return `<div class="topbar"><h1>账户</h1><button class="ibtn" data-act="openSettings" aria-label="设置">${IC.set}</button></div>
+  <div class="card net" style="margin-top:4px"><span>净资产（所有账户余额合计）</span><b class="num">${money(net)}</b></div>
+  <div class="card">
+    ${accs.map(a => { const v = bal.get(a.id) || 0; return `<div class="mrow ${a.hidden ? 'dim' : ''}" data-act="accRow" data-lp="accMenu" data-id="${a.id}">
+      <div class="ic">${a.icon}</div><div class="nm">${esc(a.name)}${a.hidden ? '<span class="badge">已隐藏</span>' : ''}</div>
+      <div class="val" style="color:${v < 0 ? 'var(--danger)' : 'var(--ink)'}">${money(v)}</div>
+      <button class="more" data-act="accMore" data-id="${a.id}" aria-label="管理">${IC.more}</button></div>`; }).join('')}
+    <button class="addline" style="width:100%" data-act="addAccount">＋ 添加账户</button>
+  </div>
+  <div class="list-tip">· 点账户查看它的明细；长按或点「⋯」可以编辑、排序、隐藏、删除。<br>· 账户之间转钱：点下方「＋」，选「转账」。转账不算支出也不算收入。</div>`;
+}
+ACT.accRow = el => showDetail({...defaultFilter('all'), accs: [el.dataset.id]});
+ACT.accMore = el => accMenu(el.dataset.id);
+
+/* ================= 设置 ================= */
+ACT.openSettings = () => {
+  const row = (go, t, val = '', danger = false) => `<div class="mrow" data-act="setGo" data-go="${go}"><div class="nm" ${danger ? 'style="color:var(--danger)"' : ''}>${t}</div>${val ? `<span style="color:var(--sub);font-size:14px">${val}</span>` : ''}<span class="chev">${IC.chev}</span></div>`;
+  openPage('设置', () => { const st = S.settings; return `
+    <div class="card">${row('recur', '周期账（自动记账）', S.recurring.filter(b => b.status === 'active').length + ' 个进行中')}${row('budget', '预算', st.budget ? '¥' + money(st.budget) : '未设置')}${row('recycle', '回收站', S.records.filter(r => r.deletedAt).length + ' 条')}</div>
+    <div class="card">${row('cats', '分类管理', S.categories.length + ' 个')}${row('accs', '账户管理', S.accounts.length + ' 个')}${row('tags', '标签管理', S.tags.length + ' 个')}${row('tpls', '记账模板', S.templates.length + ' 个')}</div>
+    <div class="card">${row('theme', '深色模式', {system: '跟随系统', light: '浅色', dark: '深色'}[st.theme] || '跟随系统')}${row('colors', '收支配色', st.colors === 'swap' ? '支出红 · 收入绿' : '支出绿 · 收入红')}${row('remind', '每日记账提醒', st.remind?.on ? st.remind.time : '关闭')}</div>
+    <div class="card">${row('export', '导出备份', S.settings.lastBackup ? '上次 ' + S.settings.lastBackup : '还没备份过')}${row('import', '导入备份')}${row('demo', '载入演示数据（4 个月）')}${row('clear', '清空所有数据', '', true)}</div>
+    <div class="card pad" style="font-size:13px;color:var(--sub);line-height:1.7">小账本 · ${IS_APP ? '安卓版 v' + APP_VERSION : '网页试用版'}<br>共 ${Store.live().length} 条记录。数据保存在${IS_APP ? '手机' : '本机浏览器'}里，没有上传到任何地方。${IS_APP ? '<br>卸载 App 会删除数据，请定期导出备份。' : ''}<br>
+    ${Storage.persistent ? '' : '<span style="color:var(--danger)">当前环境无法持久保存，关闭页面数据会丢失。</span>'}</div>`; });
+};
+ACT.setGo = el => {
+  const g = el.dataset.go;
+  if (g === 'budget') openBudget();
+  else if (g === 'recur') openRecurList();
+  else if (g === 'recycle') openRecycle();
+  else if (g === 'theme') themeMenu();
+  else if (g === 'colors') colorMenu();
+  else if (g === 'remind') remindDialog();
+  else if (g === 'demo') demoFlow();
+  else if (g === 'cats') openCatManager();
+  else if (g === 'accs') { while (Layers.stack.length) Layers.closeTop(); UI.tab = 'accounts'; renderMain(); }
+  else if (g === 'tags') openTagManager();
+  else if (g === 'tpls') openTplManager();
+  else if (g === 'export') openExport();
+  else if (g === 'import') openImport();
+  else if (g === 'clear') clearAllFlow();
+};
+function openCatManager() {
+  openPage('分类管理', () => {
+    const t = UI.cmType;
+    return `<div style="padding:12px 14px 0"><div class="seg full">${['expense', 'income'].map(k => `<button class="${t === k ? 'on ' + k : ''}" data-act="cmType" data-t="${k}">${TYPE_NAME[k]}分类</button>`).join('')}</div></div>
+    <div class="card">${Store.parents(t, true).map(p => `<div class="mrow ${p.hidden ? 'dim' : ''}" data-act="catRow" data-id="${p.id}"><div class="ic">${p.icon}</div><div class="nm"><b>${esc(p.name)}</b>${p.hidden ? '<span class="badge">已隐藏</span>' : ''}</div><span class="more">${IC.more}</span></div>`
+      + Store.children(p.id, true).map(c => `<div class="mrow sub ${c.hidden || p.hidden ? 'dim' : ''}" data-act="catRow" data-id="${c.id}"><div class="ic">${c.icon}</div><div class="nm">${esc(c.name)}${c.hidden ? '<span class="badge">已隐藏</span>' : ''}</div><span class="more">${IC.more}</span></div>`).join('')).join('')}
+      <button class="addline" style="width:100%" data-act="cmAdd">＋ 添加${TYPE_NAME[t]}分类</button></div>
+    <div class="list-tip">点任意分类可以编辑、上移下移、隐藏、删除。删除有记录的分类时，需要先选择把记录转到哪里。</div>`;
+  });
+}
+ACT.cmType = el => { UI.cmType = el.dataset.t; fdRefresh(el); };
+ACT.catRow = el => catMenu(el.dataset.id);
+ACT.cmAdd = async () => { const c = await categoryDialog({type: UI.cmType}); if (c) { toast('已添加'); refreshAll(); } };
+function openTagManager() {
+  openPage('标签管理', () => {
+    const live = Store.live();
+    return `<div class="card">${S.tags.length ? Store.tags().map(t => {
+      const rs = live.filter(r => r.tagIds?.includes(t.id)); let e = 0; rs.forEach(r => { if (r.type === 'expense') e += r.amount; });
+      return `<div class="mrow" data-act="tagRow" data-id="${t.id}"><div class="ic">#</div><div class="nm">${esc(t.name)}<small>${rs.length} 笔 · 支出合计 ¥${money(e)}</small></div><button class="more" data-act="tagMore" data-id="${t.id}">${IC.more}</button></div>`;
+    }).join('') : '<div class="empty">还没有标签</div>'}<button class="addline" style="width:100%" data-act="addTag">＋ 添加标签</button></div>
+    <div class="list-tip">点标签查看它的全部明细和合计。适合统计一次旅行、一次装修这类跨分类的总花费。</div>`;
+  });
+}
+ACT.tagRow = el => { while (Layers.stack.length) Layers.closeTop(); showDetail({...defaultFilter('all'), tags: [el.dataset.id]}); };
+ACT.tagMore = el => tagMenu(el.dataset.id);
+function openTplManager() {
+  openPage('记账模板', () => `<div class="card">${S.templates.length ? [...S.templates].sort(byOrder).map(t =>
+    `<div class="mrow" data-act="tplRow" data-id="${t.id}"><div class="ic">${t.type === 'transfer' ? '🔁' : Store.cat(t.categoryId)?.icon || '📋'}</div><div class="nm">${esc(t.name)}<small>${esc(tplSummary(t))}</small></div><span class="chev">${IC.chev}</span></div>`).join('')
+    : '<div class="empty">还没有模板</div>'}<button class="addline" style="width:100%" data-act="tplAdd">＋ 新建模板</button></div>
+    <div class="list-tip">记账时点右上角「模板」就能一键套用。也可以在记账页把正在填的内容直接存成模板。</div>`);
+}
+ACT.tplRow = el => { const t = S.templates.find(x => x.id === el.dataset.id); if (t) openRecordForm({mode: 'template', tpl: t}); };
+ACT.tplAdd = () => openRecordForm({mode: 'template'});
+
+/* ---- 备份 ---- */
+let EXPORT_CACHE = '';
+async function openExport() {
+  toast('正在打包数据…', 5000);
+  EXPORT_CACHE = await Store.exportAll();
+  const kb = (new Blob([EXPORT_CACHE]).size / 1024);
+  toast('打包好了', 600);
+  openPage('导出备份', () => `<div class="card pad" style="line-height:1.7;font-size:14px">
+      <p style="margin:0 0 8px">备份内容：${Store.live().length} 条记录、全部分类/账户/标签/模板${EXPORT_CACHE.includes('"photos":[{') ? '、照片' : ''}，大小约 <b>${kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : kb.toFixed(0) + ' KB'}</b>。</p>
+      <button class="btn pri block" data-act="copyBackup">复制备份内容</button>
+      <p class="tip">复制后粘贴到微信「文件传输助手」或备忘录里存着，需要时在「导入备份」里粘贴回来。</p>
+      <button class="btn block" style="margin-top:12px" data-act="dlBackup">下载为文件</button>
+      <p class="tip">网页试用版里下载可能没反应，属正常；打包成 APK 后会直接保存到手机文件夹，并支持坚果云自动备份。</p>
+      <textarea id="bkText" readonly style="display:none;margin-top:12px"></textarea></div>`);
+}
+function markBackup() { const d = new Date(); S.settings.lastBackup = `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; S.settings.lastBackupTs = Date.now(); Store.saveSettings(); }
+ACT.copyBackup = async el => {
+  try { await navigator.clipboard.writeText(EXPORT_CACHE); toast('已复制，去粘贴保存吧', 2500); markBackup(); }
+  catch (e) {
+    const ta = el.closest('.page').querySelector('#bkText'); ta.style.display = 'block'; ta.value = EXPORT_CACHE.length > 3e6 ? '数据太大，无法显示，请等 APK 版用文件备份' : EXPORT_CACHE;
+    ta.focus(); ta.select(); toast('自动复制失败：已全选下方内容，请长按手动复制', 3500); markBackup();
+  }
+};
+ACT.dlBackup = () => {
+  try {
+    const url = URL.createObjectURL(new Blob([EXPORT_CACHE], {type: 'application/json'}));
+    const a = document.createElement('a'); a.href = url; a.download = `小账本备份_${today()}.json`; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 8000); markBackup();
+  } catch (e) { toast('下载失败，请用「复制备份内容」'); }
+};
+function openImport() {
+  openPage('导入备份', () => `<div class="card pad" style="font-size:14px;line-height:1.7">
+    <p style="margin:0 0 8px;color:var(--danger)">注意：导入会<b>覆盖</b>当前所有数据。</p>
+    <label class="btn block" style="cursor:pointer">选择备份文件<input type="file" accept=".json,.txt,application/json,text/plain" data-ch="impFile" hidden></label>
+    <p class="tip" style="text-align:center">或者把复制保存的备份内容粘贴到下面</p>
+    <textarea id="impText" placeholder="在这里长按粘贴备份内容"></textarea>
+    <button class="btn pri block" style="margin-top:10px" data-act="doImport">导入粘贴的内容</button>
+    <p class="tip">从挖财导入旧账（Excel/CSV）是另一个功能，等你把导出文件发给我之后再做。</p></div>`);
+}
+async function importText(txt) {
+  let obj; try { obj = JSON.parse(txt); } catch (e) { return toast('内容格式不对，请确认是完整的备份内容'); }
+  if (!obj || obj.app !== 'xiaozhangben') return toast('这不是小账本的备份');
+  const n = (obj.data?.records || []).filter(r => !r.deletedAt).length;
+  if (!await confirmDlg(`备份里有 ${n} 条记录。<br>导入后当前的数据会被覆盖，确定吗？`, '覆盖导入', true)) return;
+  try { await Store.importAll(obj); } catch (e) { return toast('导入失败：' + errOf(e)); }
+  while (Layers.stack.length) Layers.closeTop(); UI.tab = 'home'; UI.homeMonth = ymOf(today()); UI.selDay = today(); UI.filter = defaultFilter();
+  renderMain(); toast('导入成功', 2000);
+}
+ACT.doImport = el => { const t = el.closest('.page').querySelector('#impText').value.trim(); if (!t) return toast('请先粘贴备份内容'); importText(t); };
+CH.impFile = async inp => { const f = inp.files[0]; inp.value = ''; if (!f) return; importText(await f.text()); };
+async function clearAllFlow() {
+  if (!await confirmDlg('清空所有记录、分类、账户、标签、模板，恢复成刚安装的样子？<br><b>此操作不能撤销。</b>', '下一步', true)) return;
+  if (!await confirmDlg('真的要清空吗？建议先导出备份。', '确认清空', true)) return;
+  await Store.clearAll();
+  while (Layers.stack.length) Layers.closeTop(); UI.tab = 'home'; UI.filter = defaultFilter(); renderMain(); toast('已清空');
+}
+
+/* ================= 第二阶段：周期账 ================= */
+function dueOf(ym, day) { const [y, m] = ym.split('-').map(Number); return `${ym}-${pad(Math.min(day, new Date(y, m, 0).getDate()))}`; }
+const Recur = {
+  STATUS: {active: '进行中', paused: '已暂停', ended: '已结束', settled: '已结清'},
+  get(id) { return S.recurring.find(b => b.id === id); },
+  amountFor(b, k) { let v = b.amount; [...(b.changes || [])].sort((x, y) => x.from - y.from).forEach(c => { if (k >= c.from) v = c.amount; }); return v; },
+  dueDate(b, k) { return dueOf(addMonth(b.startYm, k - 1), b.day); },
+  nextPeriod(b) { if (b.status !== 'active' && b.status !== 'paused') return null; const k = b.lastPeriod + 1; return b.periods && k > b.periods ? null : k; },
+  curAmount(b) { return this.amountFor(b, this.nextPeriod(b) || b.lastPeriod || 1); },
+  paid(b) { let s = (b.down || 0) + (b.settleAmount || 0); for (let k = 1; k <= b.lastPeriod; k++) s += this.amountFor(b, k); return s; },
+  remainCount(b) { return !b.periods ? null : (b.status === 'settled' ? 0 : Math.max(0, b.periods - b.lastPeriod)); },
+  remainAmount(b) { if (!b.periods || b.status === 'settled') return 0; let s = 0; for (let k = b.lastPeriod + 1; k <= b.periods; k++) s += this.amountFor(b, k); return s; },
+  note(b, k) { return b.periods ? `${b.name} 第${k}/${b.periods}期` : `${b.name}（${+this.dueDate(b, k).slice(5, 7)}月）`; },
+  addRecord(b, k, date, amount, note) {
+    const now = Date.now();
+    const r = {id: uid(), createdAt: now, updatedAt: now, type: b.type, amount, categoryId: b.categoryId, accountId: b.accountId, toAccountId: null,
+      date, note, tagIds: [], photoIds: [], recurId: b.id, recurPeriod: k};
+    S.records.push(r); persist('records', r); return r;
+  },
+  /** 补记所有已到期、还没记的账；记满期数自动结束 */
+  run() {
+    const t = today(); let n = 0;
+    for (const b of S.recurring) {
+      let ch = false, guard = 0;
+      while (b.status === 'active' && guard++ < 1200) {
+        const k = this.nextPeriod(b); if (!k) break;
+        const d = this.dueDate(b, k); if (d > t) break;
+        if (!Store.acc(b.accountId) || !Store.cat(b.categoryId)) break;
+        this.addRecord(b, k, d, this.amountFor(b, k), this.note(b, k)); b.lastPeriod = k; n++; ch = true;
+      }
+      if (b.status === 'active' && b.periods && b.lastPeriod >= b.periods) { b.status = 'ended'; ch = true; }
+      if (ch) persist('recurring', b);
+    }
+    return n;
+  },
+  records(b) { return S.records.filter(r => r.recurId === b.id && !r.deletedAt).sort((x, y) => x.date < y.date ? 1 : x.date > y.date ? -1 : (y.recurPeriod || 0) - (x.recurPeriod || 0)); },
+};
+function runRecurring(showToast = true) { const n = Recur.run(); if (n) { if (showToast) toast(`已自动记了 ${n} 笔周期账`, 2500); refreshAll(); } return n; }
+ACT.openRecur = () => openRecurList();
+ACT.noop = () => {};
+
+function openRecurList() { openPage('周期账', recurListBody); }
+function recurListBody() {
+  let fe = 0, fi = 0, remain = 0;
+  S.recurring.forEach(b => {
+    if (b.status === 'active') { if (b.type === 'expense') fe += Recur.curAmount(b); else fi += Recur.curAmount(b); }
+    if ((b.status === 'active' || b.status === 'paused') && b.type === 'expense') remain += Recur.remainAmount(b);
+  });
+  const order = {active: 0, paused: 1, ended: 2, settled: 3};
+  const list = [...S.recurring].sort((a, b) => order[a.status] - order[b.status] || a.createdAt - b.createdAt);
+  const row = b => {
+    const k = Recur.nextPeriod(b), nd = k ? Recur.dueDate(b, k) : null, cls = b.type === 'expense' ? 'exp' : 'inc';
+    return `<div class="mrow ${b.status === 'ended' || b.status === 'settled' ? 'dim' : ''}" data-act="rdOpen" data-id="${b.id}"><div class="ic">${Store.catIcon(b.categoryId)}</div>
+      <div class="nm">${esc(b.name)}${b.status !== 'active' ? `<span class="badge">${Recur.STATUS[b.status]}</span>` : ''}
+      <small>每月${b.day}号 · ${b.periods ? `${b.lastPeriod}/${b.periods}期` : '不限期'}${nd && b.status === 'active' ? ` · 下次 ${+nd.slice(5, 7)}/${+nd.slice(8)}` : ''}</small></div>
+      <div class="val ${cls}">${b.type === 'expense' ? '-' : '+'}${money(Recur.curAmount(b))}</div></div>`;
+  };
+  return `<div class="card pad"><div class="stat3"><div><span>每月固定支出</span><b class="exp">${money(fe)}</b></div><div><span>每月固定收入</span><b class="inc">${money(fi)}</b></div><div><span>分期剩余待还</span><b>${money(remain)}</b></div></div></div>
+  <div class="card">${list.length ? list.map(row).join('') : '<div class="empty">还没有周期账<br><small>房贷、工资、房租、会员这类每月固定的收支，建一次就会按时自动记账</small></div>'}
+    <button class="addline" style="width:100%" data-act="rfNew">＋ 新建周期账</button></div>
+  <div class="list-tip">· 每次打开 App，会自动补记所有已到期、还没记的账。<br>· 点某一条看详情，可以从某期起改金额、暂停、提前结清、删除。<br>· 「每月固定」只算进行中的，暂停的不算。</div>`;
+}
+ACT.rdOpen = el => openRecurDetail(el.dataset.id);
+ACT.rfNew = () => openRecurForm();
+
+/* ---- 新建 / 编辑 ---- */
+function catOptions(type, sel, withParents = false) {
+  let html = Store.parents(type).map(p => {
+    const ch = Store.children(p.id);
+    if (!ch.length) return `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${p.icon} ${esc(p.name)}</option>`;
+    return `<optgroup label="${p.icon} ${esc(p.name)}">${withParents ? `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${esc(p.name)}（整个大类）</option>` : ''}${ch.map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</optgroup>`;
+  }).join('');
+  const c = sel && Store.cat(sel);
+  if (c && !html.includes(`value="${sel}"`)) html = `<option value="${sel}" selected>${c.icon} ${esc(Store.catFull(sel))}（已隐藏）</option>` + html;
+  return html;
+}
+function openRecurForm(b) {
+  const t = today(), lastAcc = Store.acc(S.settings.lastAccountId) ? S.settings.lastAccountId : firstAcc();
+  UI.rfBill = b || null;
+  UI.rf = b ? {name: b.name, type: b.type, amountS: '', day: b.day, periodsS: b.periods ? String(b.periods) : '', preS: '0', nextYm: ymOf(t), accountId: b.accountId, categoryId: b.categoryId, downS: '', inStats: b.inStats}
+    : {name: '', type: 'expense', amountS: '', day: +t.slice(8), periodsS: '', preS: '0', nextYm: ymOf(t), accountId: lastAcc, categoryId: null, downS: '', inStats: true};
+  openPage(b ? '编辑周期账' : '新建周期账', recurFormBody, {foot: `<div class="fp-foot"><button class="btn pri grow" data-act="rfSave">${b ? '保存' : '创建'}</button></div>`});
+}
+function rfPreview(R) {
+  const per = /^\d+$/.test(R.periodsS.trim()) ? +R.periodsS : null, pre = /^\d+$/.test(R.preS.trim()) ? +R.preS : 0;
+  if (per && pre >= per) return '⚠️ 已付期数要小于总期数';
+  const d = dueOf(R.nextYm, R.day), t = today(); let n = 0, ym = R.nextYm; const maxN = per ? per - pre : Infinity;
+  while (n < maxN && dueOf(ym, R.day) <= t && n < 1200) { n++; ym = addMonth(ym, 1); }
+  return n ? `下一期是 ${d.replace(/-/g, '/')}，已经到期，创建后会立刻补记 ${n} 笔。` : `下一期是 ${d.replace(/-/g, '/')}，到那天自动记账。`;
+}
+function recurFormBody() {
+  const R = UI.rf, b = UI.rfBill;
+  const days = Array.from({length: 31}, (_, i) => i + 1).map(d => `<option value="${d}" ${d === R.day ? 'selected' : ''}>每月 ${d} 号</option>`).join('');
+  const accs = [...Store.accounts()]; const ca = Store.acc(R.accountId); if (ca && ca.hidden) accs.unshift(ca);
+  const F0 = 'style="padding:0 0 12px"';
+  return `<div class="card pad">
+    <div class="fld" ${F0}><label>名称</label><input data-in="rfName" value="${esc(R.name)}" maxlength="16" placeholder="比如：房贷、工资、房租"></div>
+    ${b ? `<div class="kv"><span>类型</span><b>${TYPE_NAME[b.type]}</b></div><div class="kv" style="margin-bottom:10px"><span>当前每期金额</span><b>¥${money(Recur.curAmount(b))}</b></div>`
+        : `<div class="fld" ${F0}><label>收入还是支出</label><div class="seg full">${['expense', 'income'].map(t => `<button class="${R.type === t ? 'on ' + t : ''}" data-act="rfType" data-t="${t}">${TYPE_NAME[t]}</button>`).join('')}</div></div>
+           <div class="fld" ${F0}><label>每期金额</label><input data-in="rfAmount" inputmode="decimal" value="${esc(R.amountS)}" placeholder="0.00"></div>`}
+    <div class="fld" ${F0}><label>每月几号记账</label><select data-ch="rfDay">${days}</select><p class="tip">遇到没有这一天的月份（比如 31 号），就记在当月最后一天。</p></div>
+    <div class="fld" ${F0}><label>总期数 <small>不填 = 不限期（工资、房租这类）</small></label><input data-in="rfPeriods" inputmode="numeric" value="${esc(R.periodsS)}" placeholder="不限期"></div>
+    ${b ? '<p class="tip" style="margin:0">要改金额，请回详情页点「从某期起改金额」。</p>' : `
+    <div class="fld" ${F0}><label>已经付过几期 <small>建账前已经付了、不用再记的期数</small></label><input data-in="rfPre" inputmode="numeric" value="${esc(R.preS)}" placeholder="0"></div>
+    <div class="fld" style="padding:0"><label>下一期在哪个月</label><button class="inp pickbtn" data-act="rfPickMonth">${R.nextYm.replace('-', '年')}月 ▾</button><p class="tip" id="rfPrev">${rfPreview(R)}</p></div>`}
+  </div>
+  <div class="card pad">
+    <div class="fld" ${F0}><label>账户</label><div class="chips wrap">${accs.map(a => `<div class="chip ${R.accountId === a.id ? 'on' : ''}" data-act="rfAcc" data-id="${a.id}">${a.icon} ${esc(a.name)}</div>`).join('')}</div></div>
+    <div class="fld" ${F0}><label>分类</label><select data-ch="rfCat"><option value="">请选择</option>${catOptions(R.type, R.categoryId)}</select></div>
+    ${!b && R.type === 'expense' ? `<div class="fld" ${F0}><label>首付 <small>可不填；填了会在今天记一笔支出</small></label><input data-in="rfDown" inputmode="decimal" value="${esc(R.downS)}" placeholder="不填"></div>` : ''}
+    <p class="tip" style="margin:0">每期自动记的支出会标成「🔁 固定」，首付标成「💰 大额」。算不算进统计，用首页和报表上的开关一键切换。</p>
+  </div>`;
+}
+const updRfPrev = () => { const e = $('#rfPrev'); if (e) e.textContent = rfPreview(UI.rf); };
+IN.rfName = el => { UI.rf.name = el.value; };
+IN.rfAmount = el => { UI.rf.amountS = el.value; };
+IN.rfPeriods = el => { UI.rf.periodsS = el.value; updRfPrev(); };
+IN.rfPre = el => { UI.rf.preS = el.value; updRfPrev(); };
+IN.rfDown = el => { UI.rf.downS = el.value; };
+CH.rfDay = el => { UI.rf.day = +el.value; updRfPrev(); };
+CH.rfCat = el => { UI.rf.categoryId = el.value || null; };
+CH.rfStats = el => { UI.rf.inStats = el.checked; };
+ACT.rfType = el => { UI.rf.type = el.dataset.t; const c = Store.cat(UI.rf.categoryId); if (c && c.type !== UI.rf.type) UI.rf.categoryId = null; fdRefresh(el); };
+ACT.rfAcc = el => { UI.rf.accountId = el.dataset.id; el.parentNode.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === el)); };
+ACT.rfPickMonth = el => { const L = Layers.get(el.closest('.layer')); openMonthPicker({ym: UI.rf.nextYm, onPick: ym => { UI.rf.nextYm = ym; L.refresh(); }}); };
+ACT.rfSave = el => {
+  const R = UI.rf, b = UI.rfBill, layer = el.closest('.layer');
+  const name = R.name.trim();
+  if (!name) return toast('请填写名称');
+  if (S.recurring.some(x => x.name === name && x.id !== b?.id)) return toast('已经有同名的周期账了');
+  let periods = null;
+  if (R.periodsS.trim()) { const v = R.periodsS.trim(); if (!/^\d+$/.test(v) || +v < 1 || +v > 1200) return toast('总期数要填 1~1200 的整数'); periods = +v; }
+  if (!Store.acc(R.accountId)) return toast('请选择账户');
+  if (!Store.cat(R.categoryId)) return toast('请选择分类');
+  if (b) {
+    if (periods && periods < b.lastPeriod) return toast(`已经记了 ${b.lastPeriod} 期，总期数不能比这少`);
+    Object.assign(b, {name, day: R.day, periods, accountId: R.accountId, categoryId: R.categoryId});
+    if (b.status === 'ended' && (!periods || b.lastPeriod < periods)) b.status = 'active';
+    if (b.status === 'active' && periods && b.lastPeriod >= periods) b.status = 'ended';
+    persist('recurring', b); Layers.closeEl(layer); toast('已保存'); runRecurring(); refreshAll(); return;
+  }
+  const p = parseAmount(R.amountS); if (p.err) return toast('每期金额：' + p.err);
+  let pre = 0;
+  if (periods && R.preS.trim()) { if (!/^\d+$/.test(R.preS.trim())) return toast('已付期数要填整数'); pre = +R.preS.trim(); }
+  if (periods && pre >= periods) return toast('已付期数要小于总期数');
+  let down = 0;
+  if (R.type === 'expense' && R.downS.trim()) { const q = parseAmount(R.downS); if (q.err) return toast('首付：' + q.err); down = q.cents; }
+  const nb = {id: uid(), name, type: R.type, amount: p.cents, day: R.day, periods, prePaid: pre, startYm: addMonth(R.nextYm, -pre), lastPeriod: pre,
+    accountId: R.accountId, categoryId: R.categoryId, down, status: 'active', changes: [], createdAt: Date.now()};
+  S.recurring.push(nb);
+  if (down) Recur.addRecord(nb, 0, today(), down, `${name} 首付`);
+  persist('recurring', nb);
+  Layers.closeEl(layer);
+  const n = Recur.run();
+  toast(`已创建「${name}」${down ? '，首付已记账' : ''}${n ? `，补记了 ${n} 笔` : ''}`, 2500);
+  refreshAll();
+};
+
+/* ---- 详情 ---- */
+function openRecurDetail(id) { UI.rdId = id; openPage('周期账详情', recurDetailBody); }
+function recurDetailBody() {
+  const b = Recur.get(UI.rdId); if (!b) return '<div class="empty">这个周期账已删除</div>';
+  const k = Recur.nextPeriod(b), nd = k ? Recur.dueDate(b, k) : null, cls = b.type === 'expense' ? 'exp' : 'inc', rs = Recur.records(b);
+  const pct = b.periods ? Math.min(100, b.lastPeriod / b.periods * 100) : null, live = b.status === 'active' || b.status === 'paused';
+  const act = (a, t, danger) => `<div class="mrow" data-act="rdAct" data-a="${a}"><div class="nm" ${danger ? 'style="color:var(--danger)"' : ''}>${t}</div><span class="chev">${IC.chev}</span></div>`;
+  return `<div class="card pad">
+    <div style="display:flex;align-items:center;gap:12px"><div class="ri-ic ${cls}" style="width:46px;height:46px;font-size:24px">${Store.catIcon(b.categoryId)}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:18px;font-weight:700">${esc(b.name)}<span class="badge">${Recur.STATUS[b.status]}</span></div>
+      <div style="font-size:13px;color:var(--sub)">${TYPE_NAME[b.type]} · 每月 ${b.day} 号 · ${esc(Store.catName(b.categoryId))} · ${esc(Store.accName(b.accountId))}</div></div></div>
+    ${pct != null ? `<div class="bar" style="height:8px;margin-top:14px"><i style="width:${pct}%;background:var(--pri)"></i></div>` : ''}
+    <div class="kvs">
+      <div><span>已记期数</span><b>${b.periods ? `${b.lastPeriod} / ${b.periods} 期` : `${b.lastPeriod} 期（不限期）`}</b></div>
+      <div><span>${b.type === 'expense' ? '已付' : '已收'}总额</span><b class="${cls}">¥${money(Recur.paid(b))}</b></div>
+      ${b.periods ? `<div><span>剩余</span><b>${Recur.remainCount(b)} 期 · ¥${money(Recur.remainAmount(b))}</b></div>` : ''}
+      <div><span>下次记账</span><b>${nd ? `${nd.replace(/-/g, '/')} · ¥${money(Recur.amountFor(b, k))}${b.status === 'paused' ? '（暂停中）' : ''}` : '—'}</b></div>
+      ${b.down ? `<div><span>首付</span><b>¥${money(b.down)}</b></div>` : ''}
+      ${b.prePaid ? `<div><span>建账前已付</span><b>${b.prePaid} 期（已算进已付，没有补记）</b></div>` : ''}
+      ${(b.changes || []).length ? `<div><span>改过金额</span><b>${[...b.changes].sort((x, y) => x.from - y.from).map(c => `第${c.from}期起 ¥${money(c.amount)}`).join('<br>')}</b></div>` : ''}
+      ${b.settleAmount ? `<div><span>提前结清</span><b>${b.settleDate.replace(/-/g, '/')} · ¥${money(b.settleAmount)}</b></div>` : ''}
+    </div></div>
+  <div class="card">
+    ${live ? act('amount', '从某期起改金额') : ''}
+    ${b.status === 'active' ? act('pause', '暂停（到期不自动记）') : ''}${b.status === 'paused' ? act('resume', '继续') : ''}
+    ${live && b.periods ? act('settle', '提前结清') : ''}
+    ${act('edit', '编辑名称、日期、期数、账户、分类')}${act('delete', '删除', true)}
+  </div>
+  <div class="card"><div class="card-h"><span>已经记的账</span><small>${rs.length} 笔</small></div>${rs.length ? rs.map(recItem).join('') : '<div class="empty">还没有自动记过账</div>'}<div style="height:6px"></div></div>`;
+}
+ACT.rdAct = async el => {
+  const b = Recur.get(UI.rdId); if (!b) return; const a = el.dataset.a;
+  if (a === 'edit') return openRecurForm(b);
+  if (a === 'amount') {
+    const k = Recur.nextPeriod(b);
+    const v = await dialog({title: '从某期起改金额', html: `<div class="fld" style="padding:0 0 10px"><label>新的每期金额</label><input id="dAmt" class="inp" inputmode="decimal" placeholder="0.00"></div>
+      <div class="fld" style="padding:0"><label>从第几期开始</label><input id="dFrom" class="inp" inputmode="numeric" value="${k}"></div><p class="tip">只影响之后自动记的账，已经记过的不变。下一期是第 ${k} 期。</p>`,
+      buttons: [{text: '取消'}, {text: '确定', cls: 'pri', onClick: L => {
+        const p = parseAmount($('#dAmt', L).value); if (p.err) { toast(p.err); return false; }
+        const f = parseInt($('#dFrom', L).value, 10);
+        if (!(f >= k) || (b.periods && f > b.periods)) { toast(`期数要填 ${k}${b.periods ? ' ~ ' + b.periods : ' 或更大的数'}`); return false; }
+        return {amount: p.cents, from: f};
+      }}]});
+    if (!v) return;
+    b.changes = (b.changes || []).filter(c => c.from !== v.from); b.changes.push(v); persist('recurring', b);
+    toast(`第 ${v.from} 期起改为 ¥${money(v.amount)}`); refreshAll();
+  } else if (a === 'pause') {
+    b.status = 'paused'; persist('recurring', b); toast('已暂停，到期不会自动记账'); refreshAll();
+  } else if (a === 'resume') {
+    let n = 0, k = b.lastPeriod + 1; const t = today();
+    while ((!b.periods || k <= b.periods) && Recur.dueDate(b, k) <= t && n < 1200) { n++; k++; }
+    if (n) {
+      const v = await dialog({title: '继续周期账', html: `<p>暂停期间有 <b>${n}</b> 期已经到期：</p><p>· 补记：把这 ${n} 期都记上；<br>· 顺延：这 ${n} 期不记，之后的日期整体往后推 ${n} 个月。</p>`,
+        buttons: [{text: '顺延', onClick: () => 'skip'}, {text: '补记', cls: 'pri', onClick: () => 'fill'}]});
+      if (!v) return;
+      if (v === 'skip') b.startYm = addMonth(b.startYm, n);
+    }
+    b.status = 'active'; persist('recurring', b); toast('已继续'); runRecurring(); refreshAll();
+  } else if (a === 'settle') {
+    const rem = Recur.remainAmount(b);
+    const v = await dialog({title: '提前结清', html: `<p>还剩 ${Recur.remainCount(b)} 期，按原计划共 ¥${money(rem)}。</p>
+      <div class="fld" style="padding:0 0 10px"><label>实际结清金额</label><input id="dAmt" class="inp" inputmode="decimal" value="${rem ? (rem / 100).toString() : ''}"></div>
+      <div class="fld" style="padding:0"><label>结清日期</label><input id="dDate" class="inp" type="date" value="${today()}"></div>
+      <p class="tip">会记一笔「${esc(b.name)} 提前结清」，之后不再自动记账。</p>`,
+      buttons: [{text: '取消'}, {text: '确认结清', cls: 'pri', onClick: L => {
+        const p = parseAmount($('#dAmt', L).value); if (p.err) { toast(p.err); return false; }
+        const d = $('#dDate', L).value; if (!d) { toast('请选择日期'); return false; }
+        return {amount: p.cents, date: d};
+      }}]});
+    if (!v) return;
+    Recur.addRecord(b, -1, v.date, v.amount, `${b.name} 提前结清`);
+    Object.assign(b, {status: 'settled', settleAmount: v.amount, settleDate: v.date}); persist('recurring', b); toast('已结清'); refreshAll();
+  } else if (a === 'delete') {
+    const n = S.records.filter(r => r.recurId === b.id && !r.deletedAt).length;
+    const v = await dialog({title: '删除周期账', html: `<p style="text-align:center">删除「${esc(b.name)}」后不再自动记账。</p>${n ? `<p style="text-align:center">它已经记了 <b>${n}</b> 笔账，这些账怎么处理？</p>` : ''}`,
+      buttons: n ? [{text: '取消'}, {text: '保留账', onClick: () => 'keep'}, {text: '账也删', cls: 'danger', onClick: () => 'all'}] : [{text: '取消'}, {text: '删除', cls: 'danger', onClick: () => 'keep'}]});
+    if (!v) return;
+    if (v === 'all') S.records.forEach(r => { if (r.recurId === b.id && !r.deletedAt) { r.deletedAt = Date.now(); persist('records', r); } });
+    S.recurring = S.recurring.filter(x => x.id !== b.id); unpersist('recurring', b.id);
+    Layers.closeEl(el.closest('.layer')); toast(v === 'all' ? '已删除，那些账放进了回收站' : '已删除'); refreshAll();
+  }
+};
+
+/* ================= 预算 ================= */
+function spentIn(ym, catId) {
+  const [a, b] = monthRange(ym), ids = catId ? new Set(Store.catTreeIds(catId)) : null; let s = 0;
+  for (const r of S.records) {
+    if (r.deletedAt || !countsExp(r) || r.date < a || r.date > b) continue;
+    if (ids && !ids.has(r.categoryId)) continue; s += r.amount;
+  }
+  return s;
+}
+function budgetStatus(ym) {
+  return Object.entries(S.settings.catBudgets || {}).map(([id, amt]) => ({c: Store.cat(id), amt})).filter(o => o.c)
+    .map(o => ({...o, sp: spentIn(ym, o.c.id)})).sort((x, y) => (y.sp / y.amt) - (x.sp / x.amt));
+}
+/** 记一笔支出后检查是否超预算：刚超出时弹窗，已经超了就轻提示 */
+function checkBudget(r) {
+  if (!r || !countsExp(r)) return;
+  const ym = ymOf(r.date), msgs = []; let crossed = false;
+  const chk = (name, amt, sp) => { if (sp > amt) { msgs.push(`${name}：预算 ${money(amt)}，已花 ${money(sp)}，<b style="color:var(--danger)">超支 ${money(sp - amt)}</b>`); if (sp - r.amount <= amt) crossed = true; } };
+  if (S.settings.budget) chk(`${+ym.slice(5)}月总预算`, S.settings.budget, spentIn(ym));
+  const cb = S.settings.catBudgets || {}, c = Store.cat(r.categoryId), anc = [r.categoryId, c?.parentId].filter(Boolean);
+  anc.forEach(id => { if (cb[id] != null && Store.cat(id)) chk(`「${Store.cat(id).name}」`, cb[id], spentIn(ym, id)); });
+  if (!msgs.length) return;
+  if (crossed) setTimeout(() => dialog({title: '⚠️ 超支提醒', html: msgs.map(m => `<p>${m}</p>`).join('')}), 350);
+  else setTimeout(() => toast('⚠️ ' + msgs[0].replace(/<[^>]+>/g, ''), 2800), 1300);
+}
+ACT.openBudget = () => openBudget();
+function openBudget() { openPage('预算', budgetBody); }
+function budgetBody() {
+  const ym = ymOf(today()), m = +ym.slice(5), tot = S.settings.budget || 0, sp = spentIn(ym), list = budgetStatus(ym);
+  const bar = (s, a) => { const pct = a ? Math.min(100, s / a * 100) : 0; return `<div class="bar" style="height:7px"><i style="width:${pct}%;background:${s > a ? 'var(--danger)' : pct > 80 ? 'var(--acc)' : 'var(--pri)'}"></i></div>`; };
+  const left = (s, a) => s > a ? `<b style="color:var(--danger)">超支 ${money(s - a)}</b>` : `剩余 <b>${money(a - s)}</b>`;
+  return `<div class="card pad"><div class="card-h" style="padding:0 0 10px"><span>${m}月 总预算</span><button class="btn sm" data-act="bgTotal">${tot ? '修改' : '设置'}</button></div>
+    ${tot ? `<div class="bgline"><span>已花 ${money(sp)} / ${money(tot)}</span><span>${left(sp, tot)}</span></div>${bar(sp, tot)}` : '<div style="color:var(--sub);font-size:13px">还没设置每月总预算</div>'}</div>
+  <div class="card"><div class="card-h"><span>分类预算</span><small>${m}月</small></div>
+    ${list.length ? list.map(o => `<div class="bgrow" data-act="bgCat" data-id="${o.c.id}"><div class="bg-t"><span>${o.c.icon} ${esc(Store.catFull(o.c.id))}</span><span>${left(o.sp, o.amt)}</span></div>${bar(o.sp, o.amt)}<div class="bg-s">已花 ${money(o.sp)} / 预算 ${money(o.amt)}</div></div>`).join('') : '<div class="empty">还没有分类预算</div>'}
+    <button class="addline" style="width:100%" data-act="bgAdd">＋ 添加分类预算</button></div>
+  <div class="list-tip">· 预算按自然月算，每月 1 号重新开始。<br>· 记账后一超出预算就会弹出提醒。<br>· 给大类设预算，会包含它下面所有小类。<br>· 固定支出（月供、话费等）、大额支出（首付等）占不占预算，跟着首页和报表上的两个开关走。</div>`;
+}
+ACT.bgTotal = async () => { await ACT.setBudget(); refreshAll(); };
+ACT.bgAdd = async () => {
+  const v = await dialog({title: '添加分类预算', html: `<div class="fld" style="padding:0 0 10px"><label>分类</label><select id="dCat">${catOptions('expense', null, true)}</select></div>
+    <div class="fld" style="padding:0"><label>每月预算</label><input id="dAmt" class="inp" inputmode="decimal" placeholder="比如 1500"></div>`,
+    buttons: [{text: '取消'}, {text: '保存', cls: 'pri', onClick: L => { const p = parseAmount($('#dAmt', L).value); if (p.err) { toast(p.err); return false; } return {id: $('#dCat', L).value, amt: p.cents}; }}]});
+  if (!v) return;
+  const had = S.settings.catBudgets[v.id] != null;
+  S.settings.catBudgets = {...S.settings.catBudgets, [v.id]: v.amt}; Store.saveSettings();
+  toast(had ? '这个分类原来有预算，已更新' : '已添加'); refreshAll();
+};
+ACT.bgCat = async el => {
+  const id = el.dataset.id, c = Store.cat(id); if (!c) return;
+  const a = await actionSheet(`${c.icon} ${c.name} 的预算`, [{t: '修改金额', v: 'edit'}, {t: '删除这个预算', v: 'del', danger: true}]);
+  if (a === 'edit') {
+    const v = await promptDlg(`「${c.name}」每月预算`, {value: (S.settings.catBudgets[id] / 100).toString(), inputmode: 'decimal', onOk: x => { const p = parseAmount(x); if (p.err) { toast(p.err); return false; } return p.cents; }});
+    if (v) { S.settings.catBudgets[id] = v; Store.saveSettings(); refreshAll(); }
+  } else if (a === 'del') { delete S.settings.catBudgets[id]; Store.saveSettings(); toast('已删除'); refreshAll(); }
+};
+
+/* ================= 回收站 ================= */
+ACT.openRecycle = () => openRecycle();
+function openRecycle() { openPage('回收站', recycleBody, {right: '<button class="tbtn" data-act="rbClear">清空</button>'}); }
+function recycleBody() {
+  const rs = S.records.filter(r => r.deletedAt).sort((a, b) => b.deletedAt - a.deletedAt);
+  const when = ts => { const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  return `<div class="list-tip" style="padding-top:12px">删除的记录都在这里，可以恢复；「彻底删除」后就找不回了。</div>
+  <div class="card">${rs.length ? rs.map(r => `<div class="rb">${recItem(r).replace('data-act="editRec"', 'data-act="noop"')}
+    <div class="rb-a"><span>${r.date.replace(/-/g, '/')} 的账 · ${when(r.deletedAt)} 删除</span><button class="btn sm" data-act="rbRestore" data-id="${r.id}">恢复</button><button class="btn sm danger-o" data-act="rbPurge" data-id="${r.id}">彻底删除</button></div></div>`).join('')
+    : '<div class="empty">回收站是空的</div>'}</div>`;
+}
+function purgeRecord(r) {
+  (r.photoIds || []).forEach(pid => { Storage.del('photos', pid).catch(() => {}); PHOTO_CACHE.delete(pid); });
+  S.records = S.records.filter(x => x.id !== r.id); unpersist('records', r.id);
+}
+ACT.rbRestore = el => { const r = S.records.find(x => x.id === el.dataset.id); if (!r) return; delete r.deletedAt; persist('records', r); toast('已恢复'); refreshAll(); };
+ACT.rbPurge = async el => { const r = S.records.find(x => x.id === el.dataset.id); if (!r) return; if (!await confirmDlg('彻底删除后就找不回了，确定吗？', '彻底删除', true)) return; purgeRecord(r); toast('已彻底删除'); refreshAll(); };
+ACT.rbClear = async () => {
+  const rs = S.records.filter(r => r.deletedAt); if (!rs.length) return toast('回收站是空的');
+  if (!await confirmDlg(`彻底删除回收站里的 ${rs.length} 条记录？删除后找不回。`, '清空', true)) return;
+  rs.forEach(purgeRecord); toast('回收站已清空'); refreshAll();
+};
+
+/* ================= 外观：深色模式、收支配色 ================= */
+function applyTheme() {
+  const st = S.settings; let dark = st.theme === 'dark';
+  if (st.theme !== 'dark' && st.theme !== 'light') { try { dark = matchMedia('(prefers-color-scheme: dark)').matches; } catch (_) {} }
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.documentElement.dataset.colors = st.colors === 'swap' ? 'swap' : 'default';
+  const m = $('meta[name=theme-color]'); if (m) m.content = dark ? '#18233A' : '#2D4B7C';
+}
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (S.settings.theme !== 'dark' && S.settings.theme !== 'light') { applyTheme(); renderMain(); } }); } catch (_) {}
+async function themeMenu() {
+  const v = await actionSheet('深色模式', [{t: '跟随系统', v: 'system'}, {t: '浅色', v: 'light'}, {t: '深色', v: 'dark'}]);
+  if (!v) return; S.settings.theme = v; Store.saveSettings(); applyTheme(); refreshAll();
+}
+async function colorMenu() {
+  const v = await actionSheet('收支配色', [
+    {html: '默认<span class="sample" style="background:#17A673"></span>支出绿<span class="sample" style="background:#EC6A3C"></span>收入红', v: 'default'},
+    {html: '反过来<span class="sample" style="background:#EC6A3C"></span>支出红<span class="sample" style="background:#17A673"></span>收入绿', v: 'swap'}]);
+  if (!v) return; S.settings.colors = v; Store.saveSettings(); applyTheme(); refreshAll();
+}
+
+/* ================= 每日提醒、备份提醒 ================= */
+async function remindDialog() {
+  const r = S.settings.remind || {on: true, time: '20:30'};
+  const v = await dialog({title: '每日记账提醒', html: `<label class="switch-row" style="padding:0 0 12px"><div><b>开启提醒</b></div><input type="checkbox" id="dOn" ${r.on ? 'checked' : ''}></label>
+    <div class="fld" style="padding:0"><label>提醒时间</label><input type="time" id="dTime" class="inp" value="${r.time}"></div>
+    <p class="tip">网页版：过了这个时间打开 App、当天还没记账，首页顶部会提示。打包成 APK 后会变成手机通知栏提醒。</p>`,
+    buttons: [{text: '取消'}, {text: '保存', cls: 'pri', onClick: L => ({on: $('#dOn', L).checked, time: $('#dTime', L).value || '20:30'})}]});
+  if (!v) return; S.settings.remind = v; Store.saveSettings(); toast(v.on ? `每天 ${v.time} 提醒` : '已关闭提醒'); refreshAll();
+}
+function homeBanners() {
+  const st = S.settings, t = today(), now = new Date(), out = [];
+  const r = st.remind || {};
+  if (r.on && `${pad(now.getHours())}:${pad(now.getMinutes())}` >= (r.time || '20:30') && st.remindDismissed !== t
+      && !S.records.some(x => !x.deletedAt && !x.recurId && x.date === t)) {
+    out.push(`<div class="banner">⏰<span>今天还没记账，现在记一笔？</span><button class="btn sm pri" data-act="addRec">记一笔</button><button class="x" data-act="dismissRemind">✕</button></div>`);
+  }
+  const live = S.records.filter(x => !x.deletedAt);
+  if (live.length && st.backupSnooze !== t) {
+    const since = st.lastBackupTs || Math.min(...live.map(x => x.createdAt || Date.now()));
+    const days = Math.floor((Date.now() - since) / 864e5);
+    if (days >= 7) out.push(`<div class="banner">💾<span>${st.lastBackupTs ? `已经 ${days} 天没备份了` : '还没有备份过数据'}</span><button class="btn sm" data-act="goBackup">去备份</button><button class="x" data-act="snoozeBackup">✕</button></div>`);
+  }
+  return out.join('');
+}
+ACT.dismissRemind = () => { S.settings.remindDismissed = today(); Store.saveSettings(); renderMain(); };
+ACT.snoozeBackup = () => { S.settings.backupSnooze = today(); Store.saveSettings(); renderMain(); };
+ACT.goBackup = () => openExport();
+
+/* ================= 演示数据（近 4 个月的模拟账） ================= */
+const Demo = {
+  async load() {
+    await Store.clearAll();
+    let seed = 20261117;
+    const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    const ri = (a, b) => Math.round(a + rnd() * (b - a));
+    const rm = (a, b) => Math.round((a + rnd() * (b - a)) * 100) / 100;
+    const pick = arr => arr[Math.floor(rnd() * arr.length)];
+    const chance = p => rnd() < p;
+    const cat = (type, name) => S.categories.find(c => c.type === type && c.name === name && Store.isLeaf(c))?.id;
+    const acc = n => S.accounts.find(a => a.name === n)?.id;
+    const init = {现金: 800, 微信: 2600, 支付宝: 6000, 银行卡: 386000};
+    S.accounts.forEach(a => { a.init = (init[a.name] || 0) * 100; });
+    const tagTrip = Store.saveTag({name: '国庆旅行'}).id, tag11 = Store.saveTag({name: '双十一'}).id;
+    const t = today(), m0 = addMonth(ymOf(t), -3), start = m0 + '-01', y = t.slice(0, 4);
+    const recs = []; let seq = 0;
+    const add = (date, type, yuan, catName, accName, note = '', tags = [], hh = 12, toAcc = null) => {
+      if (date > t || date < start) return null;
+      const c = type === 'transfer' ? null : cat(type, catName);
+      if (type !== 'transfer' && !c) return null;
+      const ts = new Date(`${date}T${pad(Math.min(23, hh))}:${pad(ri(0, 59))}:00`).getTime() + (seq++);
+      const r = {id: uid(), createdAt: ts, updatedAt: ts, type, amount: Math.round(yuan * 100), categoryId: c, accountId: acc(accName),
+        toAccountId: toAcc ? acc(toAcc) : null, date, note, tagIds: tags, photoIds: []};
+      recs.push(r); return r;
+    };
+    const payAcc = () => { const r = rnd(); return r < .5 ? '微信' : r < .85 ? '支付宝' : r < .93 ? '现金' : '银行卡'; };
+    const trip = [1, 2, 3, 4, 5].map(d => `${y}-10-0${d}`);
+    for (let d = new Date(start + 'T00:00:00'); ymd(d) <= t; d.setDate(d.getDate() + 1)) {
+      const ds = ymd(d), wd = d.getDay(), dom = d.getDate();
+      if (trip.includes(ds)) continue;                      // 国庆旅行单独记
+      const work = wd >= 1 && wd <= 5, weekend = !work;
+      // 餐饮
+      if (work && chance(.85)) add(ds, 'expense', pick([6, 7, 8, 9.5, 10, 12]), '早餐', payAcc(), pick(['', '包子豆浆', '煎饼果子', '便利店']), [], 8);
+      if (work) add(ds, 'expense', ri(16, 32), chance(.3) ? '外卖' : '午餐', payAcc(), pick(['', '公司楼下面馆', '食堂', '麻辣烫', '盖浇饭']), [], 12);
+      else if (chance(.5)) add(ds, 'expense', ri(30, 90), '午餐', payAcc(), pick(['', '和家人吃饭', '周末小馆']), [], 12);
+      if (chance(.55)) add(ds, 'expense', work ? ri(20, 45) : ri(40, 160), chance(.25) ? '外卖' : '晚餐', payAcc(), pick(['', '', '烧烤', '火锅', '家常菜']), [], 19);
+      if (chance(weekend ? .7 : .25)) add(ds, 'expense', ri(35, 130), '买菜', payAcc(), pick(['菜市场', '盒马', '超市', '美团买菜']), [], 18);
+      if (chance(.28)) add(ds, 'expense', ri(10, 45), '水果零食', payAcc(), pick(['水果', '零食', '葡萄', '橘子']), [], 16);
+      if (chance(.25)) add(ds, 'expense', ri(12, 26), '饮料奶茶', payAcc(), pick(['奶茶', '咖啡', '瑞幸']), [], 15);
+      // 交通
+      if (work) add(ds, 'expense', pick([6, 7, 8, 8]), '公交地铁', '支付宝', '通勤', [], 9);
+      if (chance(.1)) add(ds, 'expense', ri(15, 48), '打车', payAcc(), pick(['加班回家', '下雨打车', '赶时间']), [], 22);
+      if (dom === 3 || dom === 18) add(ds, 'expense', ri(280, 360), '加油', '银行卡', '', [], 10);
+      if (chance(.06)) add(ds, 'expense', ri(5, 20), '停车', '微信', '', [], 14);
+      // 日用
+      if (wd === 6 && chance(.6)) add(ds, 'expense', ri(25, 110), '日用品', payAcc(), pick(['纸巾洗衣液', '超市日用', '牙膏洗发水']), [], 17);
+      if (chance(.03)) add(ds, 'expense', ri(8, 15), '快递费', '微信', '寄快递', [], 13);
+      // 每月固定
+      if (dom === 6) { add(ds, 'expense', ri(35, 60), '水费', '支付宝', '', [], 20); add(ds, 'expense', ri(110, 260), '电费', '支付宝', '', [], 20); add(ds, 'expense', ri(40, 90), '燃气费', '支付宝', '', [], 20); }
+      if (dom === 12) add(ds, 'expense', ri(35, 45), '理发美容', '微信', '理发', [], 15);
+      if (dom === 28) add(ds, 'income', rm(60, 140), '理财收益', '支付宝', '余额宝收益', [], 9);
+      if (dom === 11) { add(ds, 'transfer', 2000, null, '银行卡', '发工资后转零花', [], 10, '微信'); add(ds, 'transfer', 2500, null, '银行卡', '', [], 10, '支付宝'); }
+      // 娱乐
+      if (weekend && chance(.18)) add(ds, 'expense', ri(45, 110), '电影演出', payAcc(), '看电影', [], 20);
+      if (chance(.04)) add(ds, 'expense', ri(30, 90), '书籍', '支付宝', '买书', [], 21);
+      if (wd === 0 && chance(.3)) add(ds, 'expense', ri(30, 80), '运动健身', '微信', pick(['羽毛球', '游泳']), [], 10);
+      // 服饰、医疗
+      if (chance(.035)) add(ds, 'expense', ri(129, 499), '衣服', '支付宝', pick(['外套', 'T恤', '裤子']), [], 20);
+      if (chance(.012)) add(ds, 'expense', ri(199, 699), '鞋包', '支付宝', '运动鞋', [], 20);
+      if (chance(.02)) add(ds, 'expense', ri(25, 90), '药品', '微信', pick(['感冒药', '药店']), [], 18);
+    }
+    // 国庆旅行（带标签，可以在明细/报表里按标签统计总花费）
+    const T = [tagTrip];
+    add(`${y}-10-01`, 'expense', 368, '火车高铁', '支付宝', '高铁去杭州', T, 8); add(`${y}-10-01`, 'expense', 426, '旅游', '支付宝', '酒店 2 晚', T, 14);
+    add(`${y}-10-01`, 'expense', 158, '晚餐', '微信', '西湖边吃饭', T, 19);
+    add(`${y}-10-02`, 'expense', 120, '旅游', '微信', '景区门票', T, 10); add(`${y}-10-02`, 'expense', 86, '午餐', '微信', '', T, 12);
+    add(`${y}-10-02`, 'expense', 45, '饮料奶茶', '微信', '', T, 15); add(`${y}-10-02`, 'expense', 212, '晚餐', '微信', '杭帮菜', T, 19);
+    add(`${y}-10-03`, 'expense', 418, '旅游', '支付宝', '民宿 1 晚', T, 14); add(`${y}-10-03`, 'expense', 62, '打车', '支付宝', '', T, 11);
+    add(`${y}-10-03`, 'expense', 138, '送礼', '支付宝', '给家里带特产', T, 17);
+    add(`${y}-10-04`, 'expense', 368, '火车高铁', '支付宝', '高铁回程', T, 16); add(`${y}-10-04`, 'expense', 75, '午餐', '微信', '', T, 12);
+    add(`${y}-10-05`, 'expense', 120, '买菜', '微信', '补冰箱', [], 18);
+    // 其他特别支出
+    add(`${y}-08-16`, 'expense', 800, '红包礼金', '微信', '同事婚礼随礼', [], 11);
+    add(`${y}-08-22`, 'expense', 1299, '家电', '支付宝', '扫地机器人', [], 20);
+    add(`${y}-09-08`, 'expense', 150, '门诊', '微信', '牙科检查', [], 10);
+    add(`${y}-09-13`, 'expense', 356, '请客吃饭', '微信', '请朋友吃饭', [], 20);
+    add(`${y}-09-20`, 'expense', 600, '物业费', '银行卡', '第四季度物业费', [], 10);
+    add(`${y}-09-24`, 'expense', 1000, '孝敬长辈', '银行卡', '中秋给爸妈', [], 20); add(`${y}-09-24`, 'expense', 268, '送礼', '支付宝', '月饼礼盒', [], 13);
+    const E = [tag11];
+    add(`${y}-11-11`, 'expense', 1599, '数码产品', '支付宝', '平板电脑', E, 0); add(`${y}-11-11`, 'expense', 389, '衣服', '支付宝', '羽绒服', E, 0);
+    add(`${y}-11-11`, 'expense', 236, '日用品', '支付宝', '囤纸巾洗衣液', E, 1); add(`${y}-11-11`, 'expense', 168, '美妆护肤', '支付宝', '护肤品', E, 1);
+    // 其他收入
+    add(`${y}-09-02`, 'income', 460, '报销款', '银行卡', '差旅报销', [], 11);
+    add(`${y}-09-30`, 'income', 3000, '奖金', '银行卡', '季度奖金', [], 15);
+    add(`${y}-10-07`, 'income', 200, '红包礼金', '微信', '国庆长辈红包', [], 19);
+    add(`${y}-10-20`, 'income', 800, '兼职副业', '微信', '周末兼职', [], 19);
+    add(`${y}-11-13`, 'income', 89, '退款', '支付宝', '双十一退货', E, 12);
+    const reno = add(`${y}-10-18`, 'expense', 18000, '装修', '银行卡', '厨房翻新（大额）', [], 15); if (reno) reno.big = true;
+    S.records.push(...recs);
+    await Storage.putMany('records', recs); await Storage.putMany('accounts', S.accounts);
+    // 周期账：工资、话费、宽带、视频会员（计入统计）；房贷（首付 + 月供，不计入统计）
+    const mk = o => { const b = {id: uid(), changes: [], status: 'active', prePaid: 0, lastPeriod: 0, down: 0, createdAt: Date.now() + (seq++), ...o}; S.recurring.push(b); return b; };
+    mk({name: '工资', type: 'income', amount: 1250000, day: 10, periods: null, startYm: m0, accountId: acc('银行卡'), categoryId: cat('income', '工资'), inStats: true});
+    mk({name: '话费', type: 'expense', amount: 5900, day: 8, periods: null, startYm: m0, accountId: acc('支付宝'), categoryId: cat('expense', '话费'), inStats: true});
+    mk({name: '宽带', type: 'expense', amount: 9900, day: 15, periods: null, startYm: m0, accountId: acc('支付宝'), categoryId: cat('expense', '宽带'), inStats: true});
+    mk({name: '视频会员', type: 'expense', amount: 2500, day: 20, periods: null, startYm: m0, accountId: acc('支付宝'), categoryId: cat('expense', '会员订阅'), inStats: true});
+    const hb = mk({name: '房贷', type: 'expense', amount: 520000, day: 15, periods: 360, startYm: addMonth(m0, 1), accountId: acc('银行卡'), categoryId: cat('expense', '房贷'), inStats: false, down: 30000000});
+    Recur.addRecord(hb, 0, `${m0}-18`, 30000000, '房贷 首付');
+    S.recurring.forEach(b => persist('recurring', b));
+    Recur.run();
+    // 预算、模板
+    const pid = n => S.categories.find(c => c.type === 'expense' && !c.parentId && c.name === n)?.id;
+    Object.assign(S.settings, {budget: 800000, catBudgets: {[pid('餐饮')]: 200000, [pid('交通')]: 120000}, lastAccountId: acc('微信'), lastBackupTs: Date.now(), introDone: true});
+    Store.saveSettings();
+    Store.saveTemplate({name: '工作日早餐', type: 'expense', amount: 800, categoryId: cat('expense', '早餐'), accountId: acc('微信'), toAccountId: null, note: '', tagIds: []});
+    Store.saveTemplate({name: '地铁通勤', type: 'expense', amount: 700, categoryId: cat('expense', '公交地铁'), accountId: acc('支付宝'), toAccountId: null, note: '通勤', tagIds: []});
+    reindex();
+    return recs.length;
+  },
+};
+async function demoFlow() {
+  if (!await confirmDlg('载入演示数据会<b>清空当前所有数据</b>，换成近 4 个月的模拟账（含房贷首付、月供、工资等周期账，国庆旅行、双十一标签）。<br><br>看完想恢复干净，在设置里点「清空所有数据」即可。', '载入演示数据', true)) return;
+  toast('正在生成…', 5000);
+  await Demo.load();
+  while (Layers.stack.length) Layers.closeTop();
+  UI.tab = 'home'; UI.homeMonth = ymOf(today()); UI.selDay = today(); UI.filter = defaultFilter(); UI.rp.ym = ymOf(today());
+  renderMain(); window.scrollTo(0, 0);
+  toast(`已载入 ${S.records.length} 笔演示账`, 2500);
+}
+
+/* ================= 事件分发（点击 / 长按 / 输入） ================= */
+let lpTimer = null, lpFired = false, lpStart = null;
+document.addEventListener('pointerdown', e => {
+  lpFired = false; const el = e.target.closest('[data-lp]'); if (!el) return;
+  lpStart = [e.clientX, e.clientY]; clearTimeout(lpTimer);
+  lpTimer = setTimeout(() => { lpTimer = null; lpFired = true; try { navigator.vibrate && navigator.vibrate(12); } catch (_) {} LP[el.dataset.lp]?.(el); }, 520);
+});
+document.addEventListener('pointermove', e => { if (lpTimer && lpStart && (Math.abs(e.clientX - lpStart[0]) > 10 || Math.abs(e.clientY - lpStart[1]) > 10)) { clearTimeout(lpTimer); lpTimer = null; } });
+['pointerup', 'pointercancel'].forEach(t => document.addEventListener(t, () => { clearTimeout(lpTimer); lpTimer = null; }));
+document.addEventListener('contextmenu', e => { if (e.target.closest('[data-lp]')) e.preventDefault(); });
+document.addEventListener('click', e => {
+  if (lpFired) { lpFired = false; e.preventDefault(); e.stopPropagation(); return; }
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const fn = ACT[el.dataset.act]; if (fn) { e.preventDefault(); Promise.resolve(fn(el, e)).catch(err => { console.error(err); toast(errOf(err)); }); }
+}, true);
+document.addEventListener('input', e => { const k = e.target.dataset?.in; if (k && IN[k]) IN[k](e.target, e); });
+document.addEventListener('change', e => { const k = e.target.dataset?.ch; if (k && CH[k]) Promise.resolve(CH[k](e.target, e)).catch(err => toast(errOf(err))); });
+
+/* 左右滑动 */
+let swStart = null;
+document.addEventListener('touchstart', e => {
+  const el = e.target.closest('[data-swipe]');
+  swStart = el && e.touches.length === 1 ? {el, x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now()} : null;
+}, {passive: true});
+document.addEventListener('touchend', e => {
+  const s = swStart; swStart = null; if (!s) return;
+  const t = e.changedTouches[0], dx = t.clientX - s.x, dy = t.clientY - s.y;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - s.t < 800) { lpFired = false; SW[s.el.dataset.swipe]?.(s.el, dx < 0 ? 1 : -1); }
+}, {passive: true});
+
+/* ================= 启动 ================= */
+(async function boot() {
+  renderTabbar();
+  try { await Store.init(); } catch (e) { console.error(e); toast('数据读取出错：' + errOf(e), 4000); }
+  applyTheme();
+  renderMain();
+  setTimeout(() => runRecurring(), 400);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { runRecurring(); if (!Layers.stack.length) renderMain(); } });
+  if (!S.settings.introDone) {
+    await dialog({title: '欢迎使用小账本', html: IS_APP ? `<p>数据保存在这台手机里，不上传到任何地方。</p>
+      <p>· <b>卸载 App 会删除所有数据</b>，换手机或重装前，先在「设置 → 导出备份」备份一份。</p>
+      <p>· 网页版试用时记过账的，可以在网页版导出备份，再在这里「设置 → 导入备份」粘贴进来。</p>` : `<p>这是<b>网页试用版</b>，先熟悉操作、提修改意见用：</p>
+      <p>· 数据只存在这台手机的这个浏览器里，清理缓存或换手机就没了。</p>
+      <p>· 试用期间可以随便记几笔试试；正式记账建议等打包成 APK、接好坚果云备份之后再开始。</p>
+      <p>· 想留着试用数据，可以在「设置 → 导出备份」复制一份。</p>`, buttons: [{text: '知道了，开始试用', cls: 'pri'}]});
+    S.settings.introDone = true; Store.saveSettings();
+  }
+})();
+</script>
+</body>
+</html>
