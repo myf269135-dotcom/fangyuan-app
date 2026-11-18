@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>维修工单接单与完工回传</title>
+<style>
+body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;background:#f1f5f9;color:#0f172a;padding:14px}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.inp,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #cbd5e1;font-size:15px;box-sizing:border-box;margin:6px 0 12px}
+.btn{width:100%;padding:12px;border-radius:12px;border:none;background:#16a34a;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+.pill{background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="app" class="card" style="text-align:center">正在加载工单详情...</div>
+<script>
+const q = new URLSearchParams(location.search), id = q.get('id'), u = q.get('u'), k = q.get('k');
+let afterImg = '';
+function compress(file) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        let w = im.width, h = im.height, m = 1000;
+        if (w > m || h > m) { if (w > h) { h = Math.round(h * m / w); w = m; } else { w = Math.round(w * m / h); h = m; } }
+        const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h);
+        res(c.toDataURL('image/jpeg', 0.78));
+      };
+      im.src = r.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
+async function load() {
+  if (!id || !u || !k) return document.getElementById('app').innerHTML = '无效的工单链接';
+  const r = await fetch(`${u}/rest/v1/work_orders_cloud?id=eq.${encodeURIComponent(id)}&select=*`, { headers: { 'apikey': k, 'Authorization': 'Bearer ' + k } });
+  const rows = await r.json(), w = rows[0];
+  if (!w) return document.getElementById('app').innerHTML = '未找到该工单';
+  document.getElementById('app').style.textAlign = 'left';
+  document.getElementById('app').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:18px">🔧 维修派单任务</b><span class="pill">${w.status}</span></div>
+    <p><b>房源位置：</b>${w.prop_name}（${w.prop_address}）</p>
+    <p><b>维修项目：</b>${w.item_name}</p>
+    <p><b>故障说明：</b>${w.issue_desc}</p>
+    ${w.before_photo ? `<div style="margin-bottom:12px"><small>房东现场照片：</small><br><img src="${w.before_photo}" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-top:4px"></div>` : ''}
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:14px 0">
+    <b>📸 师傅完工回传（房东手机将实时收到通知）</b>
+    <div style="margin-top:8px"><small>1. 拍摄/上传修好后的照片：</small><input type="file" accept="image/*" class="inp" onchange="if(this.files?.[0])compress(this.files[0]).then(d=>{afterImg=d;document.getElementById('prev').src=d;document.getElementById('prev').style.display='block'})"><img id="prev" style="display:none;width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:8px"></div>
+    <small>2. 实际维修总费用（元）：</small><input type="number" id="cost" class="inp" value="${w.quote_cost || ''}" placeholder="请输入维修金额">
+    <small>3. 维修说明/更换配件备注：</small><textarea id="note" rows="2" placeholder="如：已更换全新全铜角阀并试水无渗漏">${w.master_note || ''}</textarea>
+    <button class="btn" onclick="submitDone()">✅ 提交完工报告并通知房东</button>
+  `;
+}
+async function submitDone() {
+  const cost = Number(document.getElementById('cost').value || 0), note = document.getElementById('note').value.trim();
+  const body = { status: '已完工待验收', quote_cost: cost, master_note: note, updated_at: new Date().toISOString() };
+  if (afterImg) body.after_photo = afterImg;
+  const r = await fetch(`${u}/rest/v1/work_orders_cloud?id=eq.${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'apikey': k, 'Authorization': 'Bearer ' + k, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (r.ok) document.getElementById('app').innerHTML = `<div style="text-align:center;padding:24px"><div style="font-size:44px">✅</div><h3>完工报告已发送给房东！</h3><p style="color:#475569;font-size:14px">房东手机已收到验收通知，您可以直接关闭此页面了。</p></div>`;
+  else alert('提交失败，请检查网络后重试');
+}
+load();
+</script>
+</body>
+</html>
