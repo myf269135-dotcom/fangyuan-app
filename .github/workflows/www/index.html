@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>房源管理</title>
+<style>
+:root{--p:#2563eb;--pl:#eff6ff;--s:#16a34a;--sb:#dcfce7;--w:#d97706;--wb:#fef3c7;--d:#dc2626;--db:#fee2e2;--u:#7c3aed;--ub:#ede9fe;--g5:#f8fafc;--g1:#f1f5f9;--g2:#e2e8f0;--g4:#94a3b8;--g6:#475569;--g9:#0f172a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;background:var(--g1);color:var(--g9);padding-bottom:78px;line-height:1.45}
+.hdr{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--g2);padding:11px 14px;display:flex;align-items:center;justify-content:space-between}
+.wrap{max-width:680px;margin:0 auto;padding:12px}
+.card{background:#fff;border-radius:14px;padding:13px;margin-bottom:11px;border:1px solid var(--g2);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.ct{font-size:15px;font-weight:700;margin:0 0 9px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.ov{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:14px;padding:13px 6px;margin-bottom:11px;text-align:center}
+.ov small{font-size:11px;opacity:.85;display:block}.ov b{font-size:15px}
+.qg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:11px}
+.qb{background:#fff;border:1px solid var(--g2);border-radius:12px;padding:9px 4px;text-align:center;font-size:12px;font-weight:600;cursor:pointer}
+.inp,select,textarea{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--g2);font-size:14px;background:#fff;font-family:inherit;margin-bottom:8px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:8px 13px;border-radius:9px;font-size:13px;font-weight:600;border:none;cursor:pointer}
+.bp{background:var(--p);color:#fff}.bs{background:var(--s);color:#fff}.bw{background:var(--w);color:#fff}.bd{background:var(--d);color:#fff}.bu{background:var(--u);color:#fff}.bo{background:#fff;border:1px solid var(--g2);color:var(--g9)}.bsm{padding:5px 9px;font-size:12px}.blk{width:100%}
+.pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}.p-ok{background:var(--sb);color:var(--s)}.p-va{background:var(--pl);color:var(--p)}.p-re{background:var(--ub);color:var(--u)}.p-ma{background:var(--wb);color:var(--w)}.p-da{background:var(--db);color:var(--d)}
+.todo{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:9px;background:var(--g5);border:1px solid var(--g2);margin-bottom:6px;font-size:13px;cursor:pointer}
+.pcard{background:#fff;border-radius:14px;margin-bottom:11px;overflow:hidden;border:1px solid var(--g2);display:flex;cursor:pointer}
+.stripe{width:6px;flex-shrink:0}.st-ok{background:var(--s)}.st-va{background:var(--p)}.st-re{background:var(--u)}.st-ma{background:var(--w)}
+.pcov{width:88px;background:var(--g2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}.pcov img{width:100%;height:100%;object-fit:cover}
+.tabs{display:flex;overflow-x:auto;gap:6px;padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--g2)}
+.tbtn{padding:6px 11px;border-radius:99px;font-size:12px;font-weight:600;background:var(--g1);color:var(--g6);border:none;white-space:nowrap;cursor:pointer}.tbtn.act{background:var(--p);color:#fff}
+.rbox{border:1px solid var(--g2);border-radius:11px;padding:10px;margin-bottom:10px;background:var(--g5)}
+.irow{background:#fff;border:1px solid var(--g2);border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.banner{height:145px;border-radius:14px;overflow:hidden;position:relative;background:linear-gradient(135deg,#334155,#0f172a);margin-bottom:11px;display:flex;align-items:flex-end}
+.banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7}
+.bov{position:relative;z-index:2;width:100%;padding:12px;background:linear-gradient(transparent,rgba(0,0,0,.8));color:#fff}
+.mbk{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:100;display:none;align-items:flex-end;justify-content:center}.mbk.open{display:flex}
+.mpnl{background:#fff;width:100%;max-width:680px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px 14px 26px}
+.bnav{position:fixed;bottom:0;left:0;right:0;height:60px;background:#fff;border-top:1px solid var(--g2);display:flex;justify-content:space-around;align-items:center;z-index:50}
+.ni{flex:1;text-align:center;font-size:11px;color:var(--g6);cursor:pointer}.ni.act{color:var(--p);font-weight:700}
+.docbox{border:1px solid var(--g2);border-radius:9px;padding:10px;background:var(--g5);max-height:52vh;overflow:auto;font-size:13px}
+.docbox table{border-collapse:collapse;width:100%;background:#fff}.docbox td,.docbox th{border:1px solid #cbd5e1;padding:5px}
+.ssheet{background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:14px;color:#0f172a}
+.toast{position:fixed;top:62px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.92);color:#fff;padding:8px 15px;border-radius:99px;font-size:13px;z-index:200;display:none}
+.hidden{display:none!important}.priv{background:#fffbeb;border:1px dashed #f59e0b;padding:8px;border-radius:8px;font-size:12px}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<header class="hdr">
+  <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;">
+    <button id="btn-back" class="btn bo bsm hidden" onclick="goHome()">← 返回</button>
+    <span id="hdr-title">🏠 房源管理</span>
+  </div>
+  <button class="btn bo bsm" onclick="openDocTesterModal()">📎 附件预览</button>
+</header>
+<main id="main-content" class="wrap"></main>
+<nav class="bnav">
+  <div class="ni act" id="nav-home" onclick="goHome()">🏘️<br>房源首页</div>
+  <div class="ni" id="nav-stats" onclick="renderStatsView()">📊<br>收支统计</div>
+  <div class="ni" id="nav-masters" onclick="renderMastersView()">👷<br>师傅</div>
+  <div class="ni" id="nav-backup" onclick="renderBackupView()">💾<br>提醒</div>
+</nav>
+<div id="modal-backdrop" class="mbk" onclick="if(event.target===this)closeModal()"><div class="mpnl" id="modal-panel"></div></div>
+
+<!-- VENDOR_XLSX -->
+<!-- VENDOR_MAMMOTH -->
+<!-- VENDOR_PDFJS -->
+<!-- VENDOR_PDFWORKER -->
+<!-- VENDOR_HEIC2ANY -->
+
+<script>
+const DB_KEY='FY_APP_V3';
+const TPL={'客厅':['防盗门锁','客厅空调','沙发','茶几','电视','窗帘','照明插座','墙面地板'],'卧室':['卧室门锁','卧室空调','床及床垫','衣柜','书桌椅','窗帘','照明插座','墙面地板'],'厨房':['燃气灶','抽油烟机','热水器','冰箱','橱柜台面','水槽龙头','燃气表阀门'],'卫生间':['马桶','淋浴花洒','浴室柜洗手盆','浴霸排风扇','洗衣机','地漏下水'],'整套':['水电总闸','钥匙门禁卡','网络光猫','阳台晾衣架','窗户纱窗']};
+let STATE={lastBackupAt:null,settings:{contractRemindDays:30,rentRemindDays:5,dailyNotifyTime:'09:00'},properties:[],masters:[{id:'m1',category:'水电',name:'王师傅水电',phone:'13900001111',note:'随叫随到'}]};
+let VIEW={name:'home',propId:null,tab:'rooms'};
+try{const s=localStorage.getItem(DB_KEY);if(s)STATE=JSON.parse(s)}catch(e){}
+function save(){try{localStorage.setItem(DB_KEY,JSON.stringify(STATE))}catch(e){}scheduleNotify()}
+const uid=(p='id')=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const today=()=>new Date().toISOString().slice(0,10);
+const nowDT=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
+const esc=s=>s==null?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function toast(m){const e=document.getElementById('toast');e.textContent=m;e.style.display='block';clearTimeout(window._tt);window._tt=setTimeout(()=>e.style.display='none',2200)}
+function addMonths(ds,m){const[y,mo,d]=ds.split('-').map(Number),dt=new Date(y,mo-1+m,d);if(dt.getDate()!==d)dt.setDate(0);const p=n=>String(n).padStart(2,'0');return `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}`}
+function addDays(ds,days){const[y,m,d]=ds.split('-').map(Number),dt=new Date(y,m-1,d+days),p=n=>String(n).padStart(2,'0');return `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}`}
+
+const readDataUrl=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('读取失败'));r.readAsDataURL(b)});
+const findSOI=(b,o=0)=>{for(let i=o;i<b.length-2;i++)if(b[i]===0xFF&&b[i+1]===0xD8&&b[i+2]===0xFF)return i;return -1};
+function compressImg(blob,max=1200,q=.8){return new Promise(async(res,rej)=>{try{const u=await readDataUrl(blob),im=new Image();im.onload=()=>{if(!im.width)return rej(new Error('尺寸为0'));let w=im.width,h=im.height;if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max}else{w=Math.round(w*max/h);h=max}}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);res(c.toDataURL('image/jpeg',q))};im.onerror=()=>rej(new Error('像素流损坏'));im.src=u}catch(e){rej(e)}})}
+
+async function processUploadedFile(file){
+  const name=file.name||'文件',ext=name.toLowerCase().split('.').pop();
+  if(file.type.startsWith('video/')||['mp4','mov','webm'].includes(ext))return{id:uid('m'),name,kind:'video',mime:file.type||'video/mp4',dataUrl:await readDataUrl(file),status:'ok'};
+  if(['pdf','docx','xlsx','xls','csv','txt'].includes(ext))return{id:uid('d'),name,kind:'doc',ext,mime:file.type||'application/octet-stream',dataUrl:await readDataUrl(file),status:'ok'};
+  try{
+    let blob=file,heic=false;
+    const hdr=String.fromCharCode(...new Uint8Array(await file.slice(0,24).arrayBuffer()));
+    if(['heic','heif'].includes(ext)||hdr.includes('ftypheic')||hdr.includes('ftypmif1')){
+      heic=true;
+      if(typeof window.heic2any==='function'){
+        try{const o=await window.heic2any({blob:file,toType:'image/jpeg',quality:.85});blob=Array.isArray(o)?o[0]:o}
+        catch(e){const fb=new Uint8Array(await file.arrayBuffer()),s=findSOI(fb,12);if(s>0)blob=new Blob([fb.slice(s)],{type:'image/jpeg'});else throw e}
+      }else{const fb=new Uint8Array(await file.arrayBuffer()),s=findSOI(fb,12);if(s>0)blob=new Blob([fb.slice(s)],{type:'image/jpeg'});else throw new Error('HEIC解码器未就绪')}
+    }
+    return{id:uid('i'),name:heic?name.replace(/\.(heic|heif)$/i,'.jpg'):name,kind:'image',mime:'image/jpeg',dataUrl:await compressImg(blob),convertedFromHeic:heic,status:'ok'};
+  }catch(err){
+    try{const fb=new Uint8Array(await file.arrayBuffer()),s=findSOI(fb,0);if(s>=0){const fix=new Uint8Array([...fb.slice(s),0xFF,0xD9]);return{id:uid('i'),name,kind:'image',mime:'image/jpeg',dataUrl:await compressImg(new Blob([fix],{type:'image/jpeg'})),status:'ok'}}}catch(e){}
+    return{id:uid('i'),name,kind:'image',mime:'image/jpeg',dataUrl:'',status:'broken',errorReason:`文件损坏无法解码（${name}，${err.message}）`};
+  }
+}
+
+async function openAttachmentViewer(m){
+  if(m.status==='broken')return openModal('⚠️ 照片无法显示',`<div class="card" style="background:var(--db);color:var(--d)">${esc(m.errorReason)}</div><button class="btn bp blk" onclick="closeModal()">关闭</button>`);
+  if(m.kind==='image')return openModal(m.name,`<img src="${m.dataUrl}" style="max-width:100%;border-radius:9px">${m.convertedFromHeic?'<div style="color:var(--s);font-size:12px;margin-top:6px">✓ 已自动从 HEIC 转为标准 JPG</div>':''}`);
+  if(m.kind==='video'){window._curM=m;return openModal(m.name,`<video src="${m.dataUrl}" controls style="width:100%;border-radius:9px"></video><button class="btn bo blk" style="margin-top:8px" onclick="openExt()">📤 导出/其他软件打开</button>`)}
+  window._curM=m;
+  openModal('📄 '+m.name,`<div id="doc-render-area" class="docbox">解析中...</div><button class="btn bp blk" style="margin-top:10px" onclick="openExt()">📤 用手机上的其他软件打开 / 发送</button>`);
+  const area=document.getElementById('doc-render-area'),bin=atob(m.dataUrl.split(',')[1]),ab=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)ab[i]=bin.charCodeAt(i);
+  const ext=(m.ext||m.name.split('.').pop()).toLowerCase();
+  try{
+    if(ext==='txt'||ext==='csv'){const t=new TextDecoder().decode(ab);area.innerHTML=ext==='csv'?'<table>'+t.trim().split(/\r?\n/).map((r,i)=>'<tr>'+r.split(',').map(c=>i===0?`<th>${esc(c)}</th>`:`<td>${esc(c)}</td>`).join('')+'</tr>').join('')+'</table>':`<pre style="white-space:pre-wrap">${esc(t)}</pre>`}
+    else if(ext==='xlsx'||ext==='xls'){const wb=window.XLSX.read(ab.buffer,{type:'array'});area.innerHTML=wb.SheetNames.map(n=>`<b>${esc(n)}</b>`+window.XLSX.utils.sheet_to_html(wb.Sheets[n])).join('')}
+    else if(ext==='docx'){const r=await window.mammoth.convertToHtml({arrayBuffer:ab.buffer});area.innerHTML=r.value}
+    else if(ext==='pdf'){
+      if(window.__PDF_WORKER_B64__&&!window.pdfjsLib.GlobalWorkerOptions.workerSrc)window.pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([atob(window.__PDF_WORKER_B64__)],{type:'application/javascript'}));
+      const pdf=await window.pdfjsLib.getDocument({data:ab.buffer}).promise;let cp=1,tp=pdf.numPages;
+      area.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:6px"><button class="btn bo bsm" id="pdf-prev">上一页</button><span id="pdf-page-info">第 1 / ${tp} 页</span><button class="btn bo bsm" id="pdf-next">下一页</button></div><canvas id="pdf-c" style="max-width:100%;border:1px solid #cbd5e1"></canvas>`;
+      const draw=async n=>{const pg=await pdf.getPage(n),vp=pg.getViewport({scale:1.2}),c=document.getElementById('pdf-c');c.height=vp.height;c.width=vp.width;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;document.getElementById('pdf-page-info').textContent=`第 ${n} / ${tp} 页`};
+      document.getElementById('pdf-prev').onclick=()=>{if(cp>1)draw(--cp)};document.getElementById('pdf-next').onclick=()=>{if(cp<tp)draw(++cp)};await draw(1);
+    }
+  }catch(e){area.innerHTML=`<span style="color:var(--d)">解析失败：${esc(e.message)}</span>`}
+}
+function openExt(){const m=window._curM;if(!m)return;const a=document.createElement('a');a.href=m.dataUrl;a.download=m.name;a.click();toast('已导出文件')}
+
+function genBills(prop,lease,fromD=null,keepPaid=true){
+  prop.bills=prop.bills||[];const cut=fromD||lease.startDate;
+  if(keepPaid)prop.bills=prop.bills.filter(b=>!(b.leaseId===lease.id&&b.type==='rent'&&!b.voided&&b.paidAmount===0&&b.dueDate>=cut));
+  else prop.bills=prop.bills.filter(b=>!(b.leaseId===lease.id&&b.type==='rent'));
+  if(!prop.bills.some(b=>b.leaseId===lease.id&&b.type==='deposit'&&!b.voided)&&Number(lease.deposit)>0){
+    prop.bills.push({id:uid('b'),leaseId:lease.id,tenantName:lease.tenantName,type:'deposit',title:`租房押金（${lease.payType}）`,periodStart:lease.startDate,periodEnd:lease.endDate,dueDate:lease.startDate,amount:Number(lease.deposit),paidAmount:0,voided:false,note:'退房结算核退'});
+  }
+  const step={'押一付一':1,'押一付三':3,'押二付三':3,'押一付六':6,'押一付十二':12}[lease.payType]||Math.max(1,Number(lease.customPayMonths||1));
+  const mTot=Number(lease.rent||0)+Number(lease.fixedFee||0);let cur=lease.startDate,idx=1;
+  while(cur<lease.endDate&&idx<=120){
+    let nxt=addMonths(cur,step),am=step;
+    if(nxt>lease.endDate){am=+(Math.max(1,Math.round((new Date(lease.endDate)-new Date(cur))/86400000))/30).toFixed(2);nxt=lease.endDate}
+    const due=idx===1?cur:addDays(cur,-Number(lease.advanceDays||0));
+    if((due>=cut||!keepPaid)&&!prop.bills.some(b=>b.leaseId===lease.id&&b.type==='rent'&&!b.voided&&b.periodStart===cur)){
+      prop.bills.push({id:uid('b'),leaseId:lease.id,tenantName:lease.tenantName,type:'rent',title:`第${idx}期房租${Number(lease.fixedFee)>0?'+固定杂费':''}（${cur}~${nxt}）`,periodStart:cur,periodEnd:nxt,dueDate:due,amount:Math.round(mTot*am*100)/100,paidAmount:0,voided:false,note:''});
+    }
+    cur=nxt;idx++;
+  }
+  reallocPay(prop);
+}
+function reallocPay(prop){
+  prop.bills=(prop.bills||[]);prop.payments=(prop.payments||[]);
+  prop.bills.forEach(b=>b.paidAmount=0);
+  const act=prop.bills.filter(b=>!b.voided).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
+  let rem=Math.round(prop.payments.reduce((s,p)=>s+Number(p.amount||0),0)*100)/100;
+  for(const b of act){if(rem<=0)break;const al=Math.min(b.amount,rem);b.paidAmount=Math.round(al*100)/100;rem=Math.round((rem-al)*100)/100}
+  prop.unallocatedCredit=rem;
+}
+
+function computeTodos(){
+  const td=[],t=today(),tObj=new Date(t);
+  STATE.properties.forEach(p=>{
+    (p.bills||[]).filter(b=>!b.voided&&(b.amount-b.paidAmount)>0.01).forEach(b=>{
+      const df=Math.ceil((new Date(b.dueDate)-tObj)/86400000),up=(b.amount-b.paidAmount).toFixed(0);
+      if(df<0)td.push({badge:'🔴 逾期账单',text:`${p.name} · ${b.title} 欠¥${up}`,date:b.dueDate,propId:p.id,tab:'finance'});
+      else if(df<=STATE.settings.rentRemindDays)td.push({badge:'🔵 待收账单',text:`${p.name} · ${b.title} 应收¥${up}`,date:b.dueDate,propId:p.id,tab:'finance'});
+    });
+    if(p.status==='已出租'&&p.currentLease?.endDate){
+      const df=Math.ceil((new Date(p.currentLease.endDate)-tObj)/86400000);
+      if(df<=STATE.settings.contractRemindDays)td.push({badge:'🟣 合同快到期',text:`${p.name}(${p.currentLease.tenantName}) 剩${df}天`,date:p.currentLease.endDate,propId:p.id,tab:'lease'});
+    }
+    if(p.status==='已出租'&&p.utilityConfig?.mode==='房东代收'){
+      const st={'每月':1,'每季度':3,'每半年':6,'每年':12}[p.utilityConfig.cycle]||1;
+      const nd=addMonths(p.utilityConfig.lastReadDate||p.currentLease.startDate,st);
+      if(nd<=t)td.push({badge:'🟡 该抄表了',text:`${p.name} 已到抄表周期`,date:nd,propId:p.id,tab:'finance'});
+    }
+    (p.workOrders||[]).filter(w=>w.status==='待维修').forEach(w=>td.push({badge:'🟠 待维修',text:`${p.name} · ${w.itemName}：${w.desc}`,date:w.date,propId:p.id,tab:'workorders'}));
+  });
+  if(STATE.properties.length>0&&(!STATE.lastBackupAt||Math.floor((tObj-new Date(STATE.lastBackupAt))/86400000)>=7))td.push({badge:'🔵 备份提醒',text:'超7天未备份，请及时导出防丢',date:t,act:'backup'});
+  return td;
+}
+function setNav(id){document.querySelectorAll('.ni').forEach(e=>e.classList.remove('act'));document.getElementById(id)?.classList.add('act')}
+function goHome(){VIEW={name:'home'};document.getElementById('btn-back').classList.add('hidden');document.getElementById('hdr-title').textContent='🏠 房源管理';setNav('nav-home');renderHome()}
+
+function renderHome(q=''){
+  const ym=today().slice(0,7);let mPaid=0,mDue=0,ovDue=0;
+  STATE.properties.forEach(p=>{
+    (p.payments||[]).forEach(x=>{if((x.date||'').startsWith(ym))mPaid+=Number(x.amount||0)});
+    (p.bills||[]).filter(b=>!b.voided).forEach(b=>{if((b.dueDate||'').startsWith(ym))mDue+=Number(b.amount||0);if(b.dueDate<today()&&b.amount>b.paidAmount)ovDue+=(b.amount-b.paidAmount)});
+  });
+  const tds=computeTodos(),rented=STATE.properties.filter(p=>p.status==='已出租').length;
+  let h=`<div class="ov"><div class="ov-item"><small>本月已收</small><b>¥${mPaid.toFixed(0)}</b></div><div class="ov-item"><small>本月应收</small><b>¥${mDue.toFixed(0)}</b></div><div class="ov-item"><small>目前欠款</small><b>¥${ovDue.toFixed(0)}</b></div><div class="ov-item"><small>在租/总套数</small><b>${rented}/${STATE.properties.length}</b></div></div>
+  <div class="qg"><div class="qb" id="quick-add-prop" onclick="openCreateProp()">➕<br>新建房源</div><div class="qb" onclick="renderStatsView()">📊<br>统计</div><div class="qb" onclick="renderMastersView()">👷<br>师傅</div><div class="qb" onclick="renderBackupView()">⏰<br>提醒</div></div>
+  <input class="inp" placeholder="🔍 搜索：房源、物品、租客、工单、师傅..." value="${esc(q)}" oninput="renderHome(this.value)" />`;
+  if(q.trim()){
+    const kw=q.trim().toLowerCase(),hits=[];
+    STATE.properties.forEach(p=>{
+      if((p.name+p.address+p.layout).toLowerCase().includes(kw))hits.push({t:'🏠 房源',n:p.name,s:p.address,fn:`openProp('${p.id}','info')`});
+      (p.rooms||[]).forEach(r=>r.items.forEach(i=>{if((i.name+i.desc).toLowerCase().includes(kw))hits.push({t:'🛋️ 物品',n:`${p.name}·${r.name}-${i.name}`,s:i.status,fn:`openProp('${p.id}','rooms')`})}));
+      if(p.currentLease&&(p.currentLease.tenantName+p.currentLease.phone).toLowerCase().includes(kw))hits.push({t:'👤 租客',n:p.currentLease.tenantName,s:p.name,fn:`openProp('${p.id}','lease')`});
+      (p.workOrders||[]).forEach(w=>{if((w.itemName+w.desc).toLowerCase().includes(kw))hits.push({t:'🔧 工单',n:`${p.name}·${w.itemName}`,s:w.desc,fn:`openProp('${p.id}','workorders')`})});
+    });
+    (STATE.masters||[]).forEach(m=>{if((m.name+m.category+m.phone).toLowerCase().includes(kw))hits.push({t:'👷 师傅',n:m.name,s:m.phone,fn:`renderMastersView()`})});
+    return document.getElementById('main-content').innerHTML=h+`<div class="card"><div class="ct">搜索结果 (${hits.length})</div>${hits.map(x=>`<div class="todo" onclick="${x.fn}"><div><b>${x.t}</b> ${esc(x.n)} <small style="color:var(--g6)">${esc(x.s)}</small></div><span>›</span></div>`).join('')||'无匹配'}</div>`;
+  }
+  h+=`<div class="card"><div class="ct"><span>📌 要处理的事</span><small>${tds.length}项</small></div>${tds.length?tds.map(t=>`<div class="todo" onclick="${t.act==='backup'?'renderBackupView()':`openProp('${t.propId}','${t.tab}')`}"><div><b>${t.badge}</b> ${esc(t.text)}</div><small>${t.date} ›</small></div>`).join(''):'<div style="font-size:12px;color:var(--g4);text-align:center">暂无待办 🎉</div>'}</div>`;
+  if(!STATE.properties.length){
+    h+=`<div class="card" style="border:1.5px dashed var(--p);background:var(--pl)"><div class="ct" style="color:var(--p)">👋 怎么开始用</div><div style="font-size:13px">1. 点上方「➕ 新建房源」，支持默认房间模板快速建档。<br>2. 核对房间物品现状并拍照留底。<br>3. 办理入住自动出账单；退房自动对比变化、精算押金并把遗留问题带给下一任。</div><button class="btn bp blk" style="margin-top:10px" onclick="openCreateProp()">立即新建第一套房源</button></div>`;
+  }else{
+    STATE.properties.forEach(p=>{
+      const stCls={'已出租':'st-ok','维修中':'st-ma','待出租':'st-re'}[p.status]||'st-va';
+      const plCls={'已出租':'p-ok','维修中':'p-ma','待出租':'p-re'}[p.status]||'p-va';
+      const cov=(p.media||[]).find(m=>m.kind==='image'&&m.status==='ok');
+      const pw=(p.workOrders||[]).filter(w=>w.status==='待维修').length;
+      h+=`<div class="pcard" onclick="openProp('${p.id}','rooms')"><div class="stripe ${stCls}"></div><div class="pcov">${cov?`<img src="${cov.dataUrl}">`:'🏠'}</div><div style="padding:10px;flex:1"><div style="display:flex;justify-content:space-between"><b>${esc(p.name)}</b><span class="pill ${plCls}">${p.status}</span></div><div style="font-size:12px;color:var(--g6);margin:4px 0">${esc(p.layout||'')} ${p.area?p.area+'㎡':''} · ${esc(p.address||'')}</div><div style="font-size:12px">${p.currentLease?`租客：<b>${esc(p.currentLease.tenantName)}</b> · 到期 ${p.currentLease.endDate}`:'当前空置'} · 待维修 ${pw}</div></div></div>`;
+    });
+  }
+  document.getElementById('main-content').innerHTML=h;
+}
+
+function openCreateProp(){
+  const opts=STATE.properties.map(p=>`<option value="${p.id}">复制：${esc(p.name)}</option>`).join('');
+  openModal('➕ 新建房源',`<select id="np-m" class="inp"><option value="tpl">使用默认房间模板（客厅/卧室/厨房/卫生间/整套）</option><option value="blk">空白房源</option>${opts}</select>
+  <input id="new-prop-name" class="inp" placeholder="房源名称 *（如：阳光海岸 101 室）"><input id="np-a" class="inp" placeholder="详细地址">
+  <div class="row2"><input id="np-l" class="inp" placeholder="户型"><input id="np-ar" type="number" class="inp" placeholder="面积(㎡)"></div>
+  <button class="btn bp blk" id="btn-save-new-prop" onclick="saveNewProp()">保存创建</button>`);
+}
+function saveNewProp(){
+  const name=document.getElementById('new-prop-name').value.trim();if(!name)return toast('请填房源名称');
+  const mode=document.getElementById('np-m').value;let rooms=[];
+  if(mode==='tpl')rooms=Object.keys(TPL).map(rn=>({id:uid('r'),name:rn,items:TPL[rn].map(inm=>({id:uid('i'),name:inm,status:'完好',desc:'',photo:null,history:[]}))}));
+  else if(mode!=='blk'){const src=STATE.properties.find(x=>x.id===mode);if(src)rooms=JSON.parse(JSON.stringify(src.rooms))}
+  const p={id:uid('p'),name,address:document.getElementById('np-a').value.trim(),layout:document.getElementById('np-l').value.trim(),area:document.getElementById('np-ar').value,status:'空置',createdAt:today(),publicIntro:'',privateNote:'',media:[],rooms,currentLease:null,leaseHistory:[],workOrders:[],renovations:[],utilityConfig:{mode:'房东代收',cycle:'每月',elecPrice:.65,waterPrice:3.8,gasPrice:2.8,lastElec:0,lastWater:0,lastGas:0,lastReadDate:today()},bills:[],payments:[],unallocatedCredit:0,depositSettlements:[],landlordExpenses:[]};
+  STATE.properties.unshift(p);save();closeModal();openProp(p.id,'rooms');
+}
+
+function openProp(id,tab='rooms'){VIEW={name:'detail',propId:id,tab};document.getElementById('btn-back').classList.remove('hidden');renderProp()}
+function renderProp(){
+  const p=STATE.properties.find(x=>x.id===VIEW.propId);if(!p)return goHome();
+  document.getElementById('hdr-title').textContent=p.name;
+  let h=`<div class="card" style="padding:9px;display:flex;gap:5px;flex-wrap:wrap;justify-content:space-between;align-items:center">
+    <select style="width:auto;margin:0;padding:4px 8px" onchange="STATE.properties.find(x=>x.id==='${p.id}').status=this.value;save();renderProp()">${['空置','待出租','已出租','维修中'].map(s=>`<option value="${s}" ${p.status===s?'selected':''}>${s}</option>`).join('')}</select>
+    <div style="display:flex;gap:5px">
+      <button class="btn bu bsm" onclick="openShareGen('${p.id}')">🖼️ 分享图</button>
+      ${p.status!=='已出租'?`<button class="btn bs bsm" id="btn-start-checkin" onclick="openCheckIn('${p.id}')">🔑 入住交接</button>`:`<button class="btn bw bsm" onclick="openRenew('${p.id}')">🔄 续租</button><button class="btn bd bsm" id="btn-start-checkout" onclick="openCheckOut('${p.id}')">📦 退房交接</button>`}
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tbtn ${VIEW.tab==='rooms'?'act':''}" onclick="VIEW.tab='rooms';renderProp()">🛋️ 房间物品</button>
+    <button class="tbtn ${VIEW.tab==='finance'?'act':''}" id="tab-finance" onclick="VIEW.tab='finance';renderProp()">💰 账单水电</button>
+    <button class="tbtn ${VIEW.tab==='lease'?'act':''}" onclick="VIEW.tab='lease';renderProp()">📝 租期档案</button>
+    <button class="tbtn ${VIEW.tab==='workorders'?'act':''}" onclick="VIEW.tab='workorders';renderProp()">🔧 维修(${(p.workOrders||[]).length})</button>
+    <button class="tbtn ${VIEW.tab==='timeline'?'act':''}" onclick="VIEW.tab='timeline';renderProp()">⏳ 装修</button>
+    <button class="tbtn ${VIEW.tab==='info'?'act':''}" onclick="VIEW.tab='info';renderProp()">📋 档案</button>
+  </div>`;
+  if(VIEW.tab==='rooms'){
+    h+=`<div style="text-align:right;margin-bottom:8px"><button class="btn bp bsm" onclick="addRoom('${p.id}')">＋ 添加房间</button></div>`;
+    (p.rooms||[]).forEach(r=>{
+      h+=`<div class="rbox"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b>${esc(r.name)}</b><div><button class="btn bo bsm" style="color:var(--d)" onclick="delRoom('${p.id}','${r.id}')">删</button></div></div>`;
+      r.items.forEach(it=>{
+        const pc=it.status==='完好'?'p-ok':(it.status==='待维修'?'p-da':'p-ma');
+        h+=`<div class="irow"><div onclick="editItem('${p.id}','${r.id}','${it.id}')" style="flex:1;cursor:pointer"><b>${esc(it.name)}</b> <span class="pill ${pc}">${it.status}</span><div style="font-size:12px;color:var(--g6)">${esc(it.desc||'')}</div></div><button class="btn bo bsm" onclick="editItem('${p.id}','${r.id}','${it.id}')">编辑</button></div>`;
+      });
+      h+=`<button class="btn bo bsm blk" onclick="batchAddItems('${p.id}','${r.id}')">＋ 物品（支持逗号或空格一次加多个）</button></div>`;
+    });
+  }else if(VIEW.tab==='finance'){
+    const u=p.utilityConfig;
+    h+=`<div class="card" style="background:var(--g5)"><div class="ct"><span>💰 账务操作（预存 ¥${(p.unallocatedCredit||0).toFixed(2)}）</span></div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn bs bsm" onclick="openPayModal('${p.id}')">💵 记收款</button>
+        <button class="btn bp bsm" onclick="openAdhocModal('${p.id}')">＋ 加费用</button>
+        <button class="btn bw bsm" onclick="openMeterModal('${p.id}')">⚡ 抄表/换表</button>
+        <button class="btn bo bsm" onclick="openExpModal('${p.id}')">🧾 房东支出</button>
+      </div></div>
+      <div class="card"><div class="ct"><span>⚡ 水电燃气（${u.mode} · ${u.cycle}）</span><button class="btn bo bsm" onclick="cfgUtil('${p.id}')">设置</button></div><small>电¥${u.elecPrice} · 水¥${u.waterPrice} · 气¥${u.gasPrice} ｜ 表底：电${u.lastElec} 水${u.lastWater} 气${u.lastGas}</small></div>
+      <div class="card"><div class="ct">📑 账单明细</div>${(p.bills||[]).sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).map(b=>{
+        const up=Math.max(0,+(b.amount-b.paidAmount).toFixed(2));
+        return `<div class="irow" onclick="editBill('${p.id}','${b.id}')"><div><b>${esc(b.title)}</b><div style="font-size:11px;color:var(--g6)">应收日 ${b.dueDate} · 总额¥${b.amount} 已抵¥${b.paidAmount}</div></div><span class="pill ${up<=0&&!b.voided?'p-ok':'p-ma'}">${b.voided?'已作废':(up<=0?'已收齐':'欠¥'+up)}</span></div>`;
+      }).join('')||'暂无账单'}</div>`;
+  }else if(VIEW.tab==='lease'){
+    if(p.currentLease){
+      const l=p.currentLease;
+      h+=`<div class="card"><div class="ct"><span>👤 在租：${esc(l.tenantName)}</span><span class="pill p-ok">${l.payType}</span></div><div style="font-size:13px">租期：${l.startDate} ~ ${l.endDate} · 月租 ¥${l.rent} · 押金 ¥${l.deposit}</div><div class="priv" style="margin-top:6px">🔒 私人备注：${esc(l.privateNote||'无')}</div></div>`;
+    }else{
+      const inh=[];(p.rooms||[]).forEach(r=>r.items.forEach(i=>{if(i.status!=='完好')inh.push(`${r.name}·${i.name}(${i.status})`)}));
+      h+=`<div class="card"><div class="ct">空置待入住底单</div><div style="font-size:12px;color:var(--d)">${inh.length?'下一任自动继承遗留问题：'+inh.join('、'):'✓ 全屋完好无遗留'}</div></div>`;
+    }
+    h+=`<div class="card"><div class="ct">📁 历史退租归档</div>${(p.leaseHistory||[]).filter(x=>x.type==='checkout').map(x=>`<div style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--g2)"><b>${esc(x.tenantName)}</b> (${x.startDate}~${x.checkoutDate})</div>`).join('')||'暂无'}</div>`;
+  }else if(VIEW.tab==='workorders'){
+    h+=`<div style="text-align:right;margin-bottom:8px"><button class="btn bp bsm" onclick="openWoModal('${p.id}')">＋ 新建工单</button></div>`;
+    h+=(p.workOrders||[]).map(w=>`<div class="card"><div class="ct"><span>🔧 ${esc(w.itemName)}</span><span class="pill p-ma">${w.status}</span></div><div style="font-size:13px">${esc(w.desc)}</div><small>费用¥${w.cost}（${w.payer}${w.payer==='分摊'?'，租客出¥'+w.tenantShare:''}）</small></div>`).join('')||'<div class="card">暂无工单</div>';
+  }else if(VIEW.tab==='timeline'){
+    h+=`<div style="text-align:right;margin-bottom:8px"><button class="btn bp bsm" onclick="openRenoModal('${p.id}')">＋ 记装修</button></div><div class="card">${(p.renovations||[]).map(r=>`<div style="padding:6px 0;border-bottom:1px solid var(--g2)"><b>${r.date}</b> 🔨 ${esc(r.content)} (¥${r.cost})</div>`).join('')||'暂无记录'}</div>`;
+  }else if(VIEW.tab==='info'){
+    h+=`<div class="card"><div class="ct">介绍与私人备注</div><textarea id="info-public" class="inp" rows="2" placeholder="房源介绍">${esc(p.publicIntro||'')}</textarea><textarea id="info-private" class="inp" rows="2" placeholder="私人备注">${esc(p.privateNote||'')}</textarea><button class="btn bp bsm" onclick="const p=STATE.properties.find(x=>x.id==='${p.id}');p.publicIntro=document.getElementById('info-public').value;p.privateNote=document.getElementById('info-private').value;save();toast('已保存')">保存</button></div>`;
+  }
+  document.getElementById('main-content').innerHTML=h;
+}
+
+function delRoom(pid,rid){const p=STATE.properties.find(x=>x.id===pid);p.rooms=p.rooms.filter(r=>r.id!==rid);save();renderProp()}
+function addRoom(pid){openModal('＋ 添加房间',`<select id="ar-t" class="inp"><option value="客厅">客厅</option><option value="卧室">卧室</option><option value="厨房">厨房</option><option value="卫生间">卫生间</option><option value="空房间">空房间</option></select><input id="ar-n" class="inp" placeholder="显示名称"><button class="btn bp blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),t=document.getElementById('ar-t').value,n=document.getElementById('ar-n').value.trim()||t;p.rooms.push({id:uid('r'),name:n,items:(TPL[t]||[]).map(x=>({id:uid('i'),name:x,status:'完好',desc:'',history:[]}))});save();closeModal();renderProp()">确定</button>`)}
+function batchAddItems(pid,rid){openModal('＋ 批量加物品',`<input id="batch-items-input" class="inp" placeholder="逗号或空格隔开多个"><button class="btn bp blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),r=p.rooms.find(x=>x.id==='${rid}');document.getElementById('batch-items-input').value.split(/[,，\\s]+/).filter(Boolean).forEach(n=>r.items.push({id:uid('i'),name:n,status:'完好',desc:'',history:[]}));save();closeModal();renderProp()">确认添加</button>`)}
+function editItem(pid,rid,iid){const p=STATE.properties.find(x=>x.id===pid),it=p.rooms.find(r=>r.id===rid).items.find(i=>i.id===iid);openModal('编辑：'+it.name,`<select id="ei-s" class="inp"><option value="完好" ${it.status==='完好'?'selected':''}>完好</option><option value="待维修" ${it.status==='待维修'?'selected':''}>待维修</option><option value="暂不维修" ${it.status==='暂不维修'?'selected':''}>暂不维修</option></select><input id="ei-d" class="inp" value="${esc(it.desc||'')}" placeholder="现状描述"><button class="btn bp blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),it=p.rooms.find(r=>r.id==='${rid}').items.find(i=>i.id==='${iid}');it.status=document.getElementById('ei-s').value;it.desc=document.getElementById('ei-d').value.trim();save();closeModal();renderProp()">保存</button>`)}
+function openCheckIn(pid){openModal('🔑 办理入住交接',`<div class="row2"><input id="ci-name" class="inp" placeholder="租客姓名 *"><input id="ci-phone" class="inp" placeholder="电话"></div><div class="row2"><input type="date" id="ci-start" class="inp" value="${today()}"><input type="date" id="ci-end" class="inp"></div><div class="row2"><input type="number" id="ci-rent" class="inp" placeholder="月租金 *"><input type="number" id="ci-deposit" class="inp" placeholder="押金"></div><select id="ci-pay-type" class="inp"><option value="押一付三">押一付三</option><option value="押一付一">押一付一</option><option value="押二付三">押二付三</option><option value="押一付六">押一付六</option><option value="押一付十二">押一付十二</option></select><button class="btn bs blk" id="btn-confirm-checkin" onclick="doCheckIn('${pid}')">确认入住并生成账单</button>`)}
+function doCheckIn(pid){const p=STATE.properties.find(x=>x.id===pid),nm=document.getElementById('ci-name').value.trim(),sd=document.getElementById('ci-start').value,ed=document.getElementById('ci-end').value;if(!nm||!sd||!ed)return toast('请填姓名和起止日期');p.currentLease={id:uid('l'),tenantName:nm,phone:document.getElementById('ci-phone').value,startDate:sd,endDate:ed,rent:Number(document.getElementById('ci-rent').value||0),deposit:Number(document.getElementById('ci-deposit').value||0),payType:document.getElementById('ci-pay-type').value,advanceDays:5,fixedFee:0,metersIn:{elec:p.utilityConfig.lastElec,water:p.utilityConfig.lastWater,gas:p.utilityConfig.lastGas},privateNote:''};p.status='已出租';genBills(p,p.currentLease,sd,false);save();closeModal();renderProp()}
+function openRenew(pid){const p=STATE.properties.find(x=>x.id===pid),l=p.currentLease;openModal('🔄 续租',`<input type="date" id="rn-e" class="inp" value="${l.endDate}"><input type="number" id="rn-r" class="inp" value="${l.rent}"><button class="btn bp blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}');p.currentLease.endDate=document.getElementById('rn-e').value;p.currentLease.rent=Number(document.getElementById('rn-r').value);genBills(p,p.currentLease,today(),true);save();closeModal();renderProp()">确认续租</button>`)}
+function openCheckOut(pid){const p=STATE.properties.find(x=>x.id===pid),u=p.utilityConfig;openModal('📦 退房交接',`<input type="date" id="co-date" class="inp" value="${today()}"><div class="row2"><input type="number" id="co-elec" class="inp" value="${u.lastElec}"><input type="number" id="co-water" class="inp" value="${u.lastWater}"></div><button class="btn bd blk" id="btn-confirm-checkout" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),l=p.currentLease,cd=document.getElementById('co-date').value;(p.bills||[]).forEach(b=>{if(!b.voided&&b.leaseId===l.id&&((b.type==='rent'&&b.periodStart>=cd)||b.type==='deposit'))b.voided=true});p.leaseHistory.push({...l,type:'checkout',checkoutDate:cd});p.currentLease=null;p.status='空置';save();closeModal();renderProp()">确认退房并存档</button>`)}
+function openPayModal(pid){openModal('💵 记收款',`<input type="date" id="py-d" class="inp" value="${today()}"><input type="number" id="pay-amount" class="inp" placeholder="金额 *"><button class="btn bs blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),a=Number(document.getElementById('pay-amount').value||0);if(a<=0)return;p.payments.push({id:uid('py'),date:document.getElementById('py-d').value,amount:a,method:'微信'});reallocPay(p);save();closeModal();renderProp()">确认入账</button>`)}
+function openAdhocModal(pid){openModal('＋ 加临时费用',`<input id="adhoc-title" class="inp" placeholder="费用名称 *"><input type="number" id="adhoc-amount" class="inp" placeholder="金额 *"><button class="btn bp blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),t=document.getElementById('adhoc-title').value,a=Number(document.getElementById('adhoc-amount').value||0);if(!t||a<=0)return;p.bills.push({id:uid('b'),type:'adhoc',title:t,dueDate:today(),amount:a,paidAmount:0,voided:false});reallocPay(p);save();closeModal();renderProp()">确认添加</button>`)}
+function editBill(pid,bid){const p=STATE.properties.find(x=>x.id===pid),b=p.bills.find(x=>x.id===bid);openModal('修改/作废账单',`<input type="number" id="eb-a" class="inp" value="${b.amount}"><div class="row2"><button class="btn bp" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),b=p.bills.find(x=>x.id==='${bid}');b.amount=Number(document.getElementById('eb-a').value);reallocPay(p);save();closeModal();renderProp()">保存金额</button><button class="btn bd" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),b=p.bills.find(x=>x.id==='${bid}');b.voided=!b.voided;reallocPay(p);save();closeModal();renderProp()">作废切换</button></div>`)}
+function cfgUtil(pid){const p=STATE.properties.find(x=>x.id===pid),u=p.utilityConfig;openModal('水电燃气设置',`<select id="uc-m" class="inp"><option value="房东代收" ${u.mode==='房东代收'?'selected':''}>房东代收</option><option value="租客自缴" ${u.mode==='租客自缴'?'selected':''}>租客自缴</option></select><div class="row2"><input type="number" step="0.01" id="uc-e" class="inp" value="${u.elecPrice}"><input type="number" step="0.01" id="uc-w" class="inp" value="${u.waterPrice}"></div><button class="btn bp blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}');Object.assign(p.utilityConfig,{mode:document.getElementById('uc-m').value,elecPrice:Number(document.getElementById('uc-e').value),waterPrice:Number(document.getElementById('uc-w').value)});save();closeModal();renderProp()">保存</button>`)}
+function openMeterModal(pid){const p=STATE.properties.find(x=>x.id===pid),u=p.utilityConfig;openModal('⚡ 抄表',`<label><input type="checkbox" id="mr-e-swap"> 本期换过电表</label><input type="number" id="mr-e-old-end" class="inp" placeholder="换表填旧表最后读数"><input type="number" id="mr-e-cur" class="inp" placeholder="本次电表读数（上次 ${u.lastElec}）"><button class="btn bp blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),u=p.utilityConfig,c=Number(document.getElementById('mr-e-cur').value||u.lastElec),sw=document.getElementById('mr-e-swap').checked,used=sw?(Math.max(0,Number(document.getElementById('mr-e-old-end').value||u.lastElec)-u.lastElec)+c):Math.max(0,c-u.lastElec),fee=+(used*u.elecPrice).toFixed(2);u.lastElec=c;u.lastReadDate=today();if(fee>0){p.bills.push({id:uid('b'),type:'utility',title:'水电费('+today()+')',dueDate:today(),amount:fee,paidAmount:0,voided:false});reallocPay(p)}save();closeModal();renderProp()">记入账单</button>`)}
+function openExpModal(pid){openModal('🧾 房东支出',`<input id="le-title" class="inp" placeholder="项目"><input type="number" id="le-amount" class="inp" placeholder="金额"><button class="btn bw blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}');p.landlordExpenses.push({id:uid('e'),date:today(),title:document.getElementById('le-title').value,amount:Number(document.getElementById('le-amount').value||0)});save();closeModal();renderProp()">保存</button>`)}
+function openWoModal(pid){const p=STATE.properties.find(x=>x.id===pid),opts=[];(p.rooms||[]).forEach(r=>r.items.forEach(i=>opts.push(`<option value="${r.id}::${i.id}">${esc(r.name)}·${esc(i.name)}</option>`)));openModal('🔧 新建工单',`<select id="wo-item" class="inp">${opts.join('')}</select><input id="wo-desc" class="inp" placeholder="问题描述 *"><div class="row2"><input type="number" id="wo-cost" class="inp" value="0"><select id="wo-payer" class="inp"><option value="房东">房东</option><option value="租客">租客</option><option value="分摊">分摊</option></select></div><button class="btn bp blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),[rid,iid]=document.getElementById('wo-item').value.split('::'),r=p.rooms.find(x=>x.id===rid),it=r.items.find(x=>x.id===iid),c=Number(document.getElementById('wo-cost').value||0),py=document.getElementById('wo-payer').value,ts=py==='分摊'?+(c/2).toFixed(2):(py==='租客'?c:0);p.workOrders.push({id:uid('w'),date:today(),itemName:r.name+'·'+it.name,desc:document.getElementById('wo-desc').value,cost:c,payer:py,tenantShare:ts,status:'待维修'});it.status='待维修';save();closeModal();renderProp()">保存</button>`)}
+function openRenoModal(pid){openModal('🔨 装修改造',`<input id="rn-c" class="inp" placeholder="装修内容"><input type="number" id="rn-cost" class="inp" placeholder="费用"><button class="btn bp blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}');p.renovations.push({id:uid('rn'),date:today(),content:document.getElementById('rn-c').value,cost:Number(document.getElementById('rn-cost').value||0)});save();closeModal();renderProp()">保存</button>`)}
+function openShareGen(pid){const p=STATE.properties.find(x=>x.id===pid);openModal('🖼️ 微信分享图片（已过滤隐私）',`<div class="ssheet"><b>🏠 ${esc(p.name)}</b><p>${esc(p.address)} · ${esc(p.layout)}</p><p>${esc(p.publicIntro||'')}</p><small>生成时间：${nowDT()}</small></div>`)}
+function renderStatsView(){VIEW={name:'stats'};document.getElementById('btn-back').classList.add('hidden');document.getElementById('hdr-title').textContent='📊 收支统计';setNav('nav-stats');const yr=today().slice(0,4);document.getElementById('main-content').innerHTML=`<div class="card"><div class="ct">📈 ${yr} 年度各房源收支</div>${STATE.properties.map(p=>{const inc=(p.payments||[]).filter(x=>x.date.startsWith(yr)).reduce((s,x)=>s+x.amount,0),exp=(p.workOrders||[]).filter(x=>x.date.startsWith(yr)).reduce((s,x)=>s+Math.max(0,x.cost-x.tenantShare),0)+(p.renovations||[]).filter(x=>x.date.startsWith(yr)).reduce((s,x)=>s+x.cost,0)+(p.landlordExpenses||[]).filter(x=>x.date.startsWith(yr)).reduce((s,x)=>s+x.amount,0);return `<div class="irow"><b>${esc(p.name)}</b><span>实收¥${inc} · 支出¥${exp} · <b>净¥${inc-exp}</b></span></div>`}).join('')||'暂无数据'}</div>`}
+function renderMastersView(){VIEW={name:'masters'};document.getElementById('btn-back').classList.add('hidden');document.getElementById('hdr-title').textContent='👷 师傅通讯录';setNav('nav-masters');document.getElementById('main-content').innerHTML=`<div style="text-align:right;margin-bottom:8px"><button class="btn bp bsm" onclick="openModal('＋ 师傅','<input id=mn class=inp placeholder=姓名><input id=mp class=inp placeholder=电话><button class=\\'btn bp blk\\' onclick=\\'STATE.masters.push({id:uid(),category:\"综合\",name:document.getElementById(\"mn\").value,phone:document.getElementById(\"mp\").value});save();closeModal();renderMastersView()\\'>保存</button>')">＋ 添加师傅</button></div>`+(STATE.masters||[]).map(m=>`<div class="card"><b>${esc(m.name)}</b> · <a href="tel:${esc(m.phone)}">${esc(m.phone)}</a></div>`).join('')}
+function renderBackupView(){VIEW={name:'backup'};document.getElementById('btn-back').classList.add('hidden');document.getElementById('hdr-title').textContent='💾 备份与提醒设置';setNav('nav-backup');document.getElementById('main-content').innerHTML=`<div class="card"><div class="ct">数据备份（上次：${STATE.lastBackupAt||'从未'}）</div><div class="row2"><button class="btn bp" onclick="exportBk()">📤 导出备份</button><label class="btn bo" style="text-align:center">📥 恢复备份<input type="file" accept=".json" style="display:none" onchange="restBk(this)"></label></div></div><div class="card"><div class="ct">⏰ 每日定时推送设置</div><div class="row2"><input type="number" id="sc-d" class="inp" value="${STATE.settings.contractRemindDays}"><input type="number" id="sr-d" class="inp" value="${STATE.settings.rentRemindDays}"></div><input type="time" id="st-t" class="inp" value="${STATE.settings.dailyNotifyTime}"><button class="btn bs blk" onclick="STATE.settings={contractRemindDays:Number(document.getElementById('sc-d').value),rentRemindDays:Number(document.getElementById('sr-d').value),dailyNotifyTime:document.getElementById('st-t').value};save();toast('已保存')">保存设置</button></div>`}
+function exportBk(){STATE.lastBackupAt=today();save();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(STATE)],{type:'application/json'}));a.download=`房源管理备份_${today()}.json`;a.click();renderBackupView()}
+function restBk(inp){if(!inp.files?.[0])return;const r=new FileReader();r.onload=()=>{STATE=JSON.parse(r.result);save();goHome();toast('已恢复')};r.readAsText(inp.files[0])}
+async function scheduleNotify(){try{const LN=window.Capacitor?.Plugins?.LocalNotifications;if(!LN)return;await LN.cancel({notifications:[{id:1001}]}).catch(()=>{});const tds=computeTodos();if(!tds.length)return;const[h,m]=STATE.settings.dailyNotifyTime.split(':').map(Number);await LN.schedule({notifications:[{id:1001,title:`今日房源待办(${tds.length})`,body:tds.map(t=>`${t.badge}${t.text}(${t.date})`).join('\n')+`\n发送时间：${nowDT()}`,schedule:{on:{hour:h,minute:m},repeats:true}}]})}catch(e){}}
+function openDocTesterModal(){openModal('📎 离线文档与照片预览',`<input type="file" id="standalone-file-input" class="inp" onchange="handleTestF(this)">`)}
+async function handleTestF(inp){if(!inp.files?.[0])return;const m=await processUploadedFile(inp.files[0]);window.__lastTestedMedia=m;await openAttachmentViewer(m)}
+function openModal(t,b){document.getElementById('modal-panel').innerHTML=`<div class="modal-header" style="display:flex;justify-content:space-between;margin-bottom:10px"><b>${esc(t)}</b><button class="btn bo bsm" onclick="closeModal()">✕</button></div>${b}`;document.getElementById('modal-backdrop').classList.add('open')}
+function closeModal(){document.getElementById('modal-backdrop').classList.remove('open')}
+renderHome();scheduleNotify();
+</script>
+</body>
+</html>
