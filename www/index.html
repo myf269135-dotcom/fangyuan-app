@@ -3,72 +3,78 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>房源管理 · 满血完整版</title>
+<title>房源管家 Pro · 资产驾驶舱</title>
 <style>
-:root{--p:#2563eb;--pl:#eff6ff;--s:#16a34a;--sb:#dcfce7;--w:#d97706;--wb:#fef3c7;--d:#dc2626;--db:#fee2e2;--u:#7c3aed;--ub:#ede9fe;--g5:#f8fafc;--g1:#f1f5f9;--g2:#e2e8f0;--g4:#94a3b8;--g6:#475569;--g9:#0f172a}
+:root{--p:#2563eb;--pd:#1d4ed8;--pl:#eff6ff;--s:#16a34a;--sb:#dcfce7;--w:#d97706;--wb:#fef3c7;--d:#dc2626;--db:#fee2e2;--u:#7c3aed;--ub:#ede9fe;--g5:#f8fafc;--g1:#f1f5f9;--g2:#e2e8f0;--g4:#94a3b8;--g6:#475569;--g9:#0f172a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;background:var(--g1);color:var(--g9);padding-bottom:78px;line-height:1.45}
-.hdr{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--g2);padding:11px 14px;display:flex;align-items:center;justify-content:space-between}
+body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;background:var(--g1);color:var(--g9);padding-bottom:80px;line-height:1.45}
+.hdr{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--g2);padding:11px 14px;display:flex;align-items:center;justify-content:space-between}
 .wrap{max-width:720px;margin:0 auto;padding:12px}
-.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:11px;border:1px solid var(--g2);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.cockpit{background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 55%,#2563eb 100%);color:#fff;border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 8px 20px rgba(30,58,138,.2)}
+.cp-top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:12px;margin-bottom:12px}
+.cp-big{font-size:26px;font-weight:800;letter-spacing:-.5px}
+.cp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.cp-grid small{font-size:11px;opacity:.8;display:block}.cp-grid b{font-size:14px}
+.card{background:#fff;border-radius:16px;padding:14px;margin-bottom:12px;border:1px solid var(--g2);box-shadow:0 2px 6px rgba(15,23,42,.04)}
 .ct{font-size:15px;font-weight:700;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;gap:6px}
-.ov{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:14px;padding:14px 6px;margin-bottom:11px;text-align:center}
-.ov small{font-size:11px;opacity:.85;display:block}.ov b{font-size:16px}
-.qg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:11px}
-.qb{background:#fff;border:1px solid var(--g2);border-radius:12px;padding:10px 4px;text-align:center;font-size:12px;font-weight:600;cursor:pointer}
-.inp,select,textarea{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--g2);font-size:14px;background:#fff;font-family:inherit;margin-bottom:8px}
+.qg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.qb{background:#fff;border:1px solid var(--g2);border-radius:14px;padding:10px 4px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.pcard{background:#fff;border-radius:16px;margin-bottom:12px;overflow:hidden;border:1px solid var(--g2);box-shadow:0 3px 10px rgba(15,23,42,.05)}
+.pc-main{display:flex;cursor:pointer}
+.pc-img{width:104px;background:linear-gradient(135deg,#cbd5e1,#94a3b8);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;overflow:hidden;color:#fff;font-size:28px}
+.pc-img img{width:100%;height:100%;object-fit:cover}
+.pc-badge{position:absolute;top:6px;left:6px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;backdrop-filter:blur(4px)}
+.prog-bg{height:5px;background:var(--g2);border-radius:99px;overflow:hidden;margin:6px 0 4px}
+.prog-fg{height:100%;border-radius:99px;transition:width .3s}
+.pc-actions{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--g2);background:var(--g5)}
+.pc-act{padding:8px 4px;text-align:center;font-size:12px;font-weight:600;color:var(--g6);cursor:pointer;border-right:1px solid var(--g2)}.pc-act:last-child{border-right:none}
+.inp,select,textarea{width:100%;padding:9px 11px;border-radius:10px;border:1px solid var(--g2);font-size:14px;background:#fff;font-family:inherit;margin-bottom:8px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:8px 13px;border-radius:9px;font-size:13px;font-weight:600;border:none;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:8px 13px;border-radius:10px;font-size:13px;font-weight:600;border:none;cursor:pointer}
 .bp{background:var(--p);color:#fff}.bs{background:var(--s);color:#fff}.bw{background:var(--w);color:#fff}.bd{background:var(--d);color:#fff}.bu{background:var(--u);color:#fff}.bo{background:#fff;border:1px solid var(--g2);color:var(--g9)}.bsm{padding:5px 9px;font-size:12px}.blk{width:100%}
 .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}.p-ok{background:var(--sb);color:var(--s)}.p-va{background:var(--pl);color:var(--p)}.p-re{background:var(--ub);color:var(--u)}.p-ma{background:var(--wb);color:var(--w)}.p-da{background:var(--db);color:var(--d)}
-.todo{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-radius:9px;background:var(--g5);border:1px solid var(--g2);margin-bottom:6px;font-size:13px;cursor:pointer}
-.pcard{background:#fff;border-radius:14px;margin-bottom:11px;overflow:hidden;border:1px solid var(--g2);display:flex;cursor:pointer}
-.stripe{width:6px;flex-shrink:0}.st-ok{background:var(--s)}.st-va{background:var(--p)}.st-re{background:var(--u)}.st-ma{background:var(--w)}
-.pcov{width:92px;background:var(--g2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}.pcov img{width:100%;height:100%;object-fit:cover}
+.todo{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-radius:10px;background:var(--g5);border:1px solid var(--g2);margin-bottom:6px;font-size:13px;cursor:pointer}
 .tabs{display:flex;overflow-x:auto;gap:6px;padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--g2)}
 .tbtn{padding:6px 12px;border-radius:99px;font-size:12px;font-weight:600;background:var(--g1);color:var(--g6);border:none;white-space:nowrap;cursor:pointer}.tbtn.act{background:var(--p);color:#fff}
-.rbox{border:1px solid var(--g2);border-radius:11px;padding:10px;margin-bottom:10px;background:var(--g5)}
-.irow{background:#fff;border:1px solid var(--g2);border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:6px}
-.ithumb{width:42px;height:42px;border-radius:6px;object-fit:cover;border:1px solid var(--g2);flex-shrink:0}
+.rbox{border:1px solid var(--g2);border-radius:12px;padding:10px;margin-bottom:10px;background:var(--g5)}
+.irow{background:#fff;border:1px solid var(--g2);border-radius:9px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.ithumb{width:44px;height:44px;border-radius:7px;object-fit:cover;border:1px solid var(--g2);flex-shrink:0}
 .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
-.mth{aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid var(--g2);background:var(--g1);display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:11px;text-align:center;padding:4px;cursor:pointer;position:relative}.mth img{width:100%;height:100%;object-fit:cover}
-.banner{height:155px;border-radius:14px;overflow:hidden;position:relative;background:linear-gradient(135deg,#1e293b,#0f172a);margin-bottom:11px;display:flex;align-items:flex-end}
+.mth{aspect-ratio:1;border-radius:9px;overflow:hidden;border:1px solid var(--g2);background:var(--g1);display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:11px;text-align:center;padding:4px;cursor:pointer}.mth img{width:100%;height:100%;object-fit:cover}
+.banner{height:155px;border-radius:16px;overflow:hidden;position:relative;background:linear-gradient(135deg,#1e293b,#0f172a);margin-bottom:11px;display:flex;align-items:flex-end}
 .banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.75}
 .bov{position:relative;z-index:2;width:100%;padding:12px;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff}
 .cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--g5);padding:8px;border-radius:9px;border:1px solid var(--g2);margin-bottom:8px;font-size:12px}
 .cmp-diff{border:1.5px solid var(--d);background:var(--db)}
-.bars{display:flex;align-items:flex-end;gap:6px;height:140px;padding:12px 4px 4px;border-bottom:1px solid var(--g2);overflow-x:auto}
-.bcol{flex:1;min-width:38px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px}
-.bpair{display:flex;align-items:flex-end;gap:2px;height:105px}
-.bar-in{width:11px;background:var(--s);border-radius:3px 3px 0 0}.bar-out{width:11px;background:var(--w);border-radius:3px 3px 0 0}
 .mbk{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:100;display:none;align-items:flex-end;justify-content:center}.mbk.open{display:flex}
-.mpnl{background:#fff;width:100%;max-width:720px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px 14px 28px}
+.mpnl{background:#fff;width:100%;max-width:720px;max-height:92vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:16px 14px 28px}
 .bnav{position:fixed;bottom:0;left:0;right:0;height:62px;background:#fff;border-top:1px solid var(--g2);display:flex;justify-content:space-around;align-items:center;z-index:50}
 .ni{flex:1;text-align:center;font-size:11px;color:var(--g6);cursor:pointer}.ni.act{color:var(--p);font-weight:700}
 .docbox{border:1px solid var(--g2);border-radius:9px;padding:10px;background:var(--g5);max-height:54vh;overflow:auto;font-size:13px}
 .docbox table{border-collapse:collapse;width:100%;background:#fff}.docbox td,.docbox th{border:1px solid #cbd5e1;padding:5px}
 .ssheet{background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:14px;color:#0f172a}
 .toast{position:fixed;top:62px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.92);color:#fff;padding:8px 15px;border-radius:99px;font-size:13px;z-index:200;display:none}
-.hidden{display:none!important}.priv{background:#fffbeb;border:1px dashed #f59e0b;padding:8px;border-radius:8px;font-size:12px}
+.hidden{display:none!important}
 </style>
 </head>
 <body>
 <div id="toast" class="toast"></div>
 <header class="hdr">
-  <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;">
+  <div style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:17px;">
     <button id="btn-back" class="btn bo bsm hidden" onclick="goHome()">← 返回</button>
-    <span id="hdr-title">🏠 房源管理</span>
+    <span id="hdr-title">🏠 资产驾驶舱</span>
   </div>
   <div style="display:flex;gap:6px">
-    <button class="btn bo bsm" onclick="openDocTesterModal()">📎 附件预览</button>
+    <button class="btn bo bsm" onclick="syncCloudWorkOrders(true)">☁️ 同步工单</button>
+    <button class="btn bo bsm" onclick="openDocTesterModal()">📎 附件</button>
   </div>
 </header>
-<main id="main-content" class="wrap"><div class="card" style="text-align:center;padding:30px">正在加载本地高清数据库...</div></main>
+<main id="main-content" class="wrap"><div class="card" style="text-align:center;padding:30px">正在连接本地高清库与云端协同中心...</div></main>
 <nav class="bnav">
-  <div class="ni act" id="nav-home" onclick="goHome()">🏘️<br>房源首页</div>
+  <div class="ni act" id="nav-home" onclick="goHome()">🏘️<br>资产驾驶舱</div>
   <div class="ni" id="nav-stats" onclick="renderStatsView()">📊<br>收支看板</div>
-  <div class="ni" id="nav-masters" onclick="renderMastersView()">👷<br>师傅库</div>
-  <div class="ni" id="nav-backup" onclick="renderBackupView()">💾<br>备份通知</div>
+  <div class="ni" id="nav-masters" onclick="renderMastersView()">👷<br>云端派单</div>
+  <div class="ni" id="nav-backup" onclick="renderBackupView()">⚙️<br>云端与设置</div>
 </nav>
 <div id="modal-backdrop" class="mbk" onclick="if(event.target===this)closeModal()"><div class="mpnl" id="modal-panel"></div></div>
 
@@ -78,6 +84,13 @@ body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;background:var(
 <!-- VENDOR_PDFWORKER -->
 <!-- VENDOR_HEIC2ANY -->
 
+<script>
+window.DEFAULT_CLOUD_CFG = {
+  url: "https://lsrqdyupxyjbckegyfdv.supabase.co",
+  key: "sb_publishable_DPzfPM5wnquE3vsRRF3dgA_yfrhImuU",
+  masterWebBase: "https://myf269135-dotcom.github.io/fangyuan-app/www/master.html"
+};
+</script>
 <script src="app-core.js"></script>
 <script src="app-ui.js"></script>
 </body>
