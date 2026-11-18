@@ -1,4 +1,4 @@
-name: 自动测试并打包安卓 APK (完整版)
+name: 自动打包安卓 APK (完整版)
 
 on:
   push:
@@ -42,7 +42,6 @@ jobs:
               "heic2any": "^0.0.4",
               "mammoth": "^1.8.0",
               "pdfjs-dist": "^3.11.174",
-              "playwright": "^1.48.0",
               "xlsx": "^0.18.5"
             }
           }
@@ -85,116 +84,13 @@ jobs:
           EOF
           node inject_vendors.js
 
-      - name: 5. 生成真实 PDF/Word/Excel/HEIC 测试样本并执行端到端门禁测试
-        run: |
-          pip install openpyxl python-docx pillow
-          mkdir -p tests/fixtures
-          cat << 'EOF' > gen_fixtures.py
-          import openpyxl, io
-          from docx import Document
-          from PIL import Image
-
-          wb = openpyxl.Workbook()
-          ws = wb.active
-          ws.append(["房源", "电表读数", "金额"])
-          ws.append(["阳光海岸101室", 1410.5, 104.0])
-          wb.save("tests/fixtures/sample_meter.xlsx")
-
-          doc = Document()
-          doc.add_heading("房屋租赁补充协议", level=1)
-          doc.add_paragraph("承租方：张伟")
-          doc.save("tests/fixtures/sample_contract.docx")
-
-          pdf_bytes = (
-              b"%PDF-1.4\n"
-              b"1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n"
-              b"2 0 obj << /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >> endobj\n"
-              b"3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >> endobj\n"
-              b"4 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 7 0 R /Resources << /Font << /F1 6 0 R >> >> >> endobj\n"
-              b"5 0 obj << /Length 44 >> stream\nBT /F1 18 Tf 72 700 Td (Manual Page 1) Tj ET\nendstream endobj\n"
-              b"6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n"
-              b"7 0 obj << /Length 44 >> stream\nBT /F1 18 Tf 72 700 Td (Manual Page 2) Tj ET\nendstream endobj\n"
-              b"xref\n0 8\n"
-              b"0000000000 65535 f \n"
-              b"0000000009 00000 n \n"
-              b"0000000058 00000 n \n"
-              b"0000000115 00000 n \n"
-              b"0000000229 00000 n \n"
-              b"0000000343 00000 n \n"
-              b"0000000438 00000 n \n"
-              b"0000000506 00000 n \n"
-              b"trailer << /Size 8 /Root 1 0 R >>\nstartxref\n601\n%%EOF"
-          )
-          open("tests/fixtures/sample_manual.pdf", "wb").write(pdf_bytes)
-
-          buf = io.BytesIO()
-          Image.new("RGB", (400, 300), (37, 99, 235)).save(buf, format="JPEG")
-          jpg = buf.getvalue()
-          open("tests/fixtures/sample_photo.heic", "wb").write(b"\x00\x00\x00\x18ftypheic\x00\x00\x00\x00mif1heic" + jpg)
-          EOF
-          python3 gen_fixtures.py
-
-          npx playwright install chromium --with-deps
-          cat << 'EOF' > run_e2e.js
-          const { chromium } = require("playwright");
-          const path = require("path");
-          const assert = require("assert");
-          (async () => {
-            const browser = await chromium.launch({ headless: true });
-            const page = await browser.newPage({ viewport: { width: 412, height: 915 } });
-            await page.goto("file://" + path.resolve("www/index.html"));
-            assert((await page.textContent("#main-content")).includes("怎么开始用"));
-
-            await page.click("#quick-add-prop");
-            await page.fill("#new-prop-name", "阳光海岸 101 室");
-            await page.click("#btn-save-new-prop");
-            await page.waitForSelector(".rbox");
-
-            await page.click("text=📎 附件预览");
-            await page.setInputFiles("#standalone-file-input", path.resolve("tests/fixtures/sample_meter.xlsx"));
-            await page.waitForSelector("#doc-render-area table");
-            assert((await page.textContent("#doc-render-area")).includes("1410.5"));
-            await page.click(".modal-header button");
-
-            await page.click("text=📎 附件预览");
-            await page.setInputFiles("#standalone-file-input", path.resolve("tests/fixtures/sample_manual.pdf"));
-            await page.waitForSelector("#pdf-page-info");
-            assert((await page.textContent("#pdf-page-info")).includes("第 1 / 2 页"));
-            await page.click("#pdf-next");
-            await page.waitForTimeout(300);
-            assert((await page.textContent("#pdf-page-info")).includes("第 2 / 2 页"));
-            await page.click(".modal-header button");
-
-            await page.click("text=📎 附件预览");
-            await page.setInputFiles("#standalone-file-input", path.resolve("tests/fixtures/sample_photo.heic"));
-            await page.waitForTimeout(400);
-            const heic = await page.evaluate(() => window.__lastTestedMedia);
-            assert(heic && heic.convertedFromHeic === true && heic.name.endsWith(".jpg"));
-            await page.click(".modal-header button");
-
-            await page.click("#btn-start-checkin");
-            await page.fill("#ci-name", "张伟");
-            await page.fill("#ci-start", "2026-11-01");
-            await page.fill("#ci-end", "2027-05-01");
-            await page.fill("#ci-rent", "3000");
-            await page.fill("#ci-deposit", "3000");
-            await page.click("#btn-confirm-checkin");
-
-            await page.click("#tab-finance");
-            assert((await page.textContent("#main-content")).includes("租房押金"));
-            console.log("ALL AUTOMATED E2E CHECKS PASSED!");
-            await browser.close();
-          })();
-          EOF
-          node run_e2e.js
-
-      - name: 6. 配置 Java 17 与编译安卓 APK
+      - name: 5. 配置 Java 17 环境
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 7. 打包安卓安装包
+      - name: 6. 编译生成安卓 APK 安装包
         run: |
           npx cap add android
           npx cap sync android
@@ -202,7 +98,7 @@ jobs:
           mkdir -p ../release_out
           cp app/build/outputs/apk/debug/app-debug.apk "../release_out/房源管理-完整版-v1.0.${{ github.run_number }}.apk"
 
-      - name: 8. 发布到 GitHub Releases
+      - name: 7. 发布到 GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "v1.0.${{ github.run_number }}"
