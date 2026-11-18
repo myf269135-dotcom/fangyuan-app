@@ -16,7 +16,7 @@ jobs:
       - name: 1. 拉取仓库代码
         uses: actions/checkout@v4
 
-      - name: 2. 安装 Node.js 20 与 Python 环境
+      - name: 2. 安装 Node.js 20 环境
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -62,7 +62,7 @@ jobs:
 
       - name: 4. 打包离线文档与 HEIC 引擎进单文件网页
         run: |
-          node -e '
+          cat << 'EOF' > inject_vendors.js
           const fs = require("fs");
           let html = fs.readFileSync("www/index.html", "utf-8");
           const vendors = [
@@ -73,22 +73,23 @@ jobs:
           ];
           for (const v of vendors) {
             if (fs.existsSync(v.file)) {
-              html = html.replace(v.tag, "<script>" + fs.readFileSync(v.file, "utf-8") + "</script>");
+              html = html.replace(v.tag, "<script>" + fs.readFileSync(v.file, "utf-8") + "<\/script>");
             }
           }
           const wp = "node_modules/pdfjs-dist/build/pdf.worker.min.js";
           if (fs.existsSync(wp)) {
             const b64 = Buffer.from(fs.readFileSync(wp, "utf-8")).toString("base64");
-            html = html.replace("<!-- VENDOR_PDFWORKER -->", `<script>window.__PDF_WORKER_B64__="${b64}";</script>`);
+            html = html.replace("<!-- VENDOR_PDFWORKER -->", `<script>window.__PDF_WORKER_B64__="${b64}";<\/script>`);
           }
           fs.writeFileSync("www/index.html", html, "utf-8");
-          '
+          EOF
+          node inject_vendors.js
 
       - name: 5. 生成真实 PDF/Word/Excel/HEIC 测试样本并执行端到端门禁测试
         run: |
           pip install openpyxl python-docx pillow
           mkdir -p tests/fixtures
-          python3 -c '
+          cat << 'EOF' > gen_fixtures.py
           import openpyxl, io
           from docx import Document
           from PIL import Image
@@ -104,4 +105,106 @@ jobs:
           doc.add_paragraph("承租方：张伟")
           doc.save("tests/fixtures/sample_contract.docx")
 
-          pdf_bytes = b"%PDF-1.4\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >> endobj\n3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >> endobj\n4 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 7 0 R /Resources << /Font << /F1 6 0 R >> >> >> endobj\n5 0 obj << /Length 44 >> stream\nBT /F1 18 Tf 72 700 Td (Manual Page 1) Tj ET\nendstream endobj\n6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n7 0 obj << /Length 44 >> stream\nBT /F1 18 Tf 72 700 Td (Manual Page 2) Tj ET\nendstream endobj\nxref\n0 8\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000229 00000 n \
+          pdf_bytes = (
+              b"%PDF-1.4\n"
+              b"1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n"
+              b"2 0 obj << /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >> endobj\n"
+              b"3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >> endobj\n"
+              b"4 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 7 0 R /Resources << /Font << /F1 6 0 R >> >> >> endobj\n"
+              b"5 0 obj << /Length 44 >> stream\nBT /F1 18 Tf 72 700 Td (Manual Page 1) Tj ET\nendstream endobj\n"
+              b"6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n"
+              b"7 0 obj << /Length 44 >> stream\nBT /F1 18 Tf 72 700 Td (Manual Page 2) Tj ET\nendstream endobj\n"
+              b"xref\n0 8\n"
+              b"0000000000 65535 f \n"
+              b"0000000009 00000 n \n"
+              b"0000000058 00000 n \n"
+              b"0000000115 00000 n \n"
+              b"0000000229 00000 n \n"
+              b"0000000343 00000 n \n"
+              b"0000000438 00000 n \n"
+              b"0000000506 00000 n \n"
+              b"trailer << /Size 8 /Root 1 0 R >>\nstartxref\n601\n%%EOF"
+          )
+          open("tests/fixtures/sample_manual.pdf", "wb").write(pdf_bytes)
+
+          buf = io.BytesIO()
+          Image.new("RGB", (400, 300), (37, 99, 235)).save(buf, format="JPEG")
+          jpg = buf.getvalue()
+          open("tests/fixtures/sample_photo.heic", "wb").write(b"\x00\x00\x00\x18ftypheic\x00\x00\x00\x00mif1heic" + jpg)
+          EOF
+          python3 gen_fixtures.py
+
+          npx playwright install chromium --with-deps
+          cat << 'EOF' > run_e2e.js
+          const { chromium } = require("playwright");
+          const path = require("path");
+          const assert = require("assert");
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({ viewport: { width: 412, height: 915 } });
+            await page.goto("file://" + path.resolve("www/index.html"));
+            assert((await page.textContent("#main-content")).includes("怎么开始用"));
+
+            await page.click("#quick-add-prop");
+            await page.fill("#new-prop-name", "阳光海岸 101 室");
+            await page.click("#btn-save-new-prop");
+            await page.waitForSelector(".rbox");
+
+            await page.click("text=📎 附件预览");
+            await page.setInputFiles("#standalone-file-input", path.resolve("tests/fixtures/sample_meter.xlsx"));
+            await page.waitForSelector("#doc-render-area table");
+            assert((await page.textContent("#doc-render-area")).includes("1410.5"));
+            await page.click(".modal-header button");
+
+            await page.click("text=📎 附件预览");
+            await page.setInputFiles("#standalone-file-input", path.resolve("tests/fixtures/sample_manual.pdf"));
+            await page.waitForSelector("#pdf-page-info");
+            assert((await page.textContent("#pdf-page-info")).includes("第 1 / 2 页"));
+            await page.click("#pdf-next");
+            await page.waitForTimeout(300);
+            assert((await page.textContent("#pdf-page-info")).includes("第 2 / 2 页"));
+            await page.click(".modal-header button");
+
+            await page.click("text=📎 附件预览");
+            await page.setInputFiles("#standalone-file-input", path.resolve("tests/fixtures/sample_photo.heic"));
+            await page.waitForTimeout(400);
+            const heic = await page.evaluate(() => window.__lastTestedMedia);
+            assert(heic && heic.convertedFromHeic === true && heic.name.endsWith(".jpg"));
+            await page.click(".modal-header button");
+
+            await page.click("#btn-start-checkin");
+            await page.fill("#ci-name", "张伟");
+            await page.fill("#ci-start", "2026-11-01");
+            await page.fill("#ci-end", "2027-05-01");
+            await page.fill("#ci-rent", "3000");
+            await page.fill("#ci-deposit", "3000");
+            await page.click("#btn-confirm-checkin");
+
+            await page.click("#tab-finance");
+            assert((await page.textContent("#main-content")).includes("租房押金"));
+            console.log("ALL AUTOMATED E2E CHECKS PASSED!");
+            await browser.close();
+          })();
+          EOF
+          node run_e2e.js
+
+      - name: 6. 配置 Java 17 与编译安卓 APK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 7. 打包安卓安装包
+        run: |
+          npx cap add android
+          npx cap sync android
+          cd android && chmod +x gradlew && ./gradlew assembleDebug
+          mkdir -p ../release_out
+          cp app/build/outputs/apk/debug/app-debug.apk "../release_out/房源管理-完整版-v1.0.${{ github.run_number }}.apk"
+
+      - name: 8. 发布到 GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v1.0.${{ github.run_number }}"
+          name: "房源管理 App (完整版) v1.0.${{ github.run_number }}"
+          files: release_out/*.apk
