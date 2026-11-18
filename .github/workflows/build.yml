@@ -1,0 +1,107 @@
+name: 自动测试并打包安卓 APK (完整版)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. 拉取仓库代码
+        uses: actions/checkout@v4
+
+      - name: 2. 安装 Node.js 20 与 Python 环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 3. 初始化工程配置与离线解析库
+        run: |
+          cat << 'EOF' > package.json
+          {
+            "name": "fangyuan-app",
+            "version": "1.0.0",
+            "private": true,
+            "dependencies": {
+              "@capacitor/android": "^6.0.0",
+              "@capacitor/app": "^6.0.0",
+              "@capacitor/camera": "^6.0.0",
+              "@capacitor/core": "^6.0.0",
+              "@capacitor/filesystem": "^6.0.0",
+              "@capacitor/local-notifications": "^6.0.0",
+              "@capacitor/share": "^6.0.0"
+            },
+            "devDependencies": {
+              "@capacitor/cli": "^6.0.0",
+              "heic2any": "^0.0.4",
+              "mammoth": "^1.8.0",
+              "pdfjs-dist": "^3.11.174",
+              "playwright": "^1.48.0",
+              "xlsx": "^0.18.5"
+            }
+          }
+          EOF
+
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.fangyuan.app",
+            "appName": "房源管理",
+            "webDir": "www",
+            "bundledWebRuntime": false,
+            "android": { "allowMixedContent": true }
+          }
+          EOF
+
+          npm install
+
+      - name: 4. 打包离线文档与 HEIC 引擎进单文件网页
+        run: |
+          node -e '
+          const fs = require("fs");
+          let html = fs.readFileSync("www/index.html", "utf-8");
+          const vendors = [
+            { tag: "<!-- VENDOR_XLSX -->", file: "node_modules/xlsx/dist/xlsx.full.min.js" },
+            { tag: "<!-- VENDOR_MAMMOTH -->", file: "node_modules/mammoth/mammoth.browser.min.js" },
+            { tag: "<!-- VENDOR_PDFJS -->", file: "node_modules/pdfjs-dist/build/pdf.min.js" },
+            { tag: "<!-- VENDOR_HEIC2ANY -->", file: "node_modules/heic2any/dist/heic2any.min.js" }
+          ];
+          for (const v of vendors) {
+            if (fs.existsSync(v.file)) {
+              html = html.replace(v.tag, "<script>" + fs.readFileSync(v.file, "utf-8") + "</script>");
+            }
+          }
+          const wp = "node_modules/pdfjs-dist/build/pdf.worker.min.js";
+          if (fs.existsSync(wp)) {
+            const b64 = Buffer.from(fs.readFileSync(wp, "utf-8")).toString("base64");
+            html = html.replace("<!-- VENDOR_PDFWORKER -->", `<script>window.__PDF_WORKER_B64__="${b64}";</script>`);
+          }
+          fs.writeFileSync("www/index.html", html, "utf-8");
+          '
+
+      - name: 5. 生成真实 PDF/Word/Excel/HEIC 测试样本并执行端到端门禁测试
+        run: |
+          pip install openpyxl python-docx pillow
+          mkdir -p tests/fixtures
+          python3 -c '
+          import openpyxl, io
+          from docx import Document
+          from PIL import Image
+
+          wb = openpyxl.Workbook()
+          ws = wb.active
+          ws.append(["房源", "电表读数", "金额"])
+          ws.append(["阳光海岸101室", 1410.5, 104.0])
+          wb.save("tests/fixtures/sample_meter.xlsx")
+
+          doc = Document()
+          doc.add_heading("房屋租赁补充协议", level=1)
+          doc.add_paragraph("承租方：张伟")
+          doc.save("tests/fixtures/sample_contract.docx")
+
+          pdf_bytes = b"%PDF-1.4\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >> endobj\n3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >> endobj\n4 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 7 0 R /Resources << /Font << /F1 6 0 R >> >> >> endobj\n5 0 obj << /Length 44 >> stream\nBT /F1 18 Tf 72 700 Td (Manual Page 1) Tj ET\nendstream endobj\n6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n7 0 obj << /Length 44 >> stream\nBT /F1 18 Tf 72 700 Td (Manual Page 2) Tj ET\nendstream endobj\nxref\n0 8\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000229 00000 n \
