@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>住户在线报修中心</title>
+<style>
+body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;background:#f1f5f9;color:#0f172a;padding:14px}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.inp,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #cbd5e1;font-size:15px;box-sizing:border-box;margin:6px 0 12px;font-family:inherit}
+.btn{width:100%;padding:12px;border-radius:12px;border:none;background:#2563eb;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+.pill{padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;background:#ede9fe;color:#6d28d9}
+.row{border-bottom:1px solid #f1f5f9;padding:10px 0;font-size:13px}.row:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<div id="app" class="card" style="text-align:center">正在连接房源报修服务...</div>
+<script>
+const q = new URLSearchParams(location.search), pn = q.get('p'), pa = q.get('a') || '', u = q.get('u'), k = q.get('k');
+let bImg = '';
+function compress(file) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        let w = im.width, h = im.height, m = 1000;
+        if (w > m || h > m) { if (w > h) { h = Math.round(h * m / w); w = m; } else { w = Math.round(w * m / h); h = m; } }
+        const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h);
+        res(c.toDataURL('image/jpeg', 0.78));
+      };
+      im.src = r.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
+async function init() {
+  if (!pn || !u || !k) return document.getElementById('app').innerHTML = '无效的房源报修二维码/链接，请联系房东获取';
+  document.getElementById('app').style.textAlign = 'left';
+  document.getElementById('app').innerHTML = `
+    <div style="margin-bottom:12px"><b style="font-size:18px">🏠 ${pn} · 住户报修</b><div style="font-size:12px;color:#64748b;margin-top:2px">提交后将第一时间通知房东审核并安排维修师傅</div></div>
+    <small>1. 报修位置/物品（如：卫生间水龙头、客厅空调）：</small>
+    <input id="item" class="inp" placeholder="请填写具体损坏物品 *">
+    <small>2. 故障问题描述与方便上门时间：</small>
+    <textarea id="desc" rows="3" placeholder="请简单描述哪里坏了、什么时候方便师傅上门 *"></textarea>
+    <small>3. 拍摄/上传故障现场照片（方便房东与师傅判断）：</small>
+    <input type="file" accept="image/*" class="inp" onchange="if(this.files?.[0])compress(this.files[0]).then(d=>{bImg=d;document.getElementById('prev').src=d;document.getElementById('prev').style.display='block'})">
+    <img id="prev" style="display:none;width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px">
+    <button class="btn" id="sbtn" onclick="submitTicket()">📩 提交报修给房东审核</button>
+    <div id="hist" style="margin-top:16px;border-top:1px solid #e2e8f0;padding-top:12px"><b>📋 本套房源历史报修进度</b><div id="hlist" style="color:#64748b;font-size:12px;margin-top:6px">加载中...</div></div>
+  `;
+  loadHist();
+}
+async function loadHist() {
+  try {
+    const r = await fetch(`${u}/rest/v1/work_orders_cloud?prop_name=eq.${encodeURIComponent(pn)}&order=updated_at.desc&select=item_name,issue_desc,status,updated_at`, { headers: { 'apikey': k, 'Authorization': 'Bearer ' + k } });
+    const rows = await r.json();
+    document.getElementById('hlist').innerHTML = rows.length ? rows.map(x => `<div class="row"><div style="display:flex;justify-content:space-between"><b>${x.item_name}</b><span class="pill">${x.status}</span></div><div style="color:#475569;margin-top:3px">${x.issue_desc}</div></div>`).join('') : '暂无报修记录';
+  } catch (e) { }
+}
+async function submitTicket() {
+  const item = document.getElementById('item').value.trim(), desc = document.getElementById('desc').value.trim();
+  if (!item || !desc) return alert('请填写报修物品和故障说明');
+  const btn = document.getElementById('sbtn'); btn.disabled = true; btn.textContent = '正在提交给房东...';
+  const id = 'wo_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const payload = { id, prop_name: pn, prop_address: pa || '联系房东确认门牌', item_name: '住户报修·' + item, issue_desc: desc, before_photo: bImg, status: '住户报修待审', updated_at: new Date().toISOString() };
+  const r = await fetch(`${u}/rest/v1/work_orders_cloud`, {
+    method: 'POST',
+    headers: { 'apikey': k, 'Authorization': 'Bearer ' + k, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (r.ok) {
+    alert('✅ 报修已发送给房东！房东审核通过后会立即安排师傅联系您。');
+    document.getElementById('item').value = ''; document.getElementById('desc').value = ''; bImg = ''; document.getElementById('prev').style.display = 'none';
+    loadHist();
+  } else alert('提交失败，请检查网络后重试');
+  btn.disabled = false; btn.textContent = '📩 提交报修给房东审核';
+}
+init();
+</script>
+</body>
+</html>
