@@ -81,28 +81,38 @@ async function syncCloudWorkOrders(manual = false) {
     const rows = await r.json();
     let updatedCount = 0;
     for (const row of rows) {
-      for (const p of STATE.properties) {
-        const wo = (p.workOrders || []).find(w => w.id === row.id);
-        if (wo && (wo.status !== row.status || Number(row.quote_cost || 0) !== Number(wo.cost || 0) || (row.after_photo && !wo.afterPhoto))) {
-          const prevStatus = wo.status;
-          wo.status = row.status;
-          if (Number(row.quote_cost) > 0) {
-            wo.cost = Number(row.quote_cost);
-            wo.tenantShare = wo.payer === '分摊' ? +(wo.cost / 2).toFixed(2) : (wo.payer === '租客' ? wo.cost : 0);
-          }
-          if (row.after_photo) wo.afterPhoto = row.after_photo;
-          if (row.master_note) wo.masterNote = row.master_note;
-          if (row.status === '已完工待验收' && prevStatus !== '已完工待验收') {
-            updatedCount++;
-            triggerInstantAlert('🔔 师傅已提交完工验收！', `${p.name} · ${wo.itemName} 维修完成，报价 ¥${wo.cost}`);
-          }
+      let targetProp = STATE.properties.find(p => p.name === row.prop_name) || STATE.properties[0];
+      if (!targetProp) continue;
+      targetProp.workOrders = targetProp.workOrders || [];
+      let wo = targetProp.workOrders.find(w => w.id === row.id);
+      if (!wo && row.status === '住户报修待审') {
+        wo = {
+          id: row.id, date: today(), itemName: row.item_name || '住户报修', desc: row.issue_desc || '',
+          cost: 0, payer: '房东', tenantShare: 0, status: '住户报修待审',
+          masterName: '', masterPhone: '', beforePhoto: row.before_photo || '', afterPhoto: ''
+        };
+        targetProp.workOrders.unshift(wo);
+        updatedCount++;
+        triggerInstantAlert('🟣 收到住户新报修申请！', `${targetProp.name} · ${wo.itemName}：${wo.desc}`);
+      } else if (wo && (wo.status !== row.status || Number(row.quote_cost || 0) !== Number(wo.cost || 0) || (row.after_photo && !wo.afterPhoto))) {
+        const prevStatus = wo.status;
+        wo.status = row.status;
+        if (Number(row.quote_cost) > 0) {
+          wo.cost = Number(row.quote_cost);
+          wo.tenantShare = wo.payer === '分摊' ? +(wo.cost / 2).toFixed(2) : (wo.payer === '租客' ? wo.cost : 0);
+        }
+        if (row.after_photo) wo.afterPhoto = row.after_photo;
+        if (row.master_note) wo.masterNote = row.master_note;
+        if (row.status === '已完工待验收' && prevStatus !== '已完工待验收') {
+          updatedCount++;
+          triggerInstantAlert('🔔 师傅已提交完工验收！', `${targetProp.name} · ${wo.itemName} 维修完成，报价 ¥${wo.cost}`);
         }
       }
     }
     if (updatedCount > 0) {
       await save();
       if (VIEW.name === 'detail') renderProp(); else if (VIEW.name === 'home') renderHome();
-    } else if (manual) toast('☁️ 云端工单已同步（暂无新回单）');
+    } else if (manual) toast('☁️ 云端工单已同步（暂无新消息）');
   } catch (e) { if (manual) toast('云端连接检查中'); }
 }
 
@@ -199,6 +209,8 @@ function reallocPay(prop) {
 function computeTodos() {
   const td = [], t = today(), tObj = new Date(t);
   STATE.properties.forEach(p => {
+    (p.workOrders || []).filter(w => w.status === '住户报修待审').forEach(w => td.push({ badge: '🟣 住户报修待审', text: `${p.name} · ${w.itemName}：${w.desc}`, date: w.date, propId: p.id, tab: 'workorders' }));
+    (p.workOrders || []).filter(w => w.status === '已完工待验收').forEach(w => td.push({ badge: '🟢 师傅已完工', text: `${p.name} · ${w.itemName} 报价¥${w.cost} 待验收`, date: w.date, propId: p.id, tab: 'workorders' }));
     (p.bills || []).filter(b => !b.voided && (b.amount - b.paidAmount) > 0.01).forEach(b => {
       const df = Math.ceil((new Date(b.dueDate) - tObj) / 86400000), up = (b.amount - b.paidAmount).toFixed(0);
       if (df < 0) td.push({ badge: '🔴 逾期账单', text: `${p.name} · ${b.title} 欠¥${up}`, date: b.dueDate, propId: p.id, tab: 'finance' });
@@ -208,7 +220,6 @@ function computeTodos() {
       const df = Math.ceil((new Date(p.currentLease.endDate) - tObj) / 86400000);
       if (df <= STATE.settings.contractRemindDays) td.push({ badge: '🟣 合同快到期', text: `${p.name}(${p.currentLease.tenantName}) 剩${df}天`, date: p.currentLease.endDate, propId: p.id, tab: 'lease' });
     }
-    (p.workOrders || []).filter(w => w.status === '已完工待验收').forEach(w => td.push({ badge: '🟢 师傅已完工', text: `${p.name} · ${w.itemName} 报价¥${w.cost} 待验收`, date: w.date, propId: p.id, tab: 'workorders' }));
     (p.workOrders || []).filter(w => w.status === '待接单' || w.status === '待维修').forEach(w => td.push({ badge: '🟠 维修中', text: `${p.name} · ${w.itemName}：${w.desc}`, date: w.date, propId: p.id, tab: 'workorders' }));
   });
   return td;
