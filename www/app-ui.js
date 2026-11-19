@@ -32,10 +32,10 @@ function renderHome(q = '') {
   <div class="qg"><div class="qb" onclick="openCreateProp()">➕<br>新建房源</div><div class="qb" onclick="renderStatsView()">📊<br>收支看板</div><div class="qb" onclick="renderMastersView()">👷<br>云端派单</div><div class="qb" onclick="loadDemoData()">✨<br>载入样板房</div></div>
   <input class="inp" placeholder="🔍 搜索房源、物品、租客、工单、师傅..." value="${esc(q)}" oninput="renderHome(this.value)" />`;
 
-  h += `<div class="card"><div class="ct"><span>📌 实时待办与验收提醒</span><span class="pill p-va">${tds.length}项</span></div>${tds.length ? tds.map(t => `<div class="todo" onclick="openProp('${t.propId}','${t.tab}')"><div><b>${t.badge}</b> ${esc(t.text)}</div><small>${t.date} ›</small></div>`).join('') : '<div style="font-size:12px;color:var(--g4);text-align:center">暂无待办 🎉</div>'}</div>`;
+  h += `<div class="card"><div class="ct"><span>📌 实时待办与审核提醒</span><span class="pill p-va">${tds.length}项</span></div>${tds.length ? tds.map(t => `<div class="todo" onclick="openProp('${t.propId}','${t.tab}')"><div><b>${t.badge}</b> ${esc(t.text)}</div><small>${t.date} ›</small></div>`).join('') : '<div style="font-size:12px;color:var(--g4);text-align:center">暂无待办 🎉</div>'}</div>`;
 
   if (!STATE.properties.length) {
-    h += `<div class="card" style="border:1.5px dashed var(--p);background:var(--pl);text-align:center"><b style="color:var(--p)">👋 资产驾驶舱已就绪</b><p style="font-size:13px;color:var(--g6)">点上方「✨ 载入样板房」可一秒体验完整带合同、照片、水电和云端工单的样板数据，或直接新建您的真实房源。</p><button class="btn bp blk" onclick="openCreateProp()">➕ 新建我的第一套房源</button></div>`;
+    h += `<div class="card" style="border:1.5px dashed var(--p);background:var(--pl);text-align:center"><b style="color:var(--p)">👋 资产驾驶舱已就绪</b><p style="font-size:13px;color:var(--g6)">点上方「✨ 载入样板房」可一秒体验完整样板数据，或直接新建您的真实房源。</p><button class="btn bp blk" onclick="openCreateProp()">➕ 新建我的第一套房源</button></div>`;
   } else {
     STATE.properties.forEach(p => {
       const cov = (p.media || []).find(m => m.kind === 'image' && m.status === 'ok');
@@ -55,14 +55,22 @@ function renderHome(q = '') {
           <div style="padding:10px 12px;flex:1"><div style="display:flex;justify-content:space-between"><b>${esc(p.name)}</b><small style="color:var(--g6)">工单 ${pw}</small></div><div style="font-size:11px;color:var(--g6)">${esc(p.layout || '')} ${p.area ? p.area + '㎡' : ''} · ${esc(p.address || '')}</div>${progHtml}</div>
         </div>
         <div class="pc-actions">
-          <div class="pc-act" onclick="openShareGen('${p.id}','bills')">💬 一键催租单</div>
+          <div class="pc-act" onclick="openTenantLink('${p.id}')">📱 住户报修码</div>
           <div class="pc-act" onclick="openPayModal('${p.id}')">💵 快速记收款</div>
-          <div class="pc-act" onclick="openWoModal('${p.id}')">🔧 云端派工单</div>
+          <div class="pc-act" onclick="openWoModal('${p.id}')">🔧 房东派工单</div>
         </div>
       </div>`;
     });
   }
   document.getElementById('main-content').innerHTML = h;
+}
+
+function openTenantLink(pid) {
+  const p = STATE.properties.find(x => x.id === pid);
+  const tBase = STATE.cloud.masterWebBase.replace('master.html', 'tenant.html');
+  const url = `${tBase}?p=${encodeURIComponent(p.name)}&a=${encodeURIComponent(p.address || '')}&u=${encodeURIComponent(STATE.cloud.url)}&k=${encodeURIComponent(STATE.cloud.key)}`;
+  navigator.clipboard?.writeText(url).catch(() => { });
+  openModal('📱 住户专属微信报修入口（只发房东审核）', `<p style="font-size:13px">将下方链接发给 <b>${esc(p.name)}</b> 的住户（整套房所有室友共用此链接）。住户提交故障与照片后，<b>会先发到您的手机 App 审核</b>，不会直接发给师傅：</p><textarea class="inp" rows="4" readonly onclick="this.select()">${esc(url)}</textarea><button class="btn bp blk" onclick="navigator.clipboard?.writeText('${url}');toast('已复制住户报修链接，去微信发给租客即可')">一键复制住户报修链接</button>`);
 }
 
 function openCreateProp() {
@@ -87,13 +95,13 @@ function renderProp() {
   <div class="card" style="padding:9px;display:flex;gap:5px;flex-wrap:wrap;justify-content:space-between;align-items:center">
     <select style="width:auto;margin:0;padding:4px 8px" onchange="STATE.properties.find(x=>x.id==='${p.id}').status=this.value;save().then(renderProp)">${['空置', '待出租', '已出租', '维修中'].map(s => `<option value="${s}" ${p.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
     <div style="display:flex;gap:5px">
-      <button class="btn bu bsm" onclick="openShareGen('${p.id}','intro')">🖼️ 分享单</button>
+      <button class="btn bu bsm" onclick="openTenantLink('${p.id}')">📱 住户报修码</button>
       ${p.status !== '已出租' ? `<button class="btn bs bsm" onclick="openCheckIn('${p.id}')">🔑 入住底单</button>` : `<button class="btn bd bsm" onclick="openCheckOut('${p.id}')">📦 退房对比精算</button>`}
     </div>
   </div>
   <div class="tabs">
     <button class="tbtn ${VIEW.tab === 'rooms' ? 'act' : ''}" onclick="VIEW.tab='rooms';renderProp()">🛋️ 房间验房</button>
-    <button class="tbtn ${VIEW.tab === 'workorders' ? 'act' : ''}" onclick="VIEW.tab='workorders';renderProp()">🔧 云端工单(${(p.workOrders || []).length})</button>
+    <button class="tbtn ${VIEW.tab === 'workorders' ? 'act' : ''}" onclick="VIEW.tab='workorders';renderProp()">🔧 报修与派单(${(p.workOrders || []).length})</button>
     <button class="tbtn ${VIEW.tab === 'finance' ? 'act' : ''}" onclick="VIEW.tab='finance';renderProp()">💰 账单水电</button>
     <button class="tbtn ${VIEW.tab === 'media' ? 'act' : ''}" onclick="VIEW.tab='media';renderProp()">📷 相册合同(${(p.media || []).length})</button>
     <button class="tbtn ${VIEW.tab === 'lease' ? 'act' : ''}" onclick="VIEW.tab='lease';renderProp()">📝 租约</button>
@@ -112,21 +120,19 @@ function renderProp() {
       h += `<button class="btn bo bsm blk" onclick="batchAddItems('${p.id}','${r.id}')">＋ 批量加物品</button></div>`;
     });
   } else if (VIEW.tab === 'workorders') {
-    h += `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><button class="btn bo bsm" onclick="syncCloudWorkOrders(true)">☁️ 刷新师傅进度</button><button class="btn bp bsm" onclick="openWoModal('${p.id}')">＋ 创建并云端派单</button></div>`;
+    h += `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><button class="btn bo bsm" onclick="syncCloudWorkOrders(true)">☁️ 刷新住户/师傅进度</button><button class="btn bp bsm" onclick="openWoModal('${p.id}')">＋ 房东直接派单</button></div>`;
     h += (p.workOrders || []).map(w => {
       const link = `${STATE.cloud.masterWebBase}?id=${encodeURIComponent(w.id)}&u=${encodeURIComponent(STATE.cloud.url)}&k=${encodeURIComponent(STATE.cloud.key)}`;
-      const stCls = w.status === '已完工待验收' ? 'p-ok' : (w.status === '已验收归档' ? 'p-va' : 'p-ma');
-      return `<div class="card">
+      const isPendingApprove = w.status === '住户报修待审';
+      const stCls = isPendingApprove ? 'p-re' : (w.status === '已完工待验收' ? 'p-ok' : (w.status === '已验收归档' ? 'p-va' : 'p-ma'));
+      return `<div class="card" style="${isPendingApprove ? 'border:1.5px solid var(--u)' : ''}">
         <div class="ct"><span>🔧 ${esc(w.itemName)}</span><span class="pill ${stCls}">${w.status}</span></div>
         <div style="font-size:13px;margin-bottom:6px">${esc(w.desc)}</div>
-        <div style="font-size:12px;color:var(--g6);margin-bottom:8px">派单师傅：<b>${esc(w.masterName || '未指定')}</b> · 费用：<b>¥${w.cost}</b>（${w.payer}）${w.masterNote ? '<br>师傅留言：' + esc(w.masterNote) : ''}</div>
-        ${(w.beforePhoto || w.afterPhoto) ? `<div class="cmp-grid"><div><small>报修前照片</small>${w.beforePhoto ? `<img src="${w.beforePhoto}" style="width:100%;max-height:95px;object-fit:cover;border-radius:6px">` : '<br>无'}</div><div><small>师傅完工照片</small>${w.afterPhoto ? `<img src="${w.afterPhoto}" style="width:100%;max-height:95px;object-fit:cover;border-radius:6px">` : '<br>等待师傅上传'}</div></div>` : ''}
-        <div class="row2">
-          <button class="btn bu bsm" onclick="copyMasterLink('${link}')">📲 复制微信派单链接</button>
-          ${w.status === '已完工待验收' ? `<button class="btn bs bsm" onclick="acceptWorkOrder('${p.id}','${w.id}')">✅ 确认验收并入账</button>` : `<button class="btn bo bsm" onclick="acceptWorkOrder('${p.id}','${w.id}')">手动完结归档</button>`}
-        </div>
+        <div style="font-size:12px;color:var(--g6);margin-bottom:8px">派单师傅：<b>${esc(w.masterName || '待房东指派')}</b> · 费用：<b>¥${w.cost}</b>（${w.payer}）${w.masterNote ? '<br>师傅留言：' + esc(w.masterNote) : ''}</div>
+        ${(w.beforePhoto || w.afterPhoto) ? `<div class="cmp-grid"><div><small>故障现场照</small>${w.beforePhoto ? `<img src="${w.beforePhoto}" style="width:100%;max-height:95px;object-fit:cover;border-radius:6px">` : '<br>无'}</div><div><small>师傅完工照片</small>${w.afterPhoto ? `<img src="${w.afterPhoto}" style="width:100%;max-height:95px;object-fit:cover;border-radius:6px">` : '<br>未完工'}</div></div>` : ''}
+        ${isPendingApprove ? `<div class="row2"><button class="btn bu bsm" onclick="openApproveWoModal('${p.id}','${w.id}')">✅ 审核通过并派给师傅</button><button class="btn bo bsm" style="color:var(--d)" onclick="rejectTenantWo('${p.id}','${w.id}')">驳回/无需上门</button></div>` : `<div class="row2"><button class="btn bu bsm" onclick="copyMasterLink('${link}')">📲 复制师傅接单链接</button>${w.status === '已完工待验收' ? `<button class="btn bs bsm" onclick="acceptWorkOrder('${p.id}','${w.id}')">✅ 确认验收并入账</button>` : `<button class="btn bo bsm" onclick="acceptWorkOrder('${p.id}','${w.id}')">完结归档</button>`}</div>`}
       </div>`;
-    }).join('') || '<div class="card" style="text-align:center;color:var(--g4)">暂无云端维修工单</div>';
+    }).join('') || '<div class="card" style="text-align:center;color:var(--g4)">暂无维修与住户报修记录</div>';
   } else if (VIEW.tab === 'finance') {
     h += `<div class="card" style="background:var(--g5)"><div class="ct"><span>💰 账务操作（预存 ¥${(p.unallocatedCredit || 0).toFixed(2)}）</span></div>
       <div style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn bs bsm" onclick="openPayModal('${p.id}')">💵 记收款</button><button class="btn bp bsm" onclick="openAdhocModal('${p.id}')">＋ 加费用</button><button class="btn bw bsm" onclick="openMeterModal('${p.id}')">⚡ 抄表</button></div></div>
@@ -146,9 +152,31 @@ function renderProp() {
   document.getElementById('main-content').innerHTML = h;
 }
 
+function openApproveWoModal(pid, wid) {
+  const mOpts = (STATE.masters || []).map(m => `<option value="${esc(m.name)}::${esc(m.phone)}">${esc(m.name)} (${esc(m.phone)})</option>`).join('');
+  openModal('✅ 审核住户报修并转派师傅', `<label style="font-size:12px">1. 选择指派哪位维修师傅：</label><select id="ap-m" class="inp">${mOpts}<option value="指派师傅::">其他师傅</option></select>
+  <label style="font-size:12px">2. 判定维修费用责任方：</label><select id="ap-p" class="inp"><option value="房东">房东承担（自然老化/设备故障）</option><option value="租客">租客承担（人为损坏/耗材）</option><option value="分摊">双方对半分摊</option></select>
+  <button class="btn bs blk" onclick="confirmApproveWo('${pid}','${wid}')">确认批准并生成师傅接单链接</button>`);
+}
+async function confirmApproveWo(pid, wid) {
+  const p = STATE.properties.find(x => x.id === pid), w = p.workOrders.find(x => x.id === wid);
+  const [mName, mPhone] = document.getElementById('ap-m').value.split('::');
+  w.masterName = mName; w.masterPhone = mPhone; w.payer = document.getElementById('ap-p').value; w.status = '待接单';
+  await pushWorkOrderToCloud(p, w);
+  await save(); closeModal(); renderProp();
+  const link = `${STATE.cloud.masterWebBase}?id=${encodeURIComponent(w.id)}&u=${encodeURIComponent(STATE.cloud.url)}&k=${encodeURIComponent(STATE.cloud.key)}`;
+  copyMasterLink(link);
+}
+async function rejectTenantWo(pid, wid) {
+  const p = STATE.properties.find(x => x.id === pid), w = p.workOrders.find(x => x.id === wid);
+  w.status = '已驳回/住户自理';
+  await pushWorkOrderToCloud(p, w);
+  await save(); renderProp(); toast('已驳回该报修申请');
+}
+
 function copyMasterLink(url) {
   navigator.clipboard?.writeText(url).catch(() => { });
-  openModal('📲 微信派单专属链接已生成', `<p style="font-size:13px">直接复制下方链接在微信发给维修师傅，师傅点开无需下载任何软件即可查看地址、报修照片并回传完工照与报价：</p><textarea class="inp" rows="4" readonly onclick="this.select()">${esc(url)}</textarea><button class="btn bs blk" onclick="navigator.clipboard?.writeText('${url}');toast('已复制到剪贴板，快去微信粘贴吧')">一键复制链接去微信发送</button>`);
+  openModal('📲 师傅专属派单链接已生成', `<p style="font-size:13px">只有经过您审核批准后才会生成此链接。直接复制发给维修师傅即可：</p><textarea class="inp" rows="4" readonly onclick="this.select()">${esc(url)}</textarea><button class="btn bs blk" onclick="navigator.clipboard?.writeText('${url}');toast('已复制到剪贴板，快去微信粘贴给师傅吧')">一键复制链接发给师傅</button>`);
 }
 
 async function acceptWorkOrder(pid, wid) {
@@ -167,13 +195,12 @@ async function acceptWorkOrder(pid, wid) {
 function openWoModal(pid) {
   const p = STATE.properties.find(x => x.id === pid), opts = [], mOpts = (STATE.masters || []).map(m => `<option value="${esc(m.name)}::${esc(m.phone)}">${esc(m.name)} (${esc(m.phone)})</option>`).join('');
   (p.rooms || []).forEach(r => r.items.forEach(i => opts.push(`<option value="${r.id}::${i.id}">${esc(r.name)}·${esc(i.name)}</option>`)));
-  openModal('🔧 创建云端维修工单并派发', `<select id="wo-item" class="inp">${opts.join('')}</select>
+  openModal('🔧 房东创建云端维修工单', `<select id="wo-item" class="inp">${opts.join('')}</select>
   <select id="wo-master" class="inp">${mOpts}<option value="指派师傅::">其他师傅</option></select>
-  <input id="wo-desc" class="inp" placeholder="故障描述 *（如：水龙头漏水需更换阀芯）">
-  <div class="row2"><input type="number" id="wo-cost" class="inp" value="0" placeholder="预估费用(师傅可改)"><select id="wo-payer" class="inp"><option value="房东">房东承担</option><option value="租客">租客承担</option><option value="分摊">双方对半分摊</option></select></div>
-  <label style="font-size:12px;color:var(--g6)">拍摄/上传故障现场照片（随工单发给师傅看）：</label>
+  <input id="wo-desc" class="inp" placeholder="故障描述 *">
+  <div class="row2"><input type="number" id="wo-cost" class="inp" value="0" placeholder="预估费用"><select id="wo-payer" class="inp"><option value="房东">房东承担</option><option value="租客">租客承担</option><option value="分摊">双方对半分摊</option></select></div>
   <input type="file" id="wo-photo" accept="image/*" class="inp">
-  <button class="btn bp blk" onclick="createCloudWo('${pid}')">☁️ 生成云端工单并获取微信链接</button>`);
+  <button class="btn bp blk" onclick="createCloudWo('${pid}')">☁️ 生成工单并获取师傅链接</button>`);
 }
 async function createCloudWo(pid) {
   const p = STATE.properties.find(x => x.id === pid), [rid, iid] = document.getElementById('wo-item').value.split('::');
@@ -187,10 +214,7 @@ async function createCloudWo(pid) {
   p.workOrders.unshift(wo); it.status = '待维修';
   const ok = await pushWorkOrderToCloud(p, wo);
   await save(); closeModal(); renderProp();
-  if (ok) {
-    const link = `${STATE.cloud.masterWebBase}?id=${encodeURIComponent(wo.id)}&u=${encodeURIComponent(STATE.cloud.url)}&k=${encodeURIComponent(STATE.cloud.key)}`;
-    copyMasterLink(link);
-  } else toast('已保存到本地，请检查云端连接配置');
+  if (ok) copyMasterLink(`${STATE.cloud.masterWebBase}?id=${encodeURIComponent(wo.id)}&u=${encodeURIComponent(STATE.cloud.url)}&k=${encodeURIComponent(STATE.cloud.key)}`);
 }
 
 async function uploadPropMedia(pid, inp) { if (!inp.files?.length) return; const p = STATE.properties.find(x => x.id === pid); for (const f of inp.files) p.media.push(await processUploadedFile(f)); await save(); renderProp(); }
@@ -208,7 +232,6 @@ function openPayModal(pid) { openModal('💵 记收款', `<input type="number" i
 function openAdhocModal(pid) { openModal('＋ 加费用', `<input id="at" class="inp" placeholder="费用名"><input type="number" id="aa" class="inp" placeholder="金额"><button class="btn bp blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}');p.bills.push({id:uid('b'),type:'adhoc',title:document.getElementById('at').value,dueDate:today(),amount:Number(document.getElementById('aa').value||0),paidAmount:0,voided:false});reallocPay(p);save().then(()=>{closeModal();renderProp()})">添加</button>`); }
 function editBill(pid, bid) { const p = STATE.properties.find(x => x.id === pid), b = p.bills.find(x => x.id === bid); openModal('账单操作', `<input type="number" id="eba" class="inp" value="${b.amount}"><div class="row2"><button class="btn bp" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),b=p.bills.find(x=>x.id==='${bid}');b.amount=Number(document.getElementById('eba').value);reallocPay(p);save().then(()=>{closeModal();renderProp()})">保存</button><button class="btn bd" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),b=p.bills.find(x=>x.id==='${bid}');b.voided=!b.voided;reallocPay(p);save().then(()=>{closeModal();renderProp()})">作废</button></div>`); }
 function openMeterModal(pid) { openModal('⚡ 抄表算费', `<input type="number" id="mf" class="inp" placeholder="本次水电燃气总费用"><button class="btn bp blk" onclick="const p=STATE.properties.find(x=>x.id==='${pid}'),f=Number(document.getElementById('mf').value||0);if(f>0){p.bills.push({id:uid('b'),type:'utility',title:'水电费('+today()+')',dueDate:today(),amount:f,paidAmount:0,voided:false});reallocPay(p)}save().then(()=>{closeModal();renderProp()})">记入账单</button>`); }
-function openShareGen(pid, type = 'bills') { const p = STATE.properties.find(x => x.id === pid); const b = type === 'bills' ? `<b>📑 账单通知 · ${esc(p.name)}</b>` + (p.bills || []).filter(x => !x.voided && x.amount > x.paidAmount).map(x => `<div>• ${esc(x.title)}：待缴 <b>¥${x.amount - x.paidAmount}</b></div>`).join('') : `<b>🏠 ${esc(p.name)}</b><p>${esc(p.address)} · ${esc(p.layout)}</p>`; openModal('💬 微信通知卡片（截屏发送）', `<div class="ssheet">${b}<div style="font-size:11px;color:var(--g6);margin-top:8px">生成时间：${nowDT()}</div></div>`); }
 
 function renderStatsView() { VIEW = { name: 'stats' }; document.getElementById('btn-back').classList.add('hidden'); document.getElementById('hdr-title').textContent = '📊 收支看板'; setNav('nav-stats'); const yr = today().slice(0, 4); document.getElementById('main-content').innerHTML = `<div class="card"><div class="ct">${yr} 年度各房源收益</div>${STATE.properties.map(p => { const inc = (p.payments || []).filter(x => x.date.startsWith(yr)).reduce((s, x) => s + x.amount, 0); return `<div class="irow"><b>${esc(p.name)}</b><b style="color:var(--s)">实收 ¥${inc}</b></div>`; }).join('') || '暂无'}</div>`; }
 function renderMastersView() {
@@ -219,7 +242,7 @@ function renderMastersView() {
 }
 function renderBackupView() {
   VIEW = { name: 'backup' }; document.getElementById('btn-back').classList.add('hidden'); document.getElementById('hdr-title').textContent = '⚙️ 云端配置与通知'; setNav('nav-backup');
-  document.getElementById('main-content').innerHTML = `<div class="card"><div class="ct">☁️ 云端协同引擎状态</div><div style="font-size:12px;color:var(--s);margin-bottom:8px">✓ 已连接至 Supabase 实时云端（lsrqdyupxyjbckegyfdv）</div><button class="btn bp blk" onclick="syncCloudWorkOrders(true)">立即同步师傅回单</button></div>
+  document.getElementById('main-content').innerHTML = `<div class="card"><div class="ct">☁️ 云端协同引擎状态</div><div style="font-size:12px;color:var(--s);margin-bottom:8px">✓ 已连接至 Supabase 实时云端（lsrqdyupxyjbckegyfdv）</div><button class="btn bp blk" onclick="syncCloudWorkOrders(true)">立即同步住户与师傅动态</button></div>
   <div class="card"><div class="ct">✨ 演示样板数据管理</div><div class="row2"><button class="btn bu" onclick="loadDemoData()">一键载入样板房</button><button class="btn bd" onclick="STATE.properties=[];save().then(()=>{goHome();toast('已清空')})">清空全部数据</button></div></div>
   <div class="card"><div class="ct">💾 本地全量备份与通知测试</div><div class="row2"><button class="btn bo" onclick="exportBk()">📤 导出备份</button><button class="btn bs" onclick="testPushNow()">🔔 测试系统通知</button></div></div>`;
 }
@@ -229,7 +252,7 @@ async function loadDemoData() {
   const d2 = { id: 'demo_2', name: '阳光花园 503室', address: '学府路12号503', layout: '1室1厅', area: '52', expectedRent: 2800, status: '空置', vacantSince: addDays(today(), -14), createdAt: '2026-03-01', media: [], rooms: [{ id: 'r2', name: '卫生间', items: [{ id: 'i3', name: '洗手盆龙头', status: '待维修', desc: '阀芯滴水' }] }], currentLease: null, workOrders: [], renovations: [], utilityConfig: { mode: '房东代收', cycle: '每月', elecPrice: 0.65, waterPrice: 3.8, gasPrice: 2.8, lastElec: 500, lastWater: 120, lastGas: 40, lastReadDate: today() }, bills: [], payments: [], unallocatedCredit: 0, depositSettlements: [], landlordExpenses: [] };
   STATE.properties = [d1, d2]; await save(); goHome(); toast('✨ 已载入高颜值样板数据');
 }
-async function testPushNow() { triggerInstantAlert('🔔 房源管家通知测试', '师傅提交完工照或租金到期时，手机锁屏将收到此类强提醒！'); }
+async function testPushNow() { triggerInstantAlert('🔔 房源管家通知测试', '住户提交新报修或师傅完工时，手机将收到此类提醒！'); }
 async function exportBk() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(STATE)], { type: 'application/json' })); a.download = `房源管家备份_${today()}.json`; a.click(); }
 function openDocTesterModal() { openModal('📎 离线文档与 HEIC 预览', `<input type="file" id="sfi" class="inp" onchange="if(this.files?.[0])processUploadedFile(this.files[0]).then(openAttachmentViewer)">`); }
 function openModal(t, b) { document.getElementById('modal-panel').innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:10px"><b>${esc(t)}</b><button class="btn bo bsm" onclick="closeModal()">✕</button></div>${b}`; document.getElementById('modal-backdrop').classList.add('open'); }
