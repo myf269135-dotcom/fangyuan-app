@@ -6,63 +6,84 @@
 <meta name="theme-color" content="#2D4B7C">
 <title>小账本</title>
 <style>
-/* ===================== 样式 ===================== */
+/* ===================== 样式（焕新旗舰版 v3.0） ===================== */
 :root{
-  --bg:#F3F2EE; --card:#FFFFFF; --ink:#1E2430; --sub:#8B909A; --line:#ECEAE5;
-  --pri:#2D4B7C; --pri2:#1E3358; --pri-soft:#E8EEF8; --acc:#F0A232;
-  --tr:#5B7DB8; --danger:#E5484D;
-  --r:16px;
-  --green:#17A673; --orange:#EC6A3C; --green-soft:#EEF7F2; --orange-soft:#FDEEE7;
+  --bg:#F4F6FA; --card:#FFFFFF; --ink:#171D29; --sub:#7C8496; --line:#ECEFF5;
+  --pri:#2555A6; --pri2:#173873; --pri-soft:#EBF2FF; --acc:#F59E0B; --acc2:#EA580C;
+  --tr:#4F7AE8; --danger:#E5484D;
+  --r:20px;
+  --green:#10B981; --orange:#F97316; --green-soft:#E8FAF3; --orange-soft:#FFF2E8;
   --exp:var(--green); --inc:var(--orange); --exp-soft:var(--green-soft); --inc-soft:var(--orange-soft);
-  --ink2:#3A404C; --inp:#FFFFFF; --seg-on:#FFFFFF; --tabbar:rgba(255,255,255,.96); --danger-soft:#FDECEC;
-  --dash:#C5D1E4; --faint:#B5B9C0; --warn-bg:#FFF4E0; --warn-ink:#8A5A00; --hd1:#2D4B7C; --hd2:#1E3358;
+  --ink2:#374151; --inp:#F8FAFC; --seg-on:#FFFFFF; --tabbar:rgba(255,255,255,.88); --danger-soft:#FEECEC;
+  --dash:#C4D2EC; --faint:#A6AEBE; --warn-bg:#FFF5E0; --warn-ink:#925800;
+  --hd1:#1E3A8A; --hd2:#2563EB; --hd3:#0F172A;
+  --shadow:0 4px 18px rgba(15,23,42,.05), 0 1px 3px rgba(15,23,42,.03);
 }
+/* 4 套精选皮肤色（浅色态） */
+html[data-skin=jade]{--pri:#0F766E; --pri2:#0B4F4A; --pri-soft:#E6F7F5; --hd1:#064E3B; --hd2:#0D9488; --hd3:#042F2E; --dash:#A7D7D2}
+html[data-skin=amber]{--pri:#B45309; --pri2:#78350F; --pri-soft:#FEF3E2; --hd1:#78350F; --hd2:#D97706; --hd3:#451A03; --dash:#E7C89E}
+html[data-skin=violet]{--pri:#6D28D9; --pri2:#4C1D95; --pri-soft:#F2ECFE; --hd1:#3B0764; --hd2:#7C3AED; --hd3:#1E1B4B; --dash:#C9B6F2}
+
 html[data-theme=dark]{
-  --bg:#121519; --card:#1C2026; --ink:#E6E8EB; --ink2:#C9CDD3; --sub:#8E959F; --line:#2A2F37;
-  --pri:#6E97E0; --pri2:#2A3F66; --pri-soft:#22314A; --inp:#15181D; --seg-on:#2E343D; --tabbar:rgba(28,32,38,.96);
-  --green:#2FBF89; --orange:#F07B4E; --green-soft:#16302A; --orange-soft:#3A251B; --danger-soft:#3A1F21;
-  --dash:#3A4A66; --faint:#5E646D; --warn-bg:#3A2E14; --warn-ink:#F2CF85; --hd1:#2A4170; --hd2:#18233A;
+  --bg:#0E1117; --card:#171B24; --ink:#EDF1F7; --ink2:#C4CBD8; --sub:#8892A4; --line:#252B38;
+  --pri:#60A5FA; --pri2:#1E3A8A; --pri-soft:#1B2942; --inp:#12161F; --seg-on:#252C3B; --tabbar:rgba(23,27,36,.88);
+  --green:#34D399; --orange:#FB923C; --green-soft:#122E26; --orange-soft:#342115; --danger-soft:#361A1E;
+  --dash:#33415C; --faint:#5A6375; --warn-bg:#332811; --warn-ink:#F6D379;
+  --hd1:#172554; --hd2:#1E40AF; --hd3:#0B1120;
+  --shadow:0 6px 20px rgba(0,0,0,.32);
 }
+html[data-theme=dark][data-skin=jade]{--pri:#2DD4BF; --pri-soft:#13312E; --hd1:#064E3B; --hd2:#0F766E; --hd3:#022C22}
+html[data-theme=dark][data-skin=amber]{--pri:#FBBF24; --pri-soft:#332412; --hd1:#78350F; --hd2:#B45309; --hd3:#2A1205}
+html[data-theme=dark][data-skin=violet]{--pri:#A78BFA; --pri-soft:#261C42; --hd1:#3B0764; --hd2:#6D28D9; --hd3:#170A2E}
 html[data-colors=swap]{--exp:var(--orange); --inc:var(--green); --exp-soft:var(--orange-soft); --inc-soft:var(--green-soft)}
 html[data-theme=dark] body{color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.45}
 body{max-width:520px;margin:0 auto;min-height:100vh}
-button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;transition:transform .12s ease,background-color .15s ease,opacity .15s ease}
 input,select,textarea{font:inherit;color:inherit}
 .num,b,.ri-amt{font-variant-numeric:tabular-nums}
 [data-lp]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 svg{width:22px;height:22px;display:block}
-#main{padding-bottom:96px}
+#main{padding-bottom:104px}
 
 /* 顶部 */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 8px}
-.topbar h1{font-size:22px;margin:0;font-weight:700}
-.ibtn{width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center}
-.ibtn:active{background:rgba(0,0,0,.06)}
-.ibtn.light{color:#fff}
-.ibtn.light:active{background:rgba(255,255,255,.15)}
+.topbar h1{font-size:23px;margin:0;font-weight:800;letter-spacing:-.3px}
+.ibtn{width:38px;height:38px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center}
+.ibtn:active{background:rgba(0,0,0,.06);transform:scale(.94)}
+.ibtn.light{color:#fff;background:rgba(255,255,255,.12);backdrop-filter:blur(6px)}
+.ibtn.light:active{background:rgba(255,255,255,.24)}
 
 /* 卡片 */
-.card{background:var(--card);border-radius:var(--r);margin:12px 14px;box-shadow:0 1px 2px rgba(30,36,48,.04)}
-.card.pad{padding:14px}
-.card-h{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 6px;font-weight:600}
-.card-h small{color:var(--sub);font-weight:400}
+.card{background:var(--card);border-radius:var(--r);margin:12px 14px;box-shadow:var(--shadow);border:1px solid rgba(148,163,184,.08)}
+.card.pad{padding:15px}
+.card-h{display:flex;justify-content:space-between;align-items:center;padding:15px 16px 6px;font-weight:700;font-size:15.5px}
+.card-h small{color:var(--sub);font-weight:400;font-size:12.5px}
 
-/* 首页头部 */
-.home-hd{background:linear-gradient(160deg,var(--hd1),var(--hd2));color:#fff;padding:12px 18px 34px;border-radius:0 0 26px 26px}
-.hd-top{display:flex;justify-content:space-between;align-items:center}
-.mnav{display:flex;align-items:center;gap:2px;font-weight:600;font-size:16px}
+/* 首页旗舰沉浸头部 */
+.home-hd{position:relative;overflow:hidden;background:linear-gradient(145deg,var(--hd1) 0%,var(--hd2) 55%,var(--hd3) 100%);color:#fff;padding:14px 18px 38px;border-radius:0 0 30px 30px;box-shadow:0 10px 28px rgba(15,23,42,.16)}
+.home-hd::before{content:"";position:absolute;right:-44px;top:-44px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%);pointer-events:none}
+.home-hd::after{content:"";position:absolute;left:-50px;bottom:-60px;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,.18),transparent 72%);pointer-events:none}
+.home-hd>*{position:relative;z-index:1}
+.hd-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.hd-acts{display:flex;align-items:center;gap:6px}
+.mnav{display:flex;align-items:center;gap:3px;font-weight:600;font-size:16px}
 .mnav button{width:32px;height:32px;border-radius:10px;color:#fff;font-size:20px}
-.mnav button:active{background:rgba(255,255,255,.15)}
-.hd-lbl{opacity:.75;font-size:13px;margin-top:10px}
-.hd-big{font-size:38px;font-weight:700;letter-spacing:.5px;line-height:1.15}
-.hd-big small{font-size:20px;opacity:.85}
-.hd-row{display:flex;gap:10px;margin-top:12px}
-.hd-row>div{flex:1;background:rgba(255,255,255,.1);border-radius:12px;padding:8px 12px}
-.hd-row span{display:block;font-size:12px;opacity:.75}
-.hd-row b{font-size:16px}
+.mnav button:active{background:rgba(255,255,255,.18)}
+.hd-lbl{opacity:.8;font-size:13px;margin-top:12px;display:flex;align-items:center;justify-content:space-between}
+.hd-big{font-size:40px;font-weight:800;letter-spacing:-.5px;line-height:1.15;margin-top:2px;text-shadow:0 2px 10px rgba(0,0,0,.15)}
+.hd-big small{font-size:21px;opacity:.88;font-weight:700}
+.hd-prog{margin-top:12px;background:rgba(255,255,255,.12);border-radius:14px;padding:10px 12px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12)}
+.hd-prog-t{display:flex;justify-content:space-between;align-items:center;font-size:12px;opacity:.92;margin-bottom:6px;gap:8px}
+.hd-prog-bar{height:7px;border-radius:999px;background:rgba(255,255,255,.2);overflow:hidden}
+.hd-prog-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#34D399,#FBBF24);transition:width .35s ease}
+.hd-prog-bar i.over{background:linear-gradient(90deg,#FB7185,#EF4444)}
+.hd-row{display:flex;gap:10px;margin-top:10px}
+.hd-row>div{flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px);border-radius:14px;padding:9px 12px}
+.hd-row span{display:block;font-size:12px;opacity:.8}
+.hd-row b{font-size:16.5px;font-weight:700}
 .hd-row .over{color:#FFB4A0}
 .warn-bar{margin:10px 14px 0;padding:10px 12px;background:var(--warn-bg);color:var(--warn-ink);border-radius:12px;font-size:13px}
 
@@ -100,15 +121,16 @@ svg{width:22px;height:22px;display:block}
 .ri-amt{font-weight:700;font-size:16px;white-space:nowrap}
 .exp{color:var(--exp)} .inc{color:var(--inc)} .tr{color:var(--tr)}
 
-/* 底部导航 */
-.tabbar{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;height:64px;background:var(--tabbar);
-  backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;align-items:center;z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+/* 底部悬浮磨砂胶囊导航 */
+.tabbar{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));max-width:496px;margin:0 auto;height:62px;background:var(--tabbar);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(148,163,184,.16);border-radius:26px;
+  display:flex;align-items:center;z-index:20;box-shadow:0 10px 30px rgba(15,23,42,.12)}
 .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--sub)}
-.tabbar button.on{color:var(--pri);font-weight:600}
-.tabbar .plus{flex:none;width:58px;height:58px;border-radius:50%;background:var(--acc);color:#fff;margin:-26px 10px 0;
-  box-shadow:0 6px 16px rgba(240,162,50,.45);justify-content:center}
+.tabbar button.on{color:var(--pri);font-weight:700}
+.tabbar .plus{flex:none;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;margin:-28px 8px 0;
+  box-shadow:0 8px 20px rgba(245,158,11,.48), 0 0 0 4px var(--card);justify-content:center}
 .tabbar .plus svg{width:30px;height:30px}
-.tabbar .plus:active{transform:scale(.94)}
+.tabbar .plus:active{transform:scale(.91)}
 
 /* 按钮 */
 .btn{height:44px;padding:0 18px;border-radius:12px;background:var(--bg);font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
@@ -440,6 +462,57 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
 .bk-file .bf-mid{flex:1;min-width:0}
 .bk-file .bf-mid b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bk-file .bf-mid small{font-size:12px;color:var(--sub)}
+
+/* v3.0 旗舰美化：金刚区、计算器键盘、财务洞察、资产渐变卡、借还进度、皮肤选择器 */
+.tool-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 10px}
+.tool-item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 2px;border-radius:14px;font-size:12px;color:var(--ink2);font-weight:500}
+.tool-item:active{background:var(--bg);transform:scale(.95)}
+.tool-ic{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--pri-soft)}
+.tool-ic.c1{background:#FEE2E2} .tool-ic.c2{background:#FEF3C7} .tool-ic.c3{background:#DCFCE7} .tool-ic.c4{background:#DBEAFE}
+.tool-ic.c5{background:#F3E8FF} .tool-ic.c6{background:#CFFAFE} .tool-ic.c7{background:#FFEDD5} .tool-ic.c8{background:#F1F5F9}
+html[data-theme=dark] .tool-ic.c1{background:#3B1C22} html[data-theme=dark] .tool-ic.c2{background:#382B14}
+html[data-theme=dark] .tool-ic.c3{background:#143326} html[data-theme=dark] .tool-ic.c4{background:#1A2B4C}
+html[data-theme=dark] .tool-ic.c5{background:#2D1E4A} html[data-theme=dark] .tool-ic.c6{background:#14323B}
+html[data-theme=dark] .tool-ic.c7{background:#3A2416} html[data-theme=dark] .tool-ic.c8{background:#242936}
+
+.asset-hero{background:linear-gradient(135deg,var(--hd1),var(--hd2));color:#fff;border-radius:var(--r);margin:8px 14px 12px;padding:20px 18px;box-shadow:0 10px 26px rgba(15,23,42,.15);position:relative;overflow:hidden}
+.asset-hero::after{content:"";position:absolute;right:-30px;bottom:-40px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%)}
+.asset-hero span{font-size:13px;opacity:.82}
+.asset-hero b.big{display:block;font-size:34px;font-weight:800;margin-top:4px;letter-spacing:-.5px}
+.asset-sub{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.16)}
+.asset-sub div span{display:block;font-size:11.5px;opacity:.78}
+.asset-sub div b{font-size:14.5px;font-weight:700}
+
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ins-box{background:var(--bg);border-radius:14px;padding:11px 12px}
+.ins-box span{display:block;font-size:12px;color:var(--sub)}
+.ins-box b{display:block;font-size:17px;margin-top:3px;font-weight:700}
+.ins-box small{display:block;font-size:11.5px;color:var(--sub);margin-top:2px}
+.delta-up{color:var(--danger)!important} .delta-dn{color:var(--green)!important}
+
+.tpl-bar{display:flex;gap:6px;overflow-x:auto;padding:8px 16px 2px;scrollbar-width:none}
+.tpl-bar::-webkit-scrollbar{display:none}
+.tpl-pill{flex:none;padding:5px 11px;border-radius:999px;background:var(--pri-soft);color:var(--pri);font-size:12.5px;font-weight:600;white-space:nowrap}
+.tpl-pill.calc-on{background:var(--pri);color:#fff}
+
+.calc-pad{background:var(--bg);border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom));flex:none}
+.calc-expr{font-size:12.5px;color:var(--sub);text-align:right;padding:0 6px 6px;min-height:20px;font-variant-numeric:tabular-nums}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.calc-grid button{height:44px;border-radius:12px;background:var(--card);font-size:19px;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.calc-grid button:active{transform:scale(.95);filter:brightness(.94)}
+.calc-grid button.op{background:var(--pri-soft);color:var(--pri);font-size:17px}
+.calc-grid button.ok{background:linear-gradient(135deg,var(--pri),var(--hd2));color:#fff;font-size:16px}
+
+.skin-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.skin-chip{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 4px;border-radius:14px;background:var(--bg);border:2px solid transparent;font-size:12px;font-weight:600}
+.skin-chip.on{border-color:var(--pri);background:var(--pri-soft);color:var(--pri)}
+.skin-dot{width:26px;height:26px;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+
+.debt-card{padding:12px 16px;border-bottom:1px solid var(--line)}
+.debt-card:last-child{border-bottom:0}
+.debt-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.debt-meta{font-size:12px;color:var(--sub);margin-top:4px;display:flex;justify-content:space-between;gap:8px}
+.sumbar{bottom:calc(78px + env(safe-area-inset-bottom))}
 </style>
 </head>
 <body>
@@ -525,12 +598,14 @@ const IC = {
   more: sv('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),
   chev: sv('<path d="m9 6 6 6-6 6"/>'),
   filter: sv('<path d="M4 5h16l-6 7.5V19l-4 1.5v-8z"/>'),
+  eye: sv('<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/>'),
+  eyeOff: sv('<path d="M3 3l18 18"/><path d="M10.6 10.6a3 3 0 0 0 4.2 4.2"/><path d="M9.9 5.2A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-3.4 4.2"/><path d="M6.2 6.2A18.3 18.3 0 0 0 2 12s3.5 7 10 7a9.8 9.8 0 0 0 4.8-1.2"/>'),
 };
 
-/* ========== 2. 存储层（打包 APK 时替换这一段即可） ========== */
+/* ========== 2. 存储层（IndexedDB v3：无缝兼容旧版，新增借还欠款表） ========== */
 const Storage = (() => {
-  const NAME = 'xiaozhangben', VER = 2;
-  const STORES = ['categories', 'accounts', 'tags', 'templates', 'records', 'photos', 'meta', 'recurring'];
+  const NAME = 'xiaozhangben', VER = 3;
+  const STORES = ['categories', 'accounts', 'tags', 'templates', 'records', 'photos', 'meta', 'recurring', 'debts'];
   let db = null; const mem = {}; STORES.forEach(s => mem[s] = new Map());
   const rp = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
   const done = tx => new Promise((res, rej) => { tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error || new Error('写入被中断')); });
@@ -595,17 +670,21 @@ const DEFAULT_BACKUP = () => ({
   lastCloudTs: null, lastCloudLabel: null, lastCloudErr: '', dirty: false, uploadedPhotos: [],
 });
 const DEFAULT_SETTINGS = () => ({id: 'settings', budget: 0, catBudgets: {}, introDone: false, lastAccountId: null, lastBackup: null, lastBackupTs: null,
-  incFixed: false, incBig: false, theme: 'system', colors: 'default', remind: {on: true, time: '20:30'}, remindDismissed: null, backupSnooze: null,
+  incFixed: false, incBig: false, theme: 'system', skin: 'ocean', colors: 'default', hideMoney: false,
+  remind: {on: true, time: '20:30'}, remindDismissed: null, backupSnooze: null,
   backup: DEFAULT_BACKUP()});
-const S = {categories: [], accounts: [], tags: [], templates: [], records: [], recurring: [], settings: DEFAULT_SETTINGS()};
+const S = {categories: [], accounts: [], tags: [], templates: [], records: [], recurring: [], debts: [], settings: DEFAULT_SETTINGS()};
 const IDX = {cat: new Map(), acc: new Map(), tag: new Map()};
 function reindex() { IDX.cat = new Map(S.categories.map(c => [c.id, c])); IDX.acc = new Map(S.accounts.map(a => [a.id, a])); IDX.tag = new Map(S.tags.map(t => [t.id, t])); }
 const errOf = e => String(e?.message ?? e);
+/** 隐私模式金额遮罩工具 */
+const vMoney = c => S.settings.hideMoney ? '****' : money(c);
+const vShort = c => S.settings.hideMoney ? '**' : short(c);
 
 const Store = {
   async init() {
     await Storage.open();
-    for (const k of ['categories', 'accounts', 'tags', 'templates', 'records', 'recurring']) S[k] = await Storage.getAll(k);
+    for (const k of ['categories', 'accounts', 'tags', 'templates', 'records', 'recurring', 'debts']) S[k] = await Storage.getAll(k);
     const st = (await Storage.getAll('meta')).find(x => x.id === 'settings');
     if (st) {
       Object.assign(S.settings, st);
@@ -623,7 +702,7 @@ const Store = {
     });
     DEFAULT_INC.forEach(([n, ic], i) => cats.push({id: uid(), type: 'income', parentId: null, name: n, icon: ic, order: i, hidden: false}));
     const accs = DEFAULT_ACC.map(([n, ic], i) => ({id: uid(), name: n, icon: ic, init: 0, order: i, hidden: false}));
-    S.categories = cats; S.accounts = accs; S.tags = []; S.templates = []; S.records = []; S.recurring = [];
+    S.categories = cats; S.accounts = accs; S.tags = []; S.templates = []; S.records = []; S.recurring = []; S.debts = [];
     await Storage.putMany('categories', cats); await Storage.putMany('accounts', accs);
     reindex();
   },
@@ -812,8 +891,8 @@ const Store = {
       safeSettings.backup = {...safeSettings.backup, webdavPass: ''};
     }
     return {
-      app: 'xiaozhangben', version: 2, exportedAt: new Date().toISOString(),
-      data: {categories: S.categories, accounts: S.accounts, tags: S.tags, templates: S.templates, records: S.records, recurring: S.recurring, settings: safeSettings},
+      app: 'xiaozhangben', version: 3, exportedAt: new Date().toISOString(),
+      data: {categories: S.categories, accounts: S.accounts, tags: S.tags, templates: S.templates, records: S.records, recurring: S.recurring, debts: S.debts, settings: safeSettings},
       photoMonths: this.photoMonthMap(),
     };
   },
@@ -840,7 +919,7 @@ const Store = {
     const prevBk = keepBackupCfg ? JSON.parse(JSON.stringify(S.settings.backup || DEFAULT_BACKUP())) : DEFAULT_BACKUP();
     _suspendSync = true;
     try {
-      for (const k of ['categories', 'accounts', 'tags', 'templates', 'records', 'recurring']) {
+      for (const k of ['categories', 'accounts', 'tags', 'templates', 'records', 'recurring', 'debts']) {
         S[k] = Array.isArray(obj.data[k]) ? obj.data[k] : [];
         await Storage.clear(k); if (S[k].length) await Storage.putMany(k, S[k]);
       }
@@ -925,7 +1004,7 @@ const Layers = {
 /* 安卓返回键：先关最上面的弹窗/页面；没有弹窗时，不在首页就回首页，在首页就退到后台 */
 window.appBack = () => Layers.closeTop();
 const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '3.0.0';
 try {
   const AppPlugin = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
   if (AppPlugin) AppPlugin.addListener('backButton', () => {
@@ -990,8 +1069,9 @@ function recItem(r) {
     <div class="ri-ic ${cls}">${isT ? '🔁' : Store.catIcon(r.categoryId)}</div>
     <div class="ri-mid"><div class="ri-t">${isT ? '转账' : esc(Store.catName(r.categoryId))}${r.person ? `<span class="person-tag">👤 ${esc(r.person)}</span>` : ''}${r.photoIds?.length ? ' <small>📷</small>' : ''}${isFixed(r) ? '<small class="b">🔁 固定</small>' : r.recurId && r.type === 'income' ? '<small class="b">🔁 周期</small>' : ''}${isBig(r) ? '<small class="b">💰 大额</small>' : ''}</div>
       <div class="ri-s">${sub.join(' · ')}</div>${tags.length ? `<div class="ri-tags">${tags.map(t => `<span>#${esc(t.name)}</span>`).join('')}</div>` : ''}</div>
-    <div class="ri-amt ${cls}">${sign}${money(r.amount)}</div></div>`;
+    <div class="ri-amt ${cls}">${S.settings.hideMoney ? '****' : sign + money(r.amount)}</div></div>`;
 }
+ACT.togHideMoney = () => { S.settings.hideMoney = !S.settings.hideMoney; Store.saveSettings(); refreshAll(); toast(S.settings.hideMoney ? '已开启隐私模式，金额已隐藏' : '已显示金额', 1400); };
 ACT.editRec = el => { const r = S.records.find(x => x.id === el.dataset.id); if (r) openRecordForm({record: r}); };
 
 /* ---- 底部导航 ---- */
@@ -1011,7 +1091,20 @@ function renderMain() {
   document.querySelectorAll('#tabbar [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === t));
 }
 
-/* ================= 首页 ================= */
+/* ================= 首页（焕新旗舰版） ================= */
+function upcomingRecurBanner() {
+  const t = today(), lim = addDays(t, 3), hits = [];
+  for (const b of S.recurring) {
+    if (b.status !== 'active') continue;
+    const k = Recur.nextPeriod(b); if (!k) continue;
+    const d = Recur.dueDate(b, k);
+    if (d > t && d <= lim) hits.push({name: b.name, d, left: daysBetween(t, d), amt: Recur.amountFor(b, k), type: b.type});
+  }
+  if (!hits.length) return '';
+  hits.sort((a, b) => a.left - b.left);
+  const h = hits[0];
+  return `<div class="banner" data-act="openRecur"><span>📅 <b>${h.left} 天后</b>（${+h.d.slice(5, 7)}/${+h.d.slice(8)}）自动记账：${esc(h.name)} <b>${h.type === 'expense' ? '-' : '+'}${vMoney(h.amt)}</b>${hits.length > 1 ? ` 等 ${hits.length} 笔` : ''}</span><span class="chev">${IC.chev}</span></div>`;
+}
 function renderHome() {
   const ym = UI.homeMonth, [a, b] = monthRange(ym), [y, m] = ym.split('-').map(Number);
   let exp = 0, inc = 0, fx = 0, bg = 0; const byDay = {};
@@ -1021,42 +1114,72 @@ function renderHome() {
     const d = byDay[r.date] || (byDay[r.date] = {e: 0, i: 0});
     if (r.type === 'expense') { d.e += r.amount; exp += r.amount; } else { d.i += r.amount; inc += r.amount; }
   }
-  const budget = S.settings.budget || 0, left = budget - exp;
+  const budget = S.settings.budget || 0, left = budget - exp, bal = inc - exp;
   const catOver = budgetStatus(ym).filter(o => o.sp > o.amt).length;
   const [ei, ed] = money(exp).split('.');
   const t = today(), first = new Date(y, m - 1, 1).getDay(), offset = (first + 6) % 7, days = new Date(y, m, 0).getDate();
+  const isCur = ym === ymOf(t);
+  const remDays = isCur ? Math.max(1, days - (+t.slice(8)) + 1) : days;
+  const pct = budget ? Math.min(100, Math.round(exp / budget * 100)) : 0;
   let cells = '';
   for (let i = 0; i < offset; i++) cells += '<div class="cd blank"></div>';
   for (let d = 1; d <= days; d++) {
     const ds = `${ym}-${pad(d)}`, v = byDay[ds];
     cells += `<div class="cd ${ds === t ? 'today' : ''} ${ds === UI.selDay ? 'sel' : ''}" data-act="pickDay" data-d="${ds}"><div class="cd-n">${d}</div>
-      ${v?.e ? `<div class="cd-e">${short(v.e)}</div>` : ''}${v?.i ? `<div class="cd-i">${short(v.i)}</div>` : ''}</div>`;
+      ${v?.e ? `<div class="cd-e">${vShort(v.e)}</div>` : ''}${v?.i ? `<div class="cd-i">${vShort(v.i)}</div>` : ''}</div>`;
   }
-  // 本月全部记录，按天分组，从新到旧（向上滑浏览）
   const monthRs = S.records.filter(r => !r.deletedAt && r.date >= a && r.date <= b).sort((p, q) => p.date < q.date ? 1 : p.date > q.date ? -1 : q.createdAt - p.createdAt);
   const groups = []; monthRs.forEach(r => { const g = groups[groups.length - 1]; if (g && g.date === r.date) g.list.push(r); else groups.push({date: r.date, list: [r]}); });
   const feed = groups.map(g => {
     let ge = 0, gi = 0; g.list.forEach(r => { if (countsExp(r)) ge += r.amount; else if (r.type === 'income') gi += r.amount; });
-    return `<div class="card day-grp ${g.date === UI.selDay ? 'hl' : ''}" id="g-${g.date}"><div class="day-hd"><b>${dateLabel(g.date)}</b><span>${ge ? '支 ' + money(ge) : ''}${ge && gi ? '　' : ''}${gi ? '收 ' + money(gi) : ''}</span></div>${g.list.map(recItem).join('')}<div style="height:6px"></div></div>`;
+    return `<div class="card day-grp ${g.date === UI.selDay ? 'hl' : ''}" id="g-${g.date}"><div class="day-hd"><b>${dateLabel(g.date)}</b><span>${ge ? '支 ' + vMoney(ge) : ''}${ge && gi ? '　' : ''}${gi ? '收 ' + vMoney(gi) : ''}</span></div>${g.list.map(recItem).join('')}<div style="height:6px"></div></div>`;
   }).join('');
   const prevYm = addMonth(ym, -1);
-  const isCur = ym === ymOf(t);
   const anim = UI.anim ? (UI.anim > 0 ? 'anim-l' : 'anim-r') : ''; UI.anim = 0;
+  const openDebts = S.debts.filter(d => d.status !== 'settled').length;
+  const budgetBar = budget
+    ? `<div class="hd-prog" data-act="openBudget">
+        <div class="hd-prog-t"><span>🎯 ${m}月预算 · 已用 ${pct}%${catOver ? `（${catOver}类超支）` : ''}</span>
+          <b class="${left < 0 ? 'over' : ''}">${left < 0 ? '超支 ' + vMoney(-left) : '剩 ' + vMoney(left)}</b></div>
+        <div class="hd-prog-bar"><i class="${left < 0 ? 'over' : ''}" style="width:${pct}%"></i></div>
+        ${left > 0 && isCur ? `<div style="font-size:11px;opacity:.82;margin-top:5px">本月还剩 ${remDays} 天 · 日均还可花 ¥${vMoney(Math.floor(left / remDays))}</div>` : ''}
+      </div>`
+    : `<div class="hd-prog" data-act="openBudget" style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12.5px">🎯 还没设置每月预算，点此设定超支提醒</span><span style="opacity:.85">设置 ›</span></div>`;
+
   return `<div class="home-hd">
     <div class="hd-top"><div class="mnav"><button data-act="hmPrev">‹</button><button class="mtitle" data-act="hmPick">${y}年${m}月<small>▾</small></button><button data-act="hmNext">›</button>
-      ${isCur ? '' : '<button data-act="hmNow" style="font-size:12px;width:auto;padding:0 8px;margin-left:4px;background:rgba(255,255,255,.15)">回今天</button>'}</div>
-      <button class="ibtn light" data-act="goDetail" aria-label="查询">${IC.search}</button></div>
-    <div class="hd-lbl">${isCur ? '本月' : m + '月'}支出</div>
-    <div class="hd-big">${ei}<small>.${ed}</small></div>
+      ${isCur ? '' : '<button data-act="hmNow" style="font-size:12px;width:auto;padding:0 8px;margin-left:4px;background:rgba(255,255,255,.16)">今</button>'}</div>
+      <div class="hd-acts">
+        <button class="ibtn light" data-act="togHideMoney" aria-label="隐私模式">${S.settings.hideMoney ? IC.eyeOff : IC.eye}</button>
+        <button class="ibtn light" data-act="goDetail" aria-label="查询">${IC.search}</button>
+        <button class="ibtn light" data-act="openSettings" aria-label="设置">${IC.set}</button>
+      </div></div>
+    <div class="hd-lbl"><span>${isCur ? '本月' : m + '月'}支出 (元)</span><span style="font-size:12px;opacity:.85">${monthRs.length} 笔账目</span></div>
+    <div class="hd-big">${S.settings.hideMoney ? '****' : `${ei}<small>.${ed}</small>`}</div>
     ${fx || bg || S.settings.incFixed || S.settings.incBig ? toggleChips(fx, bg, true) : ''}
-    <div class="hd-row"><div><span>${isCur ? '本月' : m + '月'}收入</span><b>${money(inc)}</b></div>
-      <div data-act="openBudget"><span>预算剩余</span>${budget ? `<b class="${left < 0 ? 'over' : ''}">${left < 0 ? '超支 ' + money(-left) : money(left)}</b>` : '<b style="opacity:.7;font-weight:500">点此设置</b>'}${catOver ? `<small>${catOver} 个分类超支</small>` : ''}</div></div>
-    <div class="qk"><button data-act="openRecur"><span class="e">🔁</span>周期账</button><button data-act="openBudget"><span class="e">🎯</span>预算</button>
-      <button data-act="openRecycle"><span class="e">🗑️</span>回收站</button><button data-act="openSettings"><span class="e">⚙️</span>设置</button></div>
+    ${budgetBar}
+    <div class="hd-row">
+      <div><span>${isCur ? '本月' : m + '月'}收入</span><b>${vMoney(inc)}</b></div>
+      <div><span>${isCur ? '本月' : m + '月'}结余</span><b>${S.settings.hideMoney ? '****' : (bal >= 0 ? '+' : '') + money(bal)}</b></div>
+    </div>
   </div>
   ${Storage.persistent ? '' : '<div class="warn-bar">⚠️ 当前环境无法保存数据，关闭页面后记录会丢失。</div>'}
   <div class="card cal" data-swipe="hmSwipe"><div class="cal-wk">${['一', '二', '三', '四', '五', '六', '日'].map(w => `<div>${w}</div>`).join('')}</div><div class="cal-g ${anim}">${cells}</div>
-    <div class="cal-tip">左右滑动换月 · 点上方月份可直接跳到任意年月</div></div>
+    <div class="cal-tip">左右滑动换月 · 点日期直达当天账单</div></div>
+  <div class="card">
+    <div class="tool-grid">
+      <button class="tool-item" data-act="openRenqing"><div class="tool-ic c1">🧧</div><span>人情账簿</span></button>
+      <button class="tool-item" data-act="openPoker"><div class="tool-ic c2">🀄</div><span>牌局统计</span></button>
+      <button class="tool-item" data-act="openDebts"><div class="tool-ic c3">🤝</div><span>借还${openDebts ? `(${openDebts})` : '欠款'}</span></button>
+      <button class="tool-item" data-act="openRecur"><div class="tool-ic c4">🔁</div><span>周期账</span></button>
+      <button class="tool-item" data-act="openBudget"><div class="tool-ic c5">🎯</div><span>预算管理</span></button>
+      <button class="tool-item" data-act="goBackup"><div class="tool-ic c6">☁️</div><span>云备份</span></button>
+      <button class="tool-item" data-act="goWacai"><div class="tool-ic c7">📥</div><span>挖财导入</span></button>
+      <button class="tool-item" data-act="openRecycle"><div class="tool-ic c8">🗑️</div><span>回收站</span></button>
+    </div>
+  </div>
+  ${upcomingRecurBanner()}
   ${homeBanners()}
   ${feed || `<div class="card"><div class="empty">${m}月还没有记录<br><button class="btn sm pri" data-act="addOnDay">＋ 记一笔</button></div></div>`}
   <button class="btn prev-month" data-act="hmPrev">看 ${prevYm.slice(0, 4) !== String(y) ? prevYm.slice(0, 4) + '年' : ''}${+prevYm.slice(5)}月 的记录 ›</button>`;
@@ -1145,7 +1268,7 @@ function openRecordForm(opts = {}) {
     categoryId: src.categoryId || null, accountId: (src.accountId && Store.acc(src.accountId)) ? src.accountId : (isTpl && t ? null : lastAcc),
     toAccountId: src.toAccountId || null, date: r?.date || opts.date || today(), note: src.note || '', person: opts.person ?? src.person ?? '',
     tagIds: [...(src.tagIds || [])].filter(id => Store.tag(id)), photoIds: [...(r?.photoIds || [])], newPhotos: [], removedPhotos: [],
-    recurId: r?.recurId || null, recurPeriod: r?.recurPeriod, big: !!src.big,
+    recurId: r?.recurId || null, recurPeriod: r?.recurPeriod, big: !!src.big, calcOpen: false,
   };
   if (opts.type) F.type = opts.type;
   if (opts.categoryId && Store.cat(opts.categoryId)) F.categoryId = opts.categoryId;
@@ -1155,8 +1278,38 @@ function openRecordForm(opts = {}) {
   Layers.get(el).refresh = () => { if (F && F.el === el) renderFormParts(true); };
   renderForm();
 }
+function evalCalcExpr(str) {
+  const s = String(str ?? '').trim().replace(/[¥￥,，\s]/g, '').replace(/。/g, '.');
+  if (!s) return null;
+  if (!/^[0-9.+\-]+$/.test(s)) return null;
+  const tokens = s.match(/[+\-]?(\d+(\.\d*)?|\.\d+)/g);
+  if (!tokens || tokens.join('') !== s.replace(/^[+]/, '')) {
+    const clean = s.replace(/[+\-]+$/, '');
+    const t2 = clean.match(/[+\-]?(\d+(\.\d*)?|\.\d+)/g);
+    if (!t2 || !clean) return null;
+    const sum2 = t2.reduce((acc, x) => acc + parseFloat(x), 0);
+    return isFinite(sum2) ? Math.round(sum2 * 100) / 100 : null;
+  }
+  const sum = tokens.reduce((acc, x) => acc + parseFloat(x), 0);
+  return isFinite(sum) ? Math.round(sum * 100) / 100 : null;
+}
+function renderCalcPad() {
+  if (!F?.calcOpen) return '';
+  const hasOp = /[+\-]/.test(F.amount.slice(1));
+  const val = hasOp ? evalCalcExpr(F.amount) : null;
+  return `<div class="calc-pad" id="fCalcPad">
+    <div class="calc-expr">${hasOp && val != null ? `${esc(F.amount)} = <b>¥${val.toFixed(2)}</b>` : '支持加减算账，例如 36+18.5'}</div>
+    <div class="calc-grid">
+      <button type="button" data-act="calcKey" data-k="7">7</button><button type="button" data-act="calcKey" data-k="8">8</button><button type="button" data-act="calcKey" data-k="9">9</button><button type="button" class="op" data-act="calcKey" data-k="BS">⌫</button>
+      <button type="button" data-act="calcKey" data-k="4">4</button><button type="button" data-act="calcKey" data-k="5">5</button><button type="button" data-act="calcKey" data-k="6">6</button><button type="button" class="op" data-act="calcKey" data-k="+">＋</button>
+      <button type="button" data-act="calcKey" data-k="1">1</button><button type="button" data-act="calcKey" data-k="2">2</button><button type="button" data-act="calcKey" data-k="3">3</button><button type="button" class="op" data-act="calcKey" data-k="-">－</button>
+      <button type="button" class="op" data-act="calcKey" data-k="C">清零</button><button type="button" data-act="calcKey" data-k="0">0</button><button type="button" data-act="calcKey" data-k=".">.</button>
+      ${hasOp ? '<button type="button" class="ok" data-act="calcKey" data-k="=">＝</button>' : '<button type="button" class="ok" data-act="fSave">保存</button>'}
+    </div></div>`;
+}
 function renderForm() {
   const tpl = F.mode === 'template', isT = F.type === 'transfer';
+  const quickTpls = !tpl ? [...S.templates].sort(byOrder).slice(0, 8) : [];
   F.el.querySelector('.page').innerHTML = `
   <div class="fp-head"><button class="ibtn" data-act="layerBack" aria-label="关闭">${IC.close}</button>
     <div class="seg">${['expense', 'income', 'transfer'].map(t => `<button class="${F.type === t ? 'on ' + t : ''}" data-act="fType" data-t="${t}">${TYPE_NAME[t]}</button>`).join('')}</div>
@@ -1165,6 +1318,10 @@ function renderForm() {
     ${tpl ? `<div class="fld"><label>模板名称</label><input data-in="fTplName" value="${esc(F.tplName)}" placeholder="比如：早餐、地铁通勤" maxlength="20"></div>` : ''}
     <div class="amt-box ${F.type}"><div class="amt-cat" id="fSelCat"></div>
       <div class="amt-in"><span>¥</span><input id="fAmt" data-in="fAmount" inputmode="decimal" placeholder="${tpl ? '可不填' : '0.00'}" value="${esc(F.amount)}" autocomplete="off"></div></div>
+    <div class="tpl-bar">
+      <button type="button" class="tpl-pill ${F.calcOpen ? 'calc-on' : ''}" data-act="fTogCalc">🧮 ${F.calcOpen ? '收起计算器' : '计算器键盘'}</button>
+      ${quickTpls.map(t => `<button type="button" class="tpl-pill" data-act="fQuickTpl" data-id="${t.id}">⚡ ${esc(t.name)}${t.amount ? ' ¥' + (t.amount / 100) : ''}</button>`).join('')}
+    </div>
     <div class="ferr" id="fErr"></div>
     ${F.recurId ? `<div class="rec-tip">🔁 这笔来自周期账「${esc(S.recurring.find(b => b.id === F.recurId)?.name || '已删除的周期账')}」${F.recurPeriod > 0 ? `第 ${F.recurPeriod} 期` : F.recurPeriod === 0 ? '首付' : ''}。在这里修改只影响这一笔。</div>` : ''}
     ${isT ? `<div class="fld"><label>从哪个账户转出</label><div class="chips" id="fAccFrom"></div></div><div class="fld"><label>转入哪个账户</label><div class="chips" id="fAccTo"></div></div>`
@@ -1176,6 +1333,7 @@ function renderForm() {
     <div class="fld"><label>标签 <small>可多选，可不选</small></label><div class="chips wrap" id="fTags"></div></div>
     ${tpl ? '' : '<div class="fld"><label>照片 <small>最多 9 张，会自动压缩</small></label><div class="photos" id="fPhotos"></div></div>'}
   </div>
+  ${renderCalcPad()}
   <div class="fp-foot">
     ${F.id && !tpl ? '<button class="btn danger-o" data-act="fDelete">删除</button>' : ''}
     ${tpl && F.tplId ? '<button class="btn danger-o" data-act="tplDelete">删除</button>' : ''}
@@ -1184,6 +1342,41 @@ function renderForm() {
   </div>`;
   renderFormParts();
 }
+ACT.fTogCalc = () => { if (!F) return; F.calcOpen = !F.calcOpen; renderForm(); };
+ACT.fQuickTpl = el => {
+  const t = S.templates.find(x => x.id === el.dataset.id); if (!t || !F) return;
+  F.type = t.type; if (t.amount != null) F.amount = (t.amount / 100).toString();
+  F.categoryId = Store.cat(t.categoryId) ? t.categoryId : null;
+  if (Store.acc(t.accountId)) F.accountId = t.accountId;
+  F.toAccountId = Store.acc(t.toAccountId) ? t.toAccountId : F.toAccountId;
+  F.note = t.note || ''; F.tagIds = (t.tagIds || []).filter(id => Store.tag(id));
+  renderForm(); toast('已套用「' + t.name + '」', 1200);
+};
+ACT.calcKey = el => {
+  if (!F) return;
+  const k = el.dataset.k;
+  if (k === 'C') F.amount = '';
+  else if (k === 'BS') F.amount = F.amount.slice(0, -1);
+  else if (k === '=') {
+    const v = evalCalcExpr(F.amount);
+    if (v != null) F.amount = Number.isInteger(v) ? String(v) : v.toFixed(2).replace(/\.?0+$/, '');
+  } else if (k === '+' || k === '-') {
+    if (!F.amount) return;
+    if (/[+\-]$/.test(F.amount)) F.amount = F.amount.slice(0, -1) + k;
+    else F.amount += k;
+  } else if (k === '.') {
+    const curSeg = F.amount.split(/[+\-]/).pop();
+    if (!curSeg.includes('.')) F.amount += curSeg ? '.' : '0.';
+  } else {
+    const curSeg = F.amount.split(/[+\-]/).pop();
+    if (/\.\d{2}$/.test(curSeg)) return;
+    F.amount += k;
+  }
+  const inp = $('#fAmt', F.el); if (inp) inp.value = F.amount;
+  const pad = $('#fCalcPad', F.el);
+  if (pad) pad.outerHTML = renderCalcPad();
+  $('#fErr', F.el)?.classList.remove('show');
+};
 function renderFormParts(keepScroll) {
   if (!F) return;
   renderSelCat(); if (F.type !== 'transfer') renderCatBox(keepScroll);
@@ -1300,6 +1493,11 @@ function fErr(m) { const e = $('#fErr', F.el); e.textContent = m; e.classList.ad
 ACT.fSave = async el => {
   if (!F || F.saving) return;
   if (F.mode === 'template') return saveTplFromForm();
+  // 如果金额框里是加减算式（如 36+18.5），保存时自动算出结果
+  if (/[+\-]/.test(String(F.amount || '').slice(1))) {
+    const cv = evalCalcExpr(F.amount);
+    if (cv != null) F.amount = cv.toFixed(2).replace(/\.?0+$/, '');
+  }
   const again = !!el.dataset.again, p = parseAmount(F.amount);
   if (p.err) return fErr(p.err);
   if (F.type !== 'transfer' && !Store.cat(F.categoryId)) return fErr('请选择分类');
@@ -1699,13 +1897,41 @@ function renderReport() {
   const table = `<table class="tb"><tr><th>${unit === 'day' ? '日期' : unit === 'month' ? '月份' : '年份'}</th><th>支出</th><th>收入</th><th>结余</th></tr>
     ${rows.map(x => `<tr data-act="rpRow" data-k="${x.k}"><td>${unit === 'day' ? md(x.key) + ' ' + WEEK[x.wd] : unit === 'month' ? x.key.replace('-', '/') : x.key}</td><td class="exp">${money(x.e)}</td><td class="inc">${money(x.i)}</td><td>${money(x.i - x.e)}</td></tr>`).join('')}</table>
     ${rows.length < bk.length ? `<div class="list-tip" style="text-align:center;padding-top:6px">表格只列有收支的${unit === 'day' ? '日子' : unit === 'month' ? '月份' : '年份'}</div>` : ''}`;
-  return `<div class="topbar"><h1>报表</h1><div class="top-tools"><button class="pill-btn" data-act="openRenqing">🧧 人情账簿</button><button class="pill-btn" data-act="openPoker">🀄 牌局统计</button></div></div>
+  // 财务体检洞察（储蓄率、日均消费、环比上期、最大单笔 + 消费 Top 10）
+  const spanDays = Math.max(1, daysBetween(a, b > today() ? today() : b) + 1);
+  const dailyAvg = Math.round(E / spanDays);
+  const saveRate = I > 0 ? Math.round((I - E) / I * 100) : null;
+  let prevDeltaHtml = '<small>无上期对比</small>';
+  if (rp.gran === 'month' || rp.gran === 'year') {
+    const [pa, pb] = rp.gran === 'month' ? monthRange(addMonth(rp.ym, -1)) : [`${rp.year - 1}-01-01`, `${rp.year - 1}-12-31`];
+    let pE = 0; rpBase(pa, pb).forEach(r => { if (countsExp(r)) pE += r.amount; });
+    if (pE > 0) {
+      const diffPct = ((E - pE) / pE * 100);
+      prevDeltaHtml = `<small class="${diffPct > 0 ? 'delta-up' : 'delta-dn'}">较上${rp.gran === 'month' ? '月' : '年'} ${diffPct > 0 ? '↑' : '↓'}${Math.abs(diffPct).toFixed(1)}%</small>`;
+    }
+  }
+  const expList = base.filter(r => countsExp(r)).sort((x, y) => y.amount - x.amount);
+  const maxOne = expList[0];
+  const top10 = expList.slice(0, 10);
+  const insightCard = `<div class="card pad">
+    <div style="font-weight:700;font-size:15px;margin-bottom:10px">📊 本期财务体检</div>
+    <div class="insight-grid">
+      <div class="ins-box"><span>日均支出</span><b class="exp">¥${vMoney(dailyAvg)}</b>${prevDeltaHtml}</div>
+      <div class="ins-box"><span>储蓄率（结余占比）</span><b class="${saveRate != null && saveRate >= 20 ? 'inc' : ''}">${saveRate == null ? '—' : saveRate + '%'}</b><small>${saveRate == null ? '本期无收入' : saveRate >= 30 ? '理财达人 👍' : saveRate >= 0 ? '保持收支平衡' : '本期入不敷出'}</small></div>
+      <div class="ins-box"><span>单笔最大支出</span><b>${maxOne ? '¥' + vMoney(maxOne.amount) : '—'}</b><small>${maxOne ? esc(Store.catName(maxOne.categoryId)) + ' · ' + maxOne.date.slice(5) : '暂无支出'}</small></div>
+      <div class="ins-box"><span>消费笔数</span><b>${nE} 笔支出</b><small>${nI} 笔收入 · 均笔 ¥${nE ? vMoney(Math.round(E / nE)) : '0.00'}</small></div>
+    </div>
+  </div>`;
+  const top10Card = top10.length ? `<div class="card"><div class="card-h"><span>🏆 本期支出排行榜</span><small>前 ${top10.length} 笔</small></div>${top10.map(recItem).join('')}<div style="height:6px"></div></div>` : '';
+
+  return `<div class="topbar"><h1>报表</h1><div class="top-tools"><button class="pill-btn" data-act="openRenqing">🧧 人情</button><button class="pill-btn" data-act="openPoker">🀄 牌局</button><button class="pill-btn" data-act="openDebts">🤝 借还</button></div></div>
   <div class="card pad rp-ctl" style="margin-top:4px">${gseg}
     <div class="rp-row" style="justify-content:center;position:relative">${back}${nav}</div>
     ${cards}
     <div class="rp-tg">${toggleChips(fx, bg)}<button class="ibtn fbtn ${fCount ? 'on' : ''}" data-act="rpFilter" aria-label="筛选">${IC.filter}${fCount ? `<i>${fCount}</i>` : ''}</button></div>
     ${fSum}
   </div>
+  ${insightCard}
   ${pie}
   <div class="card">
     <div class="card-h"><span>${rp.view === 'balance' ? '收支对比' : '收支趋势'}</span><small>每${uName}</small></div>
@@ -1713,7 +1939,8 @@ function renderReport() {
     ${info}
     ${barsSvg(bk, rp.sel)}
     ${table}<div style="height:6px"></div>
-  </div>`;
+  </div>
+  ${top10Card}`;
 }
 function donutSvg(slices, total) {
   const R = 70, C = 2 * Math.PI * R; let off = 0;
@@ -1817,16 +2044,37 @@ ACT.rpDrill = el => {
   showDetail({...defaultFilter('custom'), start: a, end: b, type: rp.view, cats: id !== 'none' ? [id] : [], tags: rp.tag ? [rp.tag] : [], accs: [...rp.accs]});
 };
 
-/* ================= 账户页 ================= */
+/* ================= 账户页（资产渐变看板） ================= */
+function debtTotals() {
+  let lendRem = 0, borrowRem = 0;
+  S.debts.forEach(d => {
+    if (d.status === 'settled') return;
+    const rem = Math.max(0, (d.amount || 0) - (d.paid || 0));
+    if (d.dir === 'lend') lendRem += rem; else borrowRem += rem;
+  });
+  return {lendRem, borrowRem};
+}
 function renderAccounts() {
   const bal = Store.balances(), accs = Store.accounts(true);
-  const net = accs.reduce((s, a) => s + (bal.get(a.id) || 0), 0);
-  return `<div class="topbar"><h1>账户</h1><button class="ibtn" data-act="openSettings" aria-label="设置">${IC.set}</button></div>
-  <div class="card net" style="margin-top:4px"><span>净资产（所有账户余额合计）</span><b class="num">${money(net)}</b></div>
+  let pos = 0, neg = 0;
+  accs.forEach(a => { const v = bal.get(a.id) || 0; if (v >= 0) pos += v; else neg += v; });
+  const accNet = pos + neg;
+  const {lendRem, borrowRem} = debtTotals();
+  const realNet = accNet + lendRem - borrowRem;
+  return `<div class="topbar"><h1>资产与账户</h1><div class="top-tools"><button class="ibtn" data-act="togHideMoney" aria-label="隐私模式">${S.settings.hideMoney ? IC.eyeOff : IC.eye}</button><button class="ibtn" data-act="openSettings" aria-label="设置">${IC.set}</button></div></div>
+  <div class="asset-hero">
+    <span>净资产（账户余额 + 借出待收 - 借入待还）</span>
+    <b class="big num">${S.settings.hideMoney ? '****' : '¥' + money(realNet)}</b>
+    <div class="asset-sub">
+      <div><span>账户总余额</span><b>${vMoney(accNet)}</b></div>
+      <div data-act="openDebts"><span>别人欠我 ›</span><b>${vMoney(lendRem)}</b></div>
+      <div data-act="openDebts"><span>我欠别人 ›</span><b>${vMoney(borrowRem)}</b></div>
+    </div>
+  </div>
   <div class="card">
     ${accs.map(a => { const v = bal.get(a.id) || 0; return `<div class="mrow ${a.hidden ? 'dim' : ''}" data-act="accRow" data-lp="accMenu" data-id="${a.id}">
       <div class="ic">${a.icon}</div><div class="nm">${esc(a.name)}${a.hidden ? '<span class="badge">已隐藏</span>' : ''}</div>
-      <div class="val" style="color:${v < 0 ? 'var(--danger)' : 'var(--ink)'}">${money(v)}</div>
+      <div class="val" style="color:${v < 0 ? 'var(--danger)' : 'var(--ink)'}">${vMoney(v)}</div>
       <button class="more" data-act="accMore" data-id="${a.id}" aria-label="管理">${IC.more}</button></div>`; }).join('')}
     <button class="addline" style="width:100%" data-act="addAccount">＋ 添加账户</button>
   </div>
@@ -1843,9 +2091,9 @@ ACT.openSettings = () => {
     const bkVal = bk.dirty ? '<span style="color:var(--warn-ink)">待同步</span>' : (st.lastBackup ? '上次 ' + st.lastBackup : '未备份');
     return `
     <div class="card">${row('backup', '💾 数据备份与同步（本地 + 坚果云）', bkVal)}${row('wacai', '📥 导入挖财旧账（Excel / CSV）')}${row('csvExp', '📤 导出 Excel 表格（CSV）')}</div>
-    <div class="card">${row('renqing', '🧧 人情账簿（按人名查往来）')}${row('poker', '🀄 牌局娱乐统计')}${row('recur', '周期账（自动记账）', S.recurring.filter(b => b.status === 'active').length + ' 个进行中')}${row('budget', '预算', st.budget ? '¥' + money(st.budget) : '未设置')}${row('recycle', '回收站', S.records.filter(r => r.deletedAt).length + ' 条')}</div>
+    <div class="card">${row('renqing', '🧧 人情账簿（按人名查往来）')}${row('poker', '🀄 牌局娱乐统计')}${row('debts', '🤝 借入借出 / 欠款备忘', S.debts.filter(d => d.status !== 'settled').length + ' 笔未结清')}${row('recur', '周期账（自动记账）', S.recurring.filter(b => b.status === 'active').length + ' 个进行中')}${row('budget', '预算', st.budget ? '¥' + money(st.budget) : '未设置')}${row('recycle', '回收站', S.records.filter(r => r.deletedAt).length + ' 条')}</div>
     <div class="card">${row('cats', '分类管理', S.categories.length + ' 个')}${row('accs', '账户管理', S.accounts.length + ' 个')}${row('tags', '标签管理', S.tags.length + ' 个')}${row('tpls', '记账模板', S.templates.length + ' 个')}</div>
-    <div class="card">${row('theme', '深色模式', {system: '跟随系统', light: '浅色', dark: '深色'}[st.theme] || '跟随系统')}${row('colors', '收支配色', st.colors === 'swap' ? '支出红 · 收入绿' : '支出绿 · 收入红')}${row('remind', '每日记账提醒', st.remind?.on ? st.remind.time : '关闭')}</div>
+    <div class="card">${row('skin', '🎨 主题皮肤', {ocean: '深海蓝', jade: '翡翠绿', amber: '暖阳金', violet: '暮光紫'}[st.skin] || '深海蓝')}${row('theme', '深色模式', {system: '跟随系统', light: '浅色', dark: '深色'}[st.theme] || '跟随系统')}${row('colors', '收支配色', st.colors === 'swap' ? '支出红 · 收入绿' : '支出绿 · 收入红')}${row('remind', '每日记账提醒', st.remind?.on ? st.remind.time : '关闭')}</div>
     <div class="card">${row('demo', '载入演示数据（4 个月）')}${row('clear', '清空所有数据', '', true)}</div>
     <div class="card pad" style="font-size:13px;color:var(--sub);line-height:1.7">小账本 · ${IS_APP ? '安卓完全版 v' + APP_VERSION : '网页完全版 v' + APP_VERSION}<br>共 ${Store.live().length} 条记录。数据保存在${IS_APP ? '手机本地' : '本机浏览器'}里${bk.webdavOn && bk.webdavUser ? '，已开启坚果云自动同步' : '，未开启云同步时不会上传到任何地方'}。${IS_APP ? '<br>卸载 App 会清空手机应用内数据，请保持本地或坚果云自动备份开启。' : ''}<br>
     ${Storage.persistent ? '' : '<span style="color:var(--danger)">当前环境无法持久保存，关闭页面数据会丢失。</span>'}</div>`;
@@ -1858,6 +2106,8 @@ ACT.setGo = el => {
   else if (g === 'csvExp') exportCsvAction();
   else if (g === 'renqing') openRenqingPage();
   else if (g === 'poker') openPokerPage();
+  else if (g === 'debts') openDebtsPage();
+  else if (g === 'skin') skinDialog();
   else if (g === 'budget') openBudget();
   else if (g === 'recur') openRecurList();
   else if (g === 'recycle') openRecycle();
@@ -2842,6 +3092,109 @@ ACT.pkAdd = el => {
   openRecordForm({type: t, categoryId: t === 'income' ? incCat.id : expCat.id, date: today()});
 };
 
+/* ================= 借入借出 / 欠款备忘本 ================= */
+const DEBT_UI = {tab: 'open', kw: ''};
+ACT.openDebts = () => openDebtsPage();
+function openDebtsPage() {
+  openPage('借入借出', renderDebtsBody, {right: '<button class="tbtn" data-act="debtAdd">＋ 记一笔</button>'});
+}
+function renderDebtsBody() {
+  const {lendRem, borrowRem} = debtTotals();
+  const net = lendRem - borrowRem;
+  let list = [...S.debts].sort((a, b) => (a.status === 'settled') - (b.status === 'settled') || (b.date > a.date ? 1 : -1));
+  if (DEBT_UI.tab === 'open') list = list.filter(d => d.status !== 'settled');
+  else if (DEBT_UI.tab === 'settled') list = list.filter(d => d.status === 'settled');
+  const kw = (DEBT_UI.kw || '').trim().toLowerCase();
+  if (kw) list = list.filter(d => (d.person || '').toLowerCase().includes(kw) || (d.note || '').toLowerCase().includes(kw));
+
+  const card = d => {
+    const paid = d.paid || 0, rem = Math.max(0, d.amount - paid), pct = d.amount ? Math.min(100, Math.round(paid / d.amount * 100)) : 100;
+    const isLend = d.dir === 'lend', done = d.status === 'settled';
+    return `<div class="debt-card" data-act="debtDetail" data-id="${d.id}">
+      <div class="debt-top">
+        <div><b>${isLend ? '📤 借给 ' : '📥 向 '}${esc(d.person)}${isLend ? '' : ' 借'}</b>
+          <span class="badge">${done ? '已结清' : isLend ? '待收回' : '待归还'}</span></div>
+        <b class="${isLend ? 'inc' : 'exp'}">¥${vMoney(done ? d.amount : rem)}</b>
+      </div>
+      <div class="debt-meta"><span>${d.date.replace(/-/g, '/')}${d.dueDate ? ' · 预计 ' + d.dueDate.slice(5) + ' 还' : ''}${d.note ? ' · ' + esc(d.note) : ''}</span>
+        <span>${done ? '已全额结清' : paid ? `已还 ¥${vMoney(paid)} / ¥${vMoney(d.amount)}` : '未还款'}</span></div>
+      ${!done && paid > 0 ? `<div class="bar" style="margin-top:6px"><i style="width:${pct}%;background:var(--pri)"></i></div>` : ''}
+    </div>`;
+  };
+  return `<div class="card pad">
+    <div class="rq-sum">
+      <div><span>别人欠我</span><b class="inc">${vMoney(lendRem)}</b></div>
+      <div><span>我欠别人</span><b class="exp">${vMoney(borrowRem)}</b></div>
+      <div><span>净借出</span><b>${S.settings.hideMoney ? '****' : (net >= 0 ? '+' : '') + money(net)}</b></div>
+    </div>
+    <div class="seg full" style="margin-top:10px">${[['open', '未结清'], ['settled', '已还清'], ['all', '全部']].map(([k, t]) =>
+      `<button class="${DEBT_UI.tab === k ? 'on' : ''}" data-act="debtTab" data-t="${k}">${t}</button>`).join('')}</div>
+    <div class="srch"><div class="srch-in">${IC.search}<input data-in="debtKw" placeholder="搜姓名或备注" value="${esc(DEBT_UI.kw)}" autocomplete="off"></div></div>
+  </div>
+  <div class="card">${list.length ? list.map(card).join('') : '<div class="empty">暂无借还记录<br><small>朋友借钱、垫付报销都可以记在这里，点右上角「＋ 记一笔」</small></div>'}</div>`;
+}
+ACT.debtTab = el => { DEBT_UI.tab = el.dataset.t; fdRefresh(el); };
+IN.debtKw = el => { DEBT_UI.kw = el.value; fdRefresh(el); };
+ACT.debtAdd = async () => {
+  const accs = Store.accounts();
+  const accOpts = accs.map(a => `<option value="${a.id}">${a.icon} ${esc(a.name)}</option>`).join('');
+  const v = await dialog({
+    title: '新增借还记录',
+    html: `<div class="fld" style="padding:0 0 10px"><label>方向</label><select id="dbDir" class="inp"><option value="lend">📤 借出（别人欠我 / 垫付）</option><option value="borrow">📥 借入（我欠别人）</option></select></div>
+      <div class="fld" style="padding:0 0 10px"><label>对方姓名</label><input id="dbPerson" class="inp" placeholder="如：张三" maxlength="20"></div>
+      <div class="fld" style="padding:0 0 10px"><label>金额（元）</label><input id="dbAmt" class="inp" inputmode="decimal" placeholder="0.00"></div>
+      <div class="fld" style="padding:0 0 10px"><label>发生日期</label><input id="dbDate" class="inp" type="date" value="${today()}"></div>
+      <div class="fld" style="padding:0 0 10px"><label>预计还款日（可不填）</label><input id="dbDue" class="inp" type="date"></div>
+      <div class="fld" style="padding:0 0 10px"><label>涉及账户</label><select id="dbAcc" class="inp">${accOpts}</select></div>
+      <div class="fld" style="padding:0 0 8px"><label>备注（可不填）</label><input id="dbNote" class="inp" placeholder="比如：垫付团建餐费" maxlength="60"></div>`,
+    buttons: [{text: '取消'}, {text: '保存', cls: 'pri', onClick: L => {
+      const person = $('#dbPerson', L).value.trim(); if (!person) { toast('请填写对方姓名'); return false; }
+      const p = parseAmount($('#dbAmt', L).value); if (p.err) { toast(p.err); return false; }
+      return {dir: $('#dbDir', L).value, person, amount: p.cents, date: $('#dbDate', L).value || today(), dueDate: $('#dbDue', L).value || '', accountId: $('#dbAcc', L).value, note: $('#dbNote', L).value.trim()};
+    }}],
+  });
+  if (!v) return;
+  const item = {id: uid(), ...v, paid: 0, status: 'open', logs: [], createdAt: Date.now()};
+  S.debts.push(item); persist('debts', item);
+  toast('已记下借还备忘 ✓'); refreshAll();
+};
+ACT.debtDetail = async el => {
+  const d = S.debts.find(x => x.id === el.dataset.id); if (!d) return;
+  const rem = Math.max(0, d.amount - (d.paid || 0));
+  const isLend = d.dir === 'lend', done = d.status === 'settled';
+  const items = [];
+  if (!done) {
+    items.push({t: `✅ 标记已全部还清（¥${money(rem)}）`, v: 'settle'});
+    items.push({t: '💵 登记部分还款', v: 'part'});
+  } else {
+    items.push({t: '↩️ 重新标为未结清', v: 'reopen'});
+  }
+  items.push({t: '🗑️ 删除这条借还记录', v: 'del', danger: true});
+  const act = await actionSheet(`${isLend ? '借给 ' : '借自 '}${d.person} · ¥${money(d.amount)}${done ? '（已结清）' : `（剩 ¥${money(rem)}）`}`, items);
+  if (!act) return;
+  if (act === 'settle') {
+    d.paid = d.amount; d.status = 'settled'; d.logs = [...(d.logs || []), {date: today(), amount: rem}];
+    persist('debts', d); toast('已标记结清 ✓'); refreshAll();
+  } else if (act === 'part') {
+    const pv = await promptDlg('登记部分还款金额', {placeholder: `剩余 ¥${money(rem)}`, inputmode: 'decimal', onOk: s => {
+      const p = parseAmount(s); if (p.err) { toast(p.err); return false; }
+      if (p.cents > rem) { toast('不能大于剩余未还金额'); return false; }
+      return p.cents;
+    }});
+    if (!pv) return;
+    d.paid = (d.paid || 0) + pv;
+    d.logs = [...(d.logs || []), {date: today(), amount: pv}];
+    if (d.paid >= d.amount) d.status = 'settled';
+    persist('debts', d); toast(d.status === 'settled' ? '已全部还清 ✓' : `已登记还款 ¥${money(pv)}`); refreshAll();
+  } else if (act === 'reopen') {
+    d.status = 'open'; d.paid = Math.min(d.paid || 0, Math.max(0, d.amount - 100));
+    persist('debts', d); toast('已恢复为未结清'); refreshAll();
+  } else if (act === 'del') {
+    if (!await confirmDlg('确定删除这条借还记录吗？', '删除', true)) return;
+    S.debts = S.debts.filter(x => x.id !== d.id); unpersist('debts', d.id); toast('已删除'); refreshAll();
+  }
+};
+
 /* ================= 第二阶段：周期账 ================= */
 function dueOf(ym, day) { const [y, m] = ym.split('-').map(Number); return `${ym}-${pad(Math.min(day, new Date(y, m, 0).getDate()))}`; }
 const Recur = {
@@ -3163,14 +3516,36 @@ ACT.rbClear = async () => {
   rs.forEach(purgeRecord); toast('回收站已清空'); refreshAll();
 };
 
-/* ================= 外观：深色模式、收支配色 ================= */
+/* ================= 外观：主题皮肤、深色模式、收支配色 ================= */
+const SKINS = [
+  {id: 'ocean', name: '深海蓝', col: 'linear-gradient(135deg,#1E3A8A,#2563EB)', bar: '#1E3A8A', darkBar: '#172554'},
+  {id: 'jade', name: '翡翠绿', col: 'linear-gradient(135deg,#064E3B,#0D9488)', bar: '#064E3B', darkBar: '#022C22'},
+  {id: 'amber', name: '暖阳金', col: 'linear-gradient(135deg,#78350F,#D97706)', bar: '#78350F', darkBar: '#2A1205'},
+  {id: 'violet', name: '暮光紫', col: 'linear-gradient(135deg,#3B0764,#7C3AED)', bar: '#3B0764', darkBar: '#170A2E'},
+];
 function applyTheme() {
   const st = S.settings; let dark = st.theme === 'dark';
   if (st.theme !== 'dark' && st.theme !== 'light') { try { dark = matchMedia('(prefers-color-scheme: dark)').matches; } catch (_) {} }
+  const skin = SKINS.find(x => x.id === st.skin) || SKINS[0];
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.documentElement.dataset.skin = skin.id;
   document.documentElement.dataset.colors = st.colors === 'swap' ? 'swap' : 'default';
-  const m = $('meta[name=theme-color]'); if (m) m.content = dark ? '#18233A' : '#2D4B7C';
+  const m = $('meta[name=theme-color]'); if (m) m.content = dark ? skin.darkBar : skin.bar;
 }
+async function skinDialog() {
+  const cur = S.settings.skin || 'ocean';
+  const v = await dialog({
+    title: '选择主题皮肤',
+    html: `<div class="skin-row">${SKINS.map(s => `<button type="button" class="skin-chip ${cur === s.id ? 'on' : ''}" data-act="pickSkin" data-s="${s.id}"><span class="skin-dot" style="background:${s.col}"></span><span>${s.name}</span></button>`).join('')}</div>`,
+    buttons: [{text: '完成', cls: 'pri'}],
+  });
+  return v;
+}
+ACT.pickSkin = el => {
+  S.settings.skin = el.dataset.s; Store.saveSettings(); applyTheme(); refreshAll();
+  el.parentNode.querySelectorAll('.skin-chip').forEach(x => x.classList.toggle('on', x === el));
+  toast('已切换主题皮肤 ✨', 1200);
+};
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (S.settings.theme !== 'dark' && S.settings.theme !== 'light') { applyTheme(); renderMain(); } }); } catch (_) {}
 async function themeMenu() {
   const v = await actionSheet('深色模式', [{t: '跟随系统', v: 'system'}, {t: '浅色', v: 'light'}, {t: '深色', v: 'dark'}]);
@@ -3350,6 +3725,12 @@ const Demo = {
     Store.saveSettings();
     Store.saveTemplate({name: '工作日早餐', type: 'expense', amount: 800, categoryId: cat('expense', '早餐'), accountId: acc('微信'), toAccountId: null, note: '', tagIds: []});
     Store.saveTemplate({name: '地铁通勤', type: 'expense', amount: 700, categoryId: cat('expense', '公交地铁'), accountId: acc('支付宝'), toAccountId: null, note: '通勤', tagIds: []});
+    // 借还演示数据
+    S.debts = [
+      {id: uid(), dir: 'lend', person: '张伟', amount: 150000, paid: 50000, status: 'open', date: `${y}-10-15`, dueDate: `${y}-12-01`, accountId: acc('微信'), note: '帮垫付机票', logs: [{date: `${y}-11-01`, amount: 50000}], createdAt: Date.now()},
+      {id: uid(), dir: 'borrow', person: '老陈', amount: 30000, paid: 0, status: 'open', date: `${y}-11-10`, dueDate: '', accountId: acc('支付宝'), note: '聚餐AA暂欠', logs: [], createdAt: Date.now() + 1},
+    ];
+    await Storage.putMany('debts', S.debts);
     reindex();
     return recs.length;
   },

@@ -25,8 +25,8 @@ jobs:
 
       - name: 生成安卓工程与插件配置
         run: |
-          VER_CODE=$((100 + ${{ github.run_number }}))
-          VER_NAME="2.0.${{ github.run_number }}"
+          VER_CODE=$((200 + ${{ github.run_number }}))
+          VER_NAME="3.0.${{ github.run_number }}"
           mkdir -p www && cp index.html www/index.html
           sed -i "s/const APP_VERSION = '[^']*'/const APP_VERSION = '${VER_NAME}'/" www/index.html
           cat > package.json <<'EOF'
@@ -72,8 +72,8 @@ jobs:
 
       - name: 图标、权限与版本号
         run: |
-          VER_CODE=$((100 + ${{ github.run_number }}))
-          VER_NAME="2.0.${{ github.run_number }}"
+          VER_CODE=$((200 + ${{ github.run_number }}))
+          VER_NAME="3.0.${{ github.run_number }}"
           RES=android/app/src/main/res
           rm -rf $RES/mipmap-anydpi-v26
           for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
@@ -85,7 +85,7 @@ jobs:
 
       - name: 打包并签名
         run: |
-          VER_NAME="2.0.${{ github.run_number }}"
+          VER_NAME="3.0.${{ github.run_number }}"
           cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon && cd ..
           BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
           OUT=xiaozhangben-v${VER_NAME}.apk
@@ -96,16 +96,17 @@ jobs:
       - name: 发布安装包
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.0.${{ github.run_number }}
-          name: 小账本完全版 v2.0.${{ github.run_number }}
+          tag_name: v3.0.${{ github.run_number }}
+          name: 小账本 · 焕新旗舰版 v3.0.${{ github.run_number }}
           body: |
-            下载下面的 apk 文件，在安卓手机上直接点开安装（覆盖装在旧版上面会自动保留历史数据）。
+            下载下面的 apk 文件，在安卓手机上直接点开安装（覆盖旧版保留全部历史数据）。
 
-            本版包含：
-            - 本地自动/手动备份（手机 Documents 文件夹）与超 7 天提醒
-            - 坚果云 WebDAV 自动/手动备份（断网缓存、联网补传、照片按月归档）
-            - 挖财旧账 Excel(.xlsx) / CSV 导入向导（分类映射、转账识别、重复拦截）
-            - 安卓每日定时系统通知提醒
-            - 人情往来按人名双向查账 & 牌局娱乐输赢统计
-          files: xiaozhangben-v2.0.${{ github.run_number }}.apk
+            焕新旗舰版 v3.0 全新升级：
+            - 全新现代金融美学设计：4 套主题皮肤（深海蓝/翡翠绿/暖阳金/暮光紫）+ 深浅模式 + 悬浮磨砂底栏
+            - 首页全面重构：流光预算进度条（含日均可花）、2×4 彩色金刚区、即将到期周期账预告、一键隐私打码模式
+            - 记一笔内置计算器数字键盘（支持 36+18.5 现场算账）+ 快捷模板一键直达条
+            - 全新「借入借出 / 欠款备忘本」（登记部分还款、一键结清、联动总资产看板）
+            - 报表升级「本期财务体检洞察（储蓄率/日均/环比涨跌）」+「消费 Top 10 排行榜」
+            - 完整保留：本地与坚果云双自动备份、挖财 Excel/CSV 导入、安卓每日通知、人情账簿、牌局统计
+          files: xiaozhangben-v3.0.${{ github.run_number }}.apk
           make_latest: true
