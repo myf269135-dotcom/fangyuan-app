@@ -25,13 +25,13 @@ jobs:
 
       - name: 生成安卓工程与插件配置
         run: |
-          VER_NAME="4.0.${{ github.run_number }}"
+          VER_NAME="4.1.${{ github.run_number }}"
           mkdir -p www && cp index.html www/index.html
           sed -i "s/const APP_VERSION = '[^']*'/const APP_VERSION = '${VER_NAME}'/" www/index.html
           cat > package.json <<'EOF'
           {
             "name": "xiaozhangben",
-            "version": "4.0.0",
+            "version": "4.1.0",
             "private": true,
             "dependencies": {
               "@capacitor/android": "^7.0.0",
@@ -49,10 +49,10 @@ jobs:
           cat > capacitor.config.json <<'EOF'
           {
             "appId": "com.xiaozhangben.app",
-            "appName": "小账本",
+            "appName": "挖财日记",
             "webDir": "www",
             "android": {
-              "backgroundColor": "#F4F6FA",
+              "backgroundColor": "#F5F7FB",
               "adjustMarginsForEdgeToEdge": "force"
             },
             "plugins": {
@@ -60,7 +60,7 @@ jobs:
                 "enabled": true
               },
               "LocalNotifications": {
-                "iconColor": "#2555A6"
+                "iconColor": "#3B82F6"
               }
             }
           }
@@ -71,8 +71,8 @@ jobs:
 
       - name: 注入原生插件、图标、权限与版本号
         run: |
-          VER_CODE=$((300 + ${{ github.run_number }}))
-          VER_NAME="4.0.${{ github.run_number }}"
+          VER_CODE=$((400 + ${{ github.run_number }}))
+          VER_NAME="4.1.${{ github.run_number }}"
           RES=android/app/src/main/res
           rm -rf $RES/mipmap-anydpi-v26
           for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
@@ -92,7 +92,7 @@ jobs:
           """
           svc = """        <service
                   android:name=".PayNotificationService"
-                  android:label="小账本付款通知捕账"
+                  android:label="挖财日记付款通知捕账"
                   android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
                   android:exported="true">
                   <intent-filter>
@@ -108,10 +108,10 @@ jobs:
 
       - name: 打包并签名
         run: |
-          VER_NAME="4.0.${{ github.run_number }}"
+          VER_NAME="4.1.${{ github.run_number }}"
           cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon && cd ..
           BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
-          OUT=xiaozhangben-v${VER_NAME}.apk
+          OUT=wacairiji-v${VER_NAME}.apk
           $BT/zipalign -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
           $BT/apksigner sign --ks release.jks --ks-key-alias xiaozhangben --ks-pass pass:xzb-2026-key --key-pass pass:xzb-2026-key --out $OUT aligned.apk
           $BT/apksigner verify $OUT
@@ -119,17 +119,14 @@ jobs:
       - name: 发布安装包
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v4.0.${{ github.run_number }}
-          name: 小账本 · 智能增强版 v4.0.${{ github.run_number }}
+          tag_name: v4.1.${{ github.run_number }}
+          name: 挖财日记 v4.1.${{ github.run_number }}
           body: |
-            下载下面的 apk 文件，在安卓手机上直接点开安装（覆盖旧版保留全部历史数据）。
+            下载下面的 apk 文件，在安卓手机上直接点开安装（沿用原包名与签名，覆盖装在旧版「小账本」上面自动改名并保留全部历史数据与坚果云配置）。
 
-            智能增强版 v4.0 全新升级（全部智能与捕账功能默认关闭，每项独立开关）：
-            - 🔍 全维度单字/多词不漏搜：搜“蛋”“果”“买菜”“超市”同时检索大类、小类、备注、标签、人名、账户，顶部自动展示命中品类分布汇总
-            - 🤖 AI 智能助手（内置智谱免费版 + 通义千问 + 自定义接口，全独立开关）：
-              · 🗣️ 语音/一句话智能拆账（支持一次拆出日常消费 + 人情往来 + 借入借出）
-              · 📷 拍小票/账单截图批量识图（支持「整单合并写全明细备注」⇄「按品类拆单+打场景标签」一键切换）
-              · 🧠 手动记账智能猜分类 + 📊 脱敏 AI 月度财务诊断（零备注零人名上传）
-            - 🔔 安卓原生微信/支付宝/云闪付付款通知自动捕账（独立开关，支持先确认入账或自动分类入账）
-          files: xiaozhangben-v4.0.${{ github.run_number }}.apk
+            本次焕新升级：
+            - 全新更名「挖财日记」+ 全新明亮清透 3D 玻璃质感设计图标
+            - 整体色调全面提亮，告别暗沉深色，新增 8 套明亮全站统一主题配色（晴空蓝 / 元气橘红 / 中国红 / 暖阳橙 / 薄荷绿 / 樱花粉 / 香芋紫 / 奶咖棕）
+            - 新增 4 种顶部背景纹理（流光柔雾 / 几何波浪 / 星点微光 / 极简纯色），首页点「🎨 换色」一键全站同步换色（顶部背景、日期、按钮、底部＋号全部统一变色）
+          files: wacairiji-v4.1.${{ github.run_number }}.apk
           make_latest: true

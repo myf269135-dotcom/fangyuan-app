@@ -3,38 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#2D4B7C">
-<title>小账本</title>
+<meta name="theme-color" content="#3B82F6">
+<title>挖财日记</title>
 <style>
-/* ===================== 样式（焕新旗舰版 v3.0） ===================== */
+/* ===================== 样式（挖财日记 · 明亮全站换肤版） ===================== */
 :root{
-  --bg:#F4F6FA; --card:#FFFFFF; --ink:#171D29; --sub:#7C8496; --line:#ECEFF5;
-  --pri:#2555A6; --pri2:#173873; --pri-soft:#EBF2FF; --acc:#F59E0B; --acc2:#EA580C;
+  --bg:#F5F7FB; --card:#FFFFFF; --ink:#1E2430; --sub:#7E8698; --line:#EDF0F6;
+  --pri:#3B82F6; --pri2:#2563EB; --pri-soft:#EFF6FF; --acc:#3B82F6; --acc2:#60A5FA;
   --tr:#4F7AE8; --danger:#E5484D;
   --r:20px;
   --green:#10B981; --orange:#F97316; --green-soft:#E8FAF3; --orange-soft:#FFF2E8;
   --exp:var(--green); --inc:var(--orange); --exp-soft:var(--green-soft); --inc-soft:var(--orange-soft);
-  --ink2:#374151; --inp:#F8FAFC; --seg-on:#FFFFFF; --tabbar:rgba(255,255,255,.88); --danger-soft:#FEECEC;
-  --dash:#C4D2EC; --faint:#A6AEBE; --warn-bg:#FFF5E0; --warn-ink:#925800;
-  --hd1:#1E3A8A; --hd2:#2563EB; --hd3:#0F172A;
-  --shadow:0 4px 18px rgba(15,23,42,.05), 0 1px 3px rgba(15,23,42,.03);
+  --ink2:#374151; --inp:#F8FAFC; --seg-on:#FFFFFF; --tabbar:rgba(255,255,255,.94); --danger-soft:#FEECEC;
+  --dash:#BFDBFE; --faint:#A6AEBE; --warn-bg:#FFF5E0; --warn-ink:#925800;
+  --hd1:#3B82F6; --hd2:#60A5FA; --hd3:#2563EB;
+  --plus-sh:rgba(59,130,246,.36);
+  --shadow:0 4px 18px rgba(15,23,42,.045), 0 1px 3px rgba(15,23,42,.025);
 }
-/* 4 套精选皮肤色（浅色态） */
-html[data-skin=jade]{--pri:#0F766E; --pri2:#0B4F4A; --pri-soft:#E6F7F5; --hd1:#064E3B; --hd2:#0D9488; --hd3:#042F2E; --dash:#A7D7D2}
-html[data-skin=amber]{--pri:#B45309; --pri2:#78350F; --pri-soft:#FEF3E2; --hd1:#78350F; --hd2:#D97706; --hd3:#451A03; --dash:#E7C89E}
-html[data-skin=violet]{--pri:#6D28D9; --pri2:#4C1D95; --pri-soft:#F2ECFE; --hd1:#3B0764; --hd2:#7C3AED; --hd3:#1E1B4B; --dash:#C9B6F2}
+/* 8 套明亮通透、全站统一联动的主题配色（浅色态） */
+html[data-skin=coral]{--pri:#F46049; --pri2:#E04832; --pri-soft:#FFF1EE; --acc:#F46049; --acc2:#FB923C; --hd1:#FB7185; --hd2:#F97316; --hd3:#EA580C; --dash:#FBCBC2; --plus-sh:rgba(244,96,73,.38)}
+html[data-skin=crimson]{--pri:#E5484D; --pri2:#C83238; --pri-soft:#FFF0F1; --acc:#E5484D; --acc2:#FB7185; --hd1:#F43F5E; --hd2:#EF4444; --hd3:#DC2626; --dash:#F8C1C5; --plus-sh:rgba(229,72,77,.38)}
+html[data-skin=orange]{--pri:#F5820B; --pri2:#D96B06; --pri-soft:#FFF6EB; --acc:#F59E0B; --acc2:#FB923C; --hd1:#F59E0B; --hd2:#FB923C; --hd3:#EA580C; --dash:#FCD6A8; --plus-sh:rgba(245,130,11,.38)}
+html[data-skin=mint]{--pri:#10B981; --pri2:#059669; --pri-soft:#ECFDF5; --acc:#10B981; --acc2:#34D399; --hd1:#10B981; --hd2:#34D399; --hd3:#059669; --dash:#A7F3D0; --plus-sh:rgba(16,185,129,.36)}
+html[data-skin=sakura]{--pri:#EC4899; --pri2:#DB2777; --pri-soft:#FDF2F8; --acc:#EC4899; --acc2:#F472B6; --hd1:#F472B6; --hd2:#FB7185; --hd3:#EC4899; --dash:#FBCFE8; --plus-sh:rgba(236,72,153,.36)}
+html[data-skin=lavender]{--pri:#8B5CF6; --pri2:#7C3AED; --pri-soft:#F5F3FF; --acc:#8B5CF6; --acc2:#A78BFA; --hd1:#8B5CF6; --hd2:#A78BFA; --hd3:#7C3AED; --dash:#DDD6FE; --plus-sh:rgba(139,92,246,.36)}
+html[data-skin=mocha]{--pri:#B46528; --pri2:#924D1A; --pri-soft:#FAF3EB; --acc:#C87A3B; --acc2:#D99B58; --hd1:#C87A3B; --hd2:#D99B58; --hd3:#9A5420; --dash:#E5C8AA; --plus-sh:rgba(180,101,40,.36)}
 
 html[data-theme=dark]{
   --bg:#0E1117; --card:#171B24; --ink:#EDF1F7; --ink2:#C4CBD8; --sub:#8892A4; --line:#252B38;
-  --pri:#60A5FA; --pri2:#1E3A8A; --pri-soft:#1B2942; --inp:#12161F; --seg-on:#252C3B; --tabbar:rgba(23,27,36,.88);
+  --pri:#60A5FA; --pri2:#3B82F6; --pri-soft:#1B2A44; --acc:#3B82F6; --acc2:#60A5FA; --inp:#12161F; --seg-on:#252C3B; --tabbar:rgba(23,27,36,.95);
   --green:#34D399; --orange:#FB923C; --green-soft:#122E26; --orange-soft:#342115; --danger-soft:#361A1E;
-  --dash:#33415C; --faint:#5A6375; --warn-bg:#332811; --warn-ink:#F6D379;
-  --hd1:#172554; --hd2:#1E40AF; --hd3:#0B1120;
+  --dash:#334A70; --faint:#5A6375; --warn-bg:#332811; --warn-ink:#F6D379;
+  --hd1:#2563EB; --hd2:#3B82F6; --hd3:#1D4ED8;
   --shadow:0 6px 20px rgba(0,0,0,.32);
 }
-html[data-theme=dark][data-skin=jade]{--pri:#2DD4BF; --pri-soft:#13312E; --hd1:#064E3B; --hd2:#0F766E; --hd3:#022C22}
-html[data-theme=dark][data-skin=amber]{--pri:#FBBF24; --pri-soft:#332412; --hd1:#78350F; --hd2:#B45309; --hd3:#2A1205}
-html[data-theme=dark][data-skin=violet]{--pri:#A78BFA; --pri-soft:#261C42; --hd1:#3B0764; --hd2:#6D28D9; --hd3:#170A2E}
+html[data-theme=dark][data-skin=coral]{--pri:#FB836D; --pri-soft:#3A1F1B; --hd1:#E04832; --hd2:#F97316; --hd3:#C2410C; --acc:#F46049; --acc2:#FB923C}
+html[data-theme=dark][data-skin=crimson]{--pri:#F87171; --pri-soft:#3B1B20; --hd1:#DC2626; --hd2:#F43F5E; --hd3:#B91C1C; --acc:#EF4444; --acc2:#F43F5E}
+html[data-theme=dark][data-skin=orange]{--pri:#FBBF24; --pri-soft:#362511; --hd1:#D97706; --hd2:#F59E0B; --hd3:#B45309; --acc:#F59E0B; --acc2:#FB923C}
+html[data-theme=dark][data-skin=mint]{--pri:#34D399; --pri-soft:#123229; --hd1:#059669; --hd2:#10B981; --hd3:#047857; --acc:#10B981; --acc2:#34D399}
+html[data-theme=dark][data-skin=sakura]{--pri:#F472B6; --pri-soft:#3A1B2E; --hd1:#DB2777; --hd2:#EC4899; --hd3:#BE185D; --acc:#EC4899; --acc2:#F472B6}
+html[data-theme=dark][data-skin=lavender]{--pri:#A78BFA; --pri-soft:#261C42; --hd1:#7C3AED; --hd2:#8B5CF6; --hd3:#6D28D9; --acc:#8B5CF6; --acc2:#A78BFA}
+html[data-theme=dark][data-skin=mocha]{--pri:#DDA168; --pri-soft:#332316; --hd1:#9A5420; --hd2:#C87A3B; --hd3:#783E14; --acc:#C87A3B; --acc2:#D99B58}
 html[data-colors=swap]{--exp:var(--orange); --inc:var(--green); --exp-soft:var(--orange-soft); --inc-soft:var(--green-soft)}
 html[data-theme=dark] body{color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -62,10 +71,17 @@ svg{width:22px;height:22px;display:block}
 .card-h{display:flex;justify-content:space-between;align-items:center;padding:15px 16px 6px;font-weight:700;font-size:15.5px}
 .card-h small{color:var(--sub);font-weight:400;font-size:12.5px}
 
-/* 首页旗舰沉浸头部 */
-.home-hd{position:relative;overflow:hidden;background:linear-gradient(145deg,var(--hd1) 0%,var(--hd2) 55%,var(--hd3) 100%);color:#fff;padding:12px 14px 36px;border-radius:0 0 28px 28px;box-shadow:0 10px 28px rgba(15,23,42,.16)}
-.home-hd::before{content:"";position:absolute;right:-44px;top:-44px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%);pointer-events:none}
-.home-hd::after{content:"";position:absolute;left:-50px;bottom:-60px;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,.18),transparent 72%);pointer-events:none}
+/* 首页旗舰沉浸头部 + 4 种可选艺术背景纹理 */
+.home-hd{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--hd1) 0%,var(--hd2) 56%,var(--hd3) 100%);color:#fff;padding:12px 14px 36px;border-radius:0 0 28px 28px;box-shadow:0 10px 26px var(--plus-sh)}
+.home-hd::before{content:"";position:absolute;right:-36px;top:-40px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.26),transparent 70%);pointer-events:none}
+.home-hd::after{content:"";position:absolute;left:-46px;bottom:-58px;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.16),transparent 72%);pointer-events:none}
+html[data-bg=wave] .home-hd::before{inset:0;width:auto;height:auto;border-radius:0;background:radial-gradient(120% 70% at 100% 0%,rgba(255,255,255,.26) 0%,rgba(255,255,255,.08) 42%,transparent 43%),radial-gradient(110% 80% at 0% 100%,rgba(255,255,255,.18) 0%,transparent 46%)}
+html[data-bg=wave] .home-hd::after{display:none}
+html[data-bg=dots] .home-hd::before{inset:0;width:auto;height:auto;border-radius:0;background-image:radial-gradient(rgba(255,255,255,.22) 1.5px,transparent 1.5px);background-size:18px 18px}
+html[data-bg=dots] .home-hd::after{background:radial-gradient(circle,rgba(255,255,255,.22),transparent 70%)}
+html[data-bg=clean] .home-hd::before,html[data-bg=clean] .home-hd::after{display:none}
+.skin-pill-hd{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;font-size:11.5px;font-weight:600;backdrop-filter:blur(4px)}
+.skin-pill-hd:active{background:rgba(255,255,255,.3)}
 .home-hd>*{position:relative;z-index:1}
 .hd-top{display:flex;justify-content:space-between;align-items:center;gap:4px}
 .hd-acts{display:flex;align-items:center;gap:4px;flex:none}
@@ -128,8 +144,8 @@ svg{width:22px;height:22px;display:block}
   background:var(--card);border-top:1px solid var(--line);display:flex;align-items:center;z-index:20;box-shadow:0 -2px 10px rgba(15,23,42,.05)}
 .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--sub)}
 .tabbar button.on{color:var(--pri);font-weight:700}
-.tabbar .plus{flex:none;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;margin:-20px 8px 0;
-  box-shadow:0 6px 16px rgba(245,158,11,.42), 0 0 0 3px var(--card);justify-content:center}
+.tabbar .plus{flex:none;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--hd1),var(--hd2));color:#fff;margin:-20px 8px 0;
+  box-shadow:0 6px 16px var(--plus-sh), 0 0 0 3px var(--card);justify-content:center}
 .tabbar .plus svg{width:28px;height:28px}
 .tabbar .plus:active{transform:scale(.92)}
 
@@ -697,7 +713,7 @@ const DEFAULT_AI = () => ({
   apiKey: '', textModel: 'glm-4-flash', visionModel: 'glm-4v-flash',
 });
 const DEFAULT_SETTINGS = () => ({id: 'settings', budget: 0, catBudgets: {}, introDone: false, lastAccountId: null, lastBackup: null, lastBackupTs: null,
-  incFixed: false, incBig: false, theme: 'system', skin: 'ocean', colors: 'default', hideMoney: false,
+  incFixed: false, incBig: false, theme: 'system', skin: 'sky', bgStyle: 'glow', colors: 'default', hideMoney: false,
   remind: {on: true, time: '20:30'}, remindDismissed: null, backupSnooze: null,
   backup: DEFAULT_BACKUP(), ai: DEFAULT_AI()});
 const S = {categories: [], accounts: [], tags: [], templates: [], records: [], recurring: [], debts: [], settings: DEFAULT_SETTINGS()};
@@ -1033,7 +1049,7 @@ const Layers = {
 /* 安卓返回键：先关最上面的弹窗/页面；没有弹窗时，不在首页就回首页，在首页就退到后台 */
 window.appBack = () => Layers.closeTop();
 const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-const APP_VERSION = '4.0.0';
+const APP_VERSION = '4.1.0';
 try {
   const AppPlugin = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
   if (AppPlugin) AppPlugin.addListener('backButton', () => {
@@ -1189,7 +1205,7 @@ function renderHome() {
         <button class="ibtn light" data-act="goDetail" aria-label="查询">${IC.search}</button>
         <button class="ibtn light" data-act="openSettings" aria-label="设置">${IC.set}</button>
       </div></div>
-    <div class="hd-lbl"><span>${isCur ? '本月' : m + '月'}支出 (元)</span><span style="font-size:12px;opacity:.85">${monthRs.length} 笔账目</span></div>
+    <div class="hd-lbl"><span>${isCur ? '本月' : m + '月'}支出 (元)</span><span style="display:inline-flex;align-items:center;gap:6px"><small style="font-size:12px;opacity:.85">${monthRs.length} 笔账目</small><button class="skin-pill-hd" data-act="openSkin">🎨 换色</button></span></div>
     <div class="hd-big">${S.settings.hideMoney ? '****' : `${ei}<small>.${ed}</small>`}</div>
     ${toggleChips(fx, bg, true)}
     ${budgetBar}
@@ -2148,9 +2164,9 @@ ACT.openSettings = () => {
     <div class="card">${row('ai', '🤖 智能助手与微信/支付宝自动捕账', aiVal)}${row('backup', '💾 数据备份与同步（本地 + 坚果云）', bkVal)}${row('wacai', '📥 导入挖财旧账（Excel / CSV）')}${row('csvExp', '📤 导出 Excel 表格（CSV）')}</div>
     <div class="card">${row('renqing', '🧧 人情账簿（按人名查往来）')}${row('poker', '🀄 牌局娱乐统计')}${row('debts', '🤝 借入借出 / 欠款备忘', S.debts.filter(d => d.status !== 'settled').length + ' 笔未结清')}${row('recur', '周期账（自动记账）', S.recurring.filter(b => b.status === 'active').length + ' 个进行中')}${row('budget', '预算', st.budget ? '¥' + money(st.budget) : '未设置')}${row('recycle', '回收站', S.records.filter(r => r.deletedAt).length + ' 条')}</div>
     <div class="card">${row('cats', '分类管理', S.categories.length + ' 个')}${row('accs', '账户管理', S.accounts.length + ' 个')}${row('tags', '标签管理', S.tags.length + ' 个')}${row('tpls', '记账模板', S.templates.length + ' 个')}</div>
-    <div class="card">${row('skin', '🎨 主题皮肤', {ocean: '深海蓝', jade: '翡翠绿', amber: '暖阳金', violet: '暮光紫'}[st.skin] || '深海蓝')}${row('theme', '深色模式', {system: '跟随系统', light: '浅色', dark: '深色'}[st.theme] || '跟随系统')}${row('colors', '收支配色', st.colors === 'swap' ? '支出红 · 收入绿' : '支出绿 · 收入红')}${row('remind', '每日记账提醒', st.remind?.on ? st.remind.time : '关闭')}</div>
+    <div class="card">${row('skin', '🎨 主题配色与背景', (SKINS.find(x => x.id === resolveSkinId(st.skin))?.name || '晴空蓝') + ' · ' + (BG_STYLES.find(x => x.id === (st.bgStyle || 'glow'))?.name || '流光柔雾'))}${row('theme', '深色模式', {system: '跟随系统', light: '浅色', dark: '深色'}[st.theme] || '跟随系统')}${row('colors', '收支配色', st.colors === 'swap' ? '支出红 · 收入绿' : '支出绿 · 收入红')}${row('remind', '每日记账提醒', st.remind?.on ? st.remind.time : '关闭')}</div>
     <div class="card">${row('demo', '载入演示数据（4 个月）')}${row('clear', '清空所有数据', '', true)}</div>
-    <div class="card pad" style="font-size:13px;color:var(--sub);line-height:1.7">小账本 · ${IS_APP ? '安卓完全版 v' + APP_VERSION : '网页完全版 v' + APP_VERSION}<br>共 ${Store.live().length} 条记录。数据保存在${IS_APP ? '手机本地' : '本机浏览器'}里${bk.webdavOn && bk.webdavUser ? '，已开启坚果云自动同步' : '，未开启云同步时不会上传到任何地方'}。${IS_APP ? '<br>卸载 App 会清空手机应用内数据，请保持本地或坚果云自动备份开启。' : ''}<br>
+    <div class="card pad" style="font-size:13px;color:var(--sub);line-height:1.7">挖财日记 · ${IS_APP ? '安卓版 v' + APP_VERSION : '网页版 v' + APP_VERSION}<br>共 ${Store.live().length} 条记录。数据保存在${IS_APP ? '手机本地' : '本机浏览器'}里${bk.webdavOn && bk.webdavUser ? '，已开启坚果云自动同步' : '，未开启云同步时不会上传到任何地方'}。${IS_APP ? '<br>卸载 App 会清空手机应用内数据，请保持本地或坚果云自动备份开启。' : ''}<br>
     ${Storage.persistent ? '' : '<span style="color:var(--danger)">当前环境无法持久保存，关闭页面数据会丢失。</span>'}</div>`;
   });
 };
@@ -2276,7 +2292,7 @@ const LocalBackup = {
   async manualSave() {
     const json = await Store.exportAll();
     const d = new Date();
-    const fname = `小账本备份_${today()}_${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+    const fname = `挖财日记备份_${today()}_${pad(d.getHours())}${pad(d.getMinutes())}.json`;
     if (this.hasNative()) {
       const path = await this.writeNative(fname, json);
       markBackup('local');
@@ -2560,7 +2576,7 @@ ACT.bkCopyText = async () => {
 ACT.bkCsvNow = () => exportCsvAction();
 async function exportCsvAction() {
   const csv = Store.exportCsv();
-  const fname = `小账本明细_${today()}.csv`;
+  const fname = `挖财日记明细_${today()}.csv`;
   if (LocalBackup.hasNative()) {
     try { const path = await LocalBackup.writeNative(fname, csv); toast(`已导出表格到：${path}`, 3000); return; } catch (_) {}
   }
@@ -4080,27 +4096,48 @@ ACT.rbClear = async () => {
   rs.forEach(purgeRecord); toast('回收站已清空'); refreshAll();
 };
 
-/* ================= 外观：主题皮肤、深色模式、收支配色 ================= */
+/* ================= 外观：8 套明亮主题配色 + 4 种背景纹理 + 深浅模式 ================= */
 const SKINS = [
-  {id: 'ocean', name: '深海蓝', col: 'linear-gradient(135deg,#1E3A8A,#2563EB)', bar: '#1E3A8A', darkBar: '#172554'},
-  {id: 'jade', name: '翡翠绿', col: 'linear-gradient(135deg,#064E3B,#0D9488)', bar: '#064E3B', darkBar: '#022C22'},
-  {id: 'amber', name: '暖阳金', col: 'linear-gradient(135deg,#78350F,#D97706)', bar: '#78350F', darkBar: '#2A1205'},
-  {id: 'violet', name: '暮光紫', col: 'linear-gradient(135deg,#3B0764,#7C3AED)', bar: '#3B0764', darkBar: '#170A2E'},
+  {id: 'sky', name: '晴空蓝', col: 'linear-gradient(135deg,#3B82F6,#60A5FA)', bar: '#3B82F6', darkBar: '#2563EB'},
+  {id: 'coral', name: '元气橘红', col: 'linear-gradient(135deg,#FB7185,#F97316)', bar: '#F46049', darkBar: '#E04832'},
+  {id: 'crimson', name: '中国红', col: 'linear-gradient(135deg,#F43F5E,#DC2626)', bar: '#E5484D', darkBar: '#DC2626'},
+  {id: 'orange', name: '暖阳橙', col: 'linear-gradient(135deg,#F59E0B,#FB923C)', bar: '#F5820B', darkBar: '#D97706'},
+  {id: 'mint', name: '薄荷绿', col: 'linear-gradient(135deg,#10B981,#34D399)', bar: '#10B981', darkBar: '#059669'},
+  {id: 'sakura', name: '樱花粉', col: 'linear-gradient(135deg,#F472B6,#FB7185)', bar: '#EC4899', darkBar: '#DB2777'},
+  {id: 'lavender', name: '香芋紫', col: 'linear-gradient(135deg,#8B5CF6,#A78BFA)', bar: '#8B5CF6', darkBar: '#7C3AED'},
+  {id: 'mocha', name: '奶咖棕', col: 'linear-gradient(135deg,#C87A3B,#D99B58)', bar: '#B46528', darkBar: '#9A5420'},
 ];
+const BG_STYLES = [
+  {id: 'glow', name: '流光柔雾'},
+  {id: 'wave', name: '几何波浪'},
+  {id: 'dots', name: '星点微光'},
+  {id: 'clean', name: '极简纯色'},
+];
+function resolveSkinId(id) {
+  const alias = {ocean: 'sky', jade: 'mint', amber: 'orange', violet: 'lavender'};
+  return alias[id] || (SKINS.some(x => x.id === id) ? id : 'sky');
+}
 function applyTheme() {
   const st = S.settings; let dark = st.theme === 'dark';
   if (st.theme !== 'dark' && st.theme !== 'light') { try { dark = matchMedia('(prefers-color-scheme: dark)').matches; } catch (_) {} }
-  const skin = SKINS.find(x => x.id === st.skin) || SKINS[0];
+  const skinId = resolveSkinId(st.skin);
+  const skin = SKINS.find(x => x.id === skinId) || SKINS[0];
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   document.documentElement.dataset.skin = skin.id;
+  document.documentElement.dataset.bg = st.bgStyle || 'glow';
   document.documentElement.dataset.colors = st.colors === 'swap' ? 'swap' : 'default';
   const m = $('meta[name=theme-color]'); if (m) m.content = dark ? skin.darkBar : skin.bar;
 }
+ACT.openSkin = () => skinDialog();
 async function skinDialog() {
-  const cur = S.settings.skin || 'ocean';
+  const cur = resolveSkinId(S.settings.skin);
+  const curBg = S.settings.bgStyle || 'glow';
   const v = await dialog({
-    title: '选择主题皮肤',
-    html: `<div class="skin-row">${SKINS.map(s => `<button type="button" class="skin-chip ${cur === s.id ? 'on' : ''}" data-act="pickSkin" data-s="${s.id}"><span class="skin-dot" style="background:${s.col}"></span><span>${s.name}</span></button>`).join('')}</div>`,
+    title: '🎨 主题配色与背景',
+    html: `<div style="font-size:12.5px;color:var(--sub);margin-bottom:6px">全站统一换色（顶部背景、日期、按钮、底栏同步变色）</div>
+      <div class="skin-row">${SKINS.map(s => `<button type="button" class="skin-chip ${cur === s.id ? 'on' : ''}" data-act="pickSkin" data-s="${s.id}"><span class="skin-dot" style="background:${s.col}"></span><span>${s.name}</span></button>`).join('')}</div>
+      <div style="font-size:12.5px;color:var(--sub);margin:14px 0 6px">顶部背景纹理</div>
+      <div class="chips wrap">${BG_STYLES.map(b => `<button type="button" class="chip ${curBg === b.id ? 'on' : ''}" data-act="pickBg" data-b="${b.id}">${b.name}</button>`).join('')}</div>`,
     buttons: [{text: '完成', cls: 'pri'}],
   });
   return v;
@@ -4108,7 +4145,12 @@ async function skinDialog() {
 ACT.pickSkin = el => {
   S.settings.skin = el.dataset.s; Store.saveSettings(); applyTheme(); refreshAll();
   el.parentNode.querySelectorAll('.skin-chip').forEach(x => x.classList.toggle('on', x === el));
-  toast('已切换主题皮肤 ✨', 1200);
+  toast('已切换主题配色 ✨', 1100);
+};
+ACT.pickBg = el => {
+  S.settings.bgStyle = el.dataset.b; Store.saveSettings(); applyTheme(); refreshAll();
+  el.parentNode.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === el));
+  toast('已切换背景风格 ✨', 1100);
 };
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (S.settings.theme !== 'dark' && S.settings.theme !== 'light') { applyTheme(); renderMain(); } }); } catch (_) {}
 async function themeMenu() {
@@ -4138,7 +4180,7 @@ const Reminder = {
       const [h, m] = (r.time || '20:30').split(':').map(Number);
       await p.schedule({
         notifications: [{
-          id: this.ID, title: '小账本 · 记账提醒', body: '今天过得怎么样？花 10 秒记一笔账吧～',
+          id: this.ID, title: '挖财日记 · 记账提醒', body: '今天过得怎么样？花 10 秒记一笔账吧～',
           schedule: {on: {hour: isNaN(h) ? 20 : h, minute: isNaN(m) ? 30 : m}, repeats: true, allowWhileIdle: true},
         }],
       });
@@ -4361,7 +4403,7 @@ document.addEventListener('touchend', e => {
   });
   if (!S.settings.introDone) {
     const goBk = await dialog({
-      title: '欢迎使用小账本完全版',
+      title: '欢迎使用挖财日记',
       html: IS_APP ? `<p>你的记账数据全部保存在本机里，安全私密、零广告。</p>
         <p>· <b>重要提醒：卸载 App 会清空应用内数据！</b></p>
         <p>· 建议现在就去开启<b>「手机本地自动备份」</b>或配置免费的<b>「坚果云自动备份」</b>，以后换手机、重装都不怕丢账。</p>`
