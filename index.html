@@ -15,7 +15,7 @@
   --green:#17A673; --orange:#EC6A3C; --green-soft:#EEF7F2; --orange-soft:#FDEEE7;
   --exp:var(--green); --inc:var(--orange); --exp-soft:var(--green-soft); --inc-soft:var(--orange-soft);
   --ink2:#3A404C; --inp:#FFFFFF; --seg-on:#FFFFFF; --tabbar:rgba(255,255,255,.96); --danger-soft:#FDECEC;
-  --dash:var(--dash); --faint:#B5B9C0; --warn-bg:#FFF4E0; --warn-ink:#8A5A00; --hd1:#2D4B7C; --hd2:#1E3358;
+  --dash:#C5D1E4; --faint:#B5B9C0; --warn-bg:#FFF4E0; --warn-ink:#8A5A00; --hd1:#2D4B7C; --hd2:#1E3358;
 }
 html[data-theme=dark]{
   --bg:#121519; --card:#1C2026; --ink:#E6E8EB; --ink2:#C9CDD3; --sub:#8E959F; --line:#2A2F37;
@@ -405,6 +405,41 @@ table.tb{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
 #toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:rgba(20,24,32,.88);color:#fff;padding:10px 18px;border-radius:12px;font-size:14px;
   z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;max-width:80vw;text-align:center}
 #toast.show{opacity:1}
+
+/* 完全版新增：备份同步状态、导入向导、人情与牌局视图 */
+.sync-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--bg);color:var(--sub)}
+.sync-pill.ok{background:var(--green-soft);color:var(--green)}
+.sync-pill.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.sync-pill.err{background:var(--danger-soft);color:var(--danger)}
+.st-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.st-box{background:var(--bg);border-radius:12px;padding:10px 12px}
+.st-box .st-t{font-size:12px;color:var(--sub);display:flex;justify-content:space-between;align-items:center;gap:4px}
+.st-box .st-v{font-size:13.5px;font-weight:600;margin-top:4px;word-break:break-all}
+.st-box .st-s{font-size:11.5px;color:var(--sub);margin-top:2px;line-height:1.45}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn-row .btn{flex:1;min-width:120px}
+.help-box{background:var(--bg);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--ink2);line-height:1.65;margin-top:8px}
+.help-box summary{cursor:pointer;font-weight:600;color:var(--pri)}
+.map-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.map-row:last-child{border-bottom:0}
+.map-row .m-src{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.map-row select{max-width:56%;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--inp);padding:0 8px;font-size:13px}
+.pv-tb{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;overflow-x:auto;display:block}
+.pv-tb th,.pv-tb td{padding:5px 7px;border:1px solid var(--line);white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+.pv-tb th{background:var(--bg);color:var(--sub);font-weight:600}
+.top-tools{display:flex;gap:6px;align-items:center}
+.pill-btn{height:32px;padding:0 11px;border-radius:16px;font-size:12.5px;font-weight:600;background:var(--pri-soft);color:var(--pri);display:inline-flex;align-items:center;gap:4px}
+.pill-btn:active{filter:brightness(.93)}
+.person-tag{display:inline-flex;align-items:center;gap:2px;font-size:11px;padding:0 6px;border-radius:6px;background:var(--orange-soft);color:var(--orange);margin-left:4px;font-weight:500;vertical-align:1px}
+.rq-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.rq-sum>div{background:var(--bg);border-radius:12px;padding:10px 6px}
+.rq-sum span{display:block;font-size:12px;color:var(--sub)}
+.rq-sum b{display:block;font-size:16px;margin-top:3px}
+.bk-file{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line)}
+.bk-file:last-child{border-bottom:0}
+.bk-file .bf-mid{flex:1;min-width:0}
+.bk-file .bf-mid b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk-file .bf-mid small{font-size:12px;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -522,8 +557,17 @@ const Storage = (() => {
   };
 })();
 const PHOTO_CACHE = new Map();
-function persist(store, obj) { return Storage.put(store, JSON.parse(JSON.stringify(obj))).catch(e => toast('保存失败：' + (e?.message || e))); }
-function unpersist(store, id) { return Storage.del(store, id).catch(e => toast('删除失败：' + (e?.message || e))); }
+let _suspendSync = false;
+function persist(store, obj) {
+  const p = Storage.put(store, JSON.parse(JSON.stringify(obj))).catch(e => toast('保存失败：' + (e?.message || e)));
+  if (!_suspendSync && store !== 'meta' && typeof Sync !== 'undefined') Sync.markDirty(store);
+  return p;
+}
+function unpersist(store, id) {
+  const p = Storage.del(store, id).catch(e => toast('删除失败：' + (e?.message || e)));
+  if (!_suspendSync && store !== 'meta' && typeof Sync !== 'undefined') Sync.markDirty(store);
+  return p;
+}
 
 /* ========== 3. 数据层（业务规则都在这里） ========== */
 const DEFAULT_EXP = [
@@ -533,7 +577,7 @@ const DEFAULT_EXP = [
   ['日用家居', '🧺', [['日用品', '🧻'], ['家电', '📺'], ['家具', '🛋️'], ['厨房用品', '🍳'], ['清洁用品', '🧽'], ['快递费', '📦']]],
   ['交通', '🚗', [['公交地铁', '🚇'], ['打车', '🚕'], ['火车高铁', '🚄'], ['飞机', '✈️'], ['加油', '⛽'], ['充电', '🔌'], ['停车', '🅿️'], ['过路费', '🛣️'], ['车辆保养维修', '🛠️'], ['车险', '🛡️']]],
   ['通讯网络', '📱', [['话费', '📞'], ['宽带', '🌐'], ['会员订阅', '🎬']]],
-  ['文教娱乐', '🎓', [['书籍', '📚'], ['课程培训', '📝'], ['考试', '✏️'], ['旅游', '🏖️'], ['电影演出', '🎭'], ['游戏', '🎮'], ['运动健身', '🏃'], ['数码产品', '💻']]],
+  ['文教娱乐', '🎓', [['书籍', '📚'], ['课程培训', '📝'], ['考试', '✏️'], ['旅游', '🏖️'], ['电影演出', '🎭'], ['游戏', '🎮'], ['牌局娱乐', '🀄'], ['运动健身', '🏃'], ['数码产品', '💻']]],
   ['医疗健康', '🏥', [['门诊', '🩺'], ['药品', '💊'], ['体检', '📋'], ['住院', '🛏️'], ['保健品', '🌿']]],
   ['人情往来', '🧧', [['红包礼金', '🧧'], ['请客吃饭', '🍻'], ['送礼', '🎁'], ['孝敬长辈', '👴']]],
   ['子女', '👶', [['学费', '🎒'], ['兴趣班', '🎨'], ['子女用品', '🧸'], ['零花钱', '🪙']]],
@@ -541,12 +585,18 @@ const DEFAULT_EXP = [
   ['金融保险', '💳', [['保险', '☂️'], ['手续费', '🧾'], ['利息支出', '📉'], ['罚款', '🚫']]],
   ['其他', '📌', [['其他支出', '📌']]],
 ];
-const DEFAULT_INC = [['工资', '💼'], ['奖金', '🏆'], ['兼职副业', '💡'], ['理财收益', '📈'], ['租金收入', '🏘️'], ['红包礼金', '🧧'], ['报销款', '🧾'], ['退款', '↩️'], ['其他收入', '💰']];
+const DEFAULT_INC = [['工资', '💼'], ['奖金', '🏆'], ['兼职副业', '💡'], ['理财收益', '📈'], ['租金收入', '🏘️'], ['红包礼金', '🧧'], ['牌局赢钱', '🀄'], ['报销款', '🧾'], ['退款', '↩️'], ['其他收入', '💰']];
 const DEFAULT_ACC = [['现金', '💵'], ['微信', '💚'], ['支付宝', '🔷'], ['银行卡', '💳']];
-const EMOJIS = ['🍚','🥐','🍱','🍲','🍢','🛵','🥬','🍎','🧋','🍵','🍻','☕','🍜','🍔','🍰','🥩','👗','👕','👟','👜','💍','💄','💇','🧴','🏠','🔑','🏦','🏢','💧','⚡','🔥','♨️','🔧','🧱','🛋️','📺','🧻','🍳','🧽','📦','🧺','🚗','🚇','🚕','🚄','✈️','⛽','🔌','🅿️','🛣️','🛠️','🛡️','🚲','📱','📞','🌐','🎬','🎵','☁️','🎓','📚','📝','✏️','🏖️','🎭','🎮','🏃','💻','📷','🏥','🩺','💊','📋','🛏️','🌿','🧧','🎁','👴','🤝','👶','🎒','🎨','🧸','🪙','🐾','🦴','🧶','💉','💳','☂️','🧾','📉','🚫','📈','💼','🏆','💡','🏘️','↩️','💰','💵','💚','🔷','🏧','📌','⭐','❤️','🎉'];
+const EMOJIS = ['🍚','🥐','🍱','🍲','🍢','🛵','🥬','🍎','🧋','🍵','🍻','☕','🍜','🍔','🍰','🥩','👗','👕','👟','👜','💍','💄','💇','🧴','🏠','🔑','🏦','🏢','💧','⚡','🔥','♨️','🔧','🧱','🛋️','📺','🧻','🍳','🧽','📦','🧺','🚗','🚇','🚕','🚄','✈️','⛽','🔌','🅿️','🛣️','🛠️','🛡️','🚲','📱','📞','🌐','🎬','🎵','☁️','🎓','📚','📝','✏️','🏖️','🎭','🎮','🀄','🏃','💻','📷','🏥','🩺','💊','📋','🛏️','🌿','🧧','🎁','👴','🤝','👶','🎒','🎨','🧸','🪙','🐾','🦴','🧶','💉','💳','☂️','🧾','📉','🚫','📈','💼','🏆','💡','🏘️','↩️','💰','💵','💚','🔷','🏧','📌','⭐','❤️','🎉'];
 
+const DEFAULT_BACKUP = () => ({
+  localAuto: true, localDir: '小账本备份', lastLocalTs: null, lastLocalLabel: null,
+  webdavOn: false, webdavUrl: 'https://dav.jianguoyun.com/dav/', webdavUser: '', webdavPass: '', webdavDir: '小账本',
+  lastCloudTs: null, lastCloudLabel: null, lastCloudErr: '', dirty: false, uploadedPhotos: [],
+});
 const DEFAULT_SETTINGS = () => ({id: 'settings', budget: 0, catBudgets: {}, introDone: false, lastAccountId: null, lastBackup: null, lastBackupTs: null,
-  incFixed: false, incBig: false, theme: 'system', colors: 'default', remind: {on: true, time: '20:30'}, remindDismissed: null, backupSnooze: null});
+  incFixed: false, incBig: false, theme: 'system', colors: 'default', remind: {on: true, time: '20:30'}, remindDismissed: null, backupSnooze: null,
+  backup: DEFAULT_BACKUP()});
 const S = {categories: [], accounts: [], tags: [], templates: [], records: [], recurring: [], settings: DEFAULT_SETTINGS()};
 const IDX = {cat: new Map(), acc: new Map(), tag: new Map()};
 function reindex() { IDX.cat = new Map(S.categories.map(c => [c.id, c])); IDX.acc = new Map(S.accounts.map(a => [a.id, a])); IDX.tag = new Map(S.tags.map(t => [t.id, t])); }
@@ -556,7 +606,12 @@ const Store = {
   async init() {
     await Storage.open();
     for (const k of ['categories', 'accounts', 'tags', 'templates', 'records', 'recurring']) S[k] = await Storage.getAll(k);
-    const st = (await Storage.getAll('meta')).find(x => x.id === 'settings'); if (st) Object.assign(S.settings, st);
+    const st = (await Storage.getAll('meta')).find(x => x.id === 'settings');
+    if (st) {
+      Object.assign(S.settings, st);
+      S.settings.backup = {...DEFAULT_BACKUP(), ...(st.backup || {})};
+      if (!Array.isArray(S.settings.backup.uploadedPhotos)) S.settings.backup.uploadedPhotos = [];
+    }
     if (!S.categories.length && !S.accounts.length) await this.seed();
     reindex();
   },
@@ -618,8 +673,25 @@ const Store = {
     if (!r) { r = {id: uid(), createdAt: now}; S.records.push(r); }
     const isT = d.type === 'transfer';
     Object.assign(r, {type: d.type, amount: d.amount, categoryId: isT ? null : d.categoryId, accountId: d.accountId,
-      toAccountId: isT ? d.toAccountId : null, date: d.date, note: d.note || '', tagIds: d.tagIds || [], photoIds: d.photoIds || [], big: d.type === 'expense' && !!d.big, updatedAt: now});
+      toAccountId: isT ? d.toAccountId : null, date: d.date, note: d.note || '', person: isT ? '' : (d.person || '').trim(),
+      tagIds: d.tagIds || [], photoIds: d.photoIds || [], big: d.type === 'expense' && !!d.big, updatedAt: now});
     persist('records', r); return r;
+  },
+  recentPersons(n = 12) {
+    const seen = new Set(), out = [];
+    const rs = this.live().filter(r => r.person).sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
+    for (const r of rs) { const p = r.person.trim(); if (!p || seen.has(p)) continue; seen.add(p); out.push(p); if (out.length >= n) break; }
+    return out;
+  },
+  isRenqingCat(catId) {
+    const c = this.cat(catId); if (!c) return false;
+    const top = this.topOf(catId);
+    const names = [c.name, top?.name || ''].join(' ');
+    return /人情|红包|礼金|送礼|请客|孝敬|随礼/.test(names);
+  },
+  isGameCat(catId) {
+    const c = this.cat(catId); if (!c) return false;
+    return /麻将|牌局|扑克|打牌|棋牌/.test(c.name);
   },
   /** 删除 = 放进回收站（第二阶段做找回界面） */
   deleteRecord(id) { const r = S.records.find(x => x.id === id); if (!r) return; r.deletedAt = Date.now(); persist('records', r); },
@@ -724,27 +796,75 @@ const Store = {
   deleteTemplate(id) { S.templates = S.templates.filter(t => t.id !== id); unpersist('templates', id); },
 
   /* ---- 备份 ---- */
+  photoMonthMap() {
+    const m = {};
+    for (const r of S.records) {
+      if (!r.photoIds?.length) continue;
+      const ym = /^\d{4}-\d{2}/.test(r.date || '') ? r.date.slice(0, 7) : 'other';
+      r.photoIds.forEach(pid => { if (!m[pid]) m[pid] = ym; });
+    }
+    return m;
+  },
+  /** 核心业务数据导出（不含坚果云明文密码与照片大图，适合云端增量同步） */
+  exportCoreObj() {
+    const safeSettings = {...S.settings};
+    if (safeSettings.backup) {
+      safeSettings.backup = {...safeSettings.backup, webdavPass: ''};
+    }
+    return {
+      app: 'xiaozhangben', version: 2, exportedAt: new Date().toISOString(),
+      data: {categories: S.categories, accounts: S.accounts, tags: S.tags, templates: S.templates, records: S.records, recurring: S.recurring, settings: safeSettings},
+      photoMonths: this.photoMonthMap(),
+    };
+  },
   async exportAll() {
     const photos = await Storage.getAll('photos');
-    return JSON.stringify({app: 'xiaozhangben', version: 1, exportedAt: new Date().toISOString(),
-      data: {categories: S.categories, accounts: S.accounts, tags: S.tags, templates: S.templates, records: S.records, recurring: S.recurring, settings: S.settings}, photos});
+    return JSON.stringify({...this.exportCoreObj(), photos});
   },
-  async importAll(obj) {
+  /** 导出为 Excel 可直接打开的 UTF-8 BOM CSV 文件 */
+  exportCsv() {
+    const q = v => { const s = String(v ?? ''); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const head = ['日期', '类型', '金额', '一级分类', '二级分类', '账户', '转入账户', '往来对象', '标签', '大额', '备注'];
+    const rows = this.live().sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.createdAt - a.createdAt).map(r => {
+      const c = this.cat(r.categoryId), p = c?.parentId ? this.cat(c.parentId) : null;
+      const c1 = r.type === 'transfer' ? '转账' : (p ? p.name : (c?.name || ''));
+      const c2 = r.type === 'transfer' ? '' : (p ? c.name : '');
+      const tags = (r.tagIds || []).map(id => this.tag(id)?.name).filter(Boolean).join('、');
+      return [r.date, TYPE_NAME[r.type] || r.type, (r.amount / 100).toFixed(2), c1, c2, this.accName(r.accountId),
+        r.toAccountId ? this.accName(r.toAccountId) : '', r.person || '', tags, isBig(r) ? '是' : '', r.note || ''].map(q).join(',');
+    });
+    return '\uFEFF' + [head.join(','), ...rows].join('\r\n');
+  },
+  async importAll(obj, {keepBackupCfg = true} = {}) {
     if (!obj || obj.app !== 'xiaozhangben' || !obj.data) throw '这不是本 App 的备份文件';
-    for (const k of ['categories', 'accounts', 'tags', 'templates', 'records', 'recurring']) {
-      S[k] = Array.isArray(obj.data[k]) ? obj.data[k] : [];
-      await Storage.clear(k); if (S[k].length) await Storage.putMany(k, S[k]);
-    }
-    await Storage.clear('photos'); PHOTO_CACHE.clear();
-    if (Array.isArray(obj.photos) && obj.photos.length) await Storage.putMany('photos', obj.photos);
-    S.settings = {...DEFAULT_SETTINGS(), ...(obj.data.settings || {}), id: 'settings', introDone: true}; this.saveSettings();
-    reindex();
+    const prevBk = keepBackupCfg ? JSON.parse(JSON.stringify(S.settings.backup || DEFAULT_BACKUP())) : DEFAULT_BACKUP();
+    _suspendSync = true;
+    try {
+      for (const k of ['categories', 'accounts', 'tags', 'templates', 'records', 'recurring']) {
+        S[k] = Array.isArray(obj.data[k]) ? obj.data[k] : [];
+        await Storage.clear(k); if (S[k].length) await Storage.putMany(k, S[k]);
+      }
+      if (Array.isArray(obj.photos)) {
+        await Storage.clear('photos'); PHOTO_CACHE.clear();
+        if (obj.photos.length) await Storage.putMany('photos', obj.photos);
+      }
+      const inSet = obj.data.settings || {};
+      S.settings = {...DEFAULT_SETTINGS(), ...inSet, id: 'settings', introDone: true,
+        backup: keepBackupCfg ? {...DEFAULT_BACKUP(), ...prevBk, dirty: false} : {...DEFAULT_BACKUP(), ...(inSet.backup || {})}};
+      this.saveSettings();
+      reindex();
+    } finally { _suspendSync = false; }
   },
   async clearAll() {
-    for (const k of Storage.STORES) await Storage.clear(k);
-    PHOTO_CACHE.clear();
-    S.settings = {...DEFAULT_SETTINGS(), introDone: true}; this.saveSettings();
-    await this.seed();
+    const prevBk = JSON.parse(JSON.stringify(S.settings.backup || DEFAULT_BACKUP()));
+    _suspendSync = true;
+    try {
+      for (const k of Storage.STORES) await Storage.clear(k);
+      PHOTO_CACHE.clear();
+      S.settings = {...DEFAULT_SETTINGS(), introDone: true, backup: {...prevBk, uploadedPhotos: [], dirty: false}};
+      this.saveSettings();
+      await this.seed();
+    } finally { _suspendSync = false; }
   },
 };
 
@@ -805,7 +925,7 @@ const Layers = {
 /* 安卓返回键：先关最上面的弹窗/页面；没有弹窗时，不在首页就回首页，在首页就退到后台 */
 window.appBack = () => Layers.closeTop();
 const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-const APP_VERSION = '1.0';
+const APP_VERSION = '2.0.0';
 try {
   const AppPlugin = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
   if (AppPlugin) AppPlugin.addListener('backButton', () => {
@@ -868,7 +988,7 @@ function recItem(r) {
   const sign = r.type === 'expense' ? '-' : r.type === 'income' ? '+' : '';
   return `<div class="ri" data-act="editRec" data-id="${r.id}">
     <div class="ri-ic ${cls}">${isT ? '🔁' : Store.catIcon(r.categoryId)}</div>
-    <div class="ri-mid"><div class="ri-t">${isT ? '转账' : esc(Store.catName(r.categoryId))}${r.photoIds?.length ? ' <small>📷</small>' : ''}${isFixed(r) ? '<small class="b">🔁 固定</small>' : r.recurId && r.type === 'income' ? '<small class="b">🔁 周期</small>' : ''}${isBig(r) ? '<small class="b">💰 大额</small>' : ''}</div>
+    <div class="ri-mid"><div class="ri-t">${isT ? '转账' : esc(Store.catName(r.categoryId))}${r.person ? `<span class="person-tag">👤 ${esc(r.person)}</span>` : ''}${r.photoIds?.length ? ' <small>📷</small>' : ''}${isFixed(r) ? '<small class="b">🔁 固定</small>' : r.recurId && r.type === 'income' ? '<small class="b">🔁 周期</small>' : ''}${isBig(r) ? '<small class="b">💰 大额</small>' : ''}</div>
       <div class="ri-s">${sub.join(' · ')}</div>${tags.length ? `<div class="ri-tags">${tags.map(t => `<span>#${esc(t.name)}</span>`).join('')}</div>` : ''}</div>
     <div class="ri-amt ${cls}">${sign}${money(r.amount)}</div></div>`;
 }
@@ -1023,10 +1143,12 @@ function openRecordForm(opts = {}) {
     mode: isTpl ? 'template' : 'record', id: r?.id || null, tplId: t?.id || null, tplName: t?.name || '',
     type: src.type || 'expense', amount: src.amount != null ? (src.amount / 100).toString() : '',
     categoryId: src.categoryId || null, accountId: (src.accountId && Store.acc(src.accountId)) ? src.accountId : (isTpl && t ? null : lastAcc),
-    toAccountId: src.toAccountId || null, date: r?.date || opts.date || today(), note: src.note || '',
+    toAccountId: src.toAccountId || null, date: r?.date || opts.date || today(), note: src.note || '', person: opts.person ?? src.person ?? '',
     tagIds: [...(src.tagIds || [])].filter(id => Store.tag(id)), photoIds: [...(r?.photoIds || [])], newPhotos: [], removedPhotos: [],
     recurId: r?.recurId || null, recurPeriod: r?.recurPeriod, big: !!src.big,
   };
+  if (opts.type) F.type = opts.type;
+  if (opts.categoryId && Store.cat(opts.categoryId)) F.categoryId = opts.categoryId;
   if (isTpl && !t) F.accountId = lastAcc;
   const el = Layers.open('<div class="page form-page"></div>', {cls: 'page-layer', onClose: () => { if (F && F.el === el) F = null; }});
   F.el = el;
@@ -1048,6 +1170,7 @@ function renderForm() {
     ${isT ? `<div class="fld"><label>从哪个账户转出</label><div class="chips" id="fAccFrom"></div></div><div class="fld"><label>转入哪个账户</label><div class="chips" id="fAccTo"></div></div>`
           : `<div class="catbox" id="fCat"></div><div class="fld"><label>账户</label><div class="chips" id="fAccFrom"></div></div>`}
     ${tpl ? '' : `<div class="fld row"><label>日期</label><input type="date" data-in="fDate" value="${F.date}"></div>`}
+    ${tpl || isT ? '' : '<div id="fPersonBox"></div>'}
     <div class="fld row"><label>备注</label><input data-in="fNote" value="${esc(F.note)}" placeholder="写点什么（可不填）" maxlength="100"></div>
     ${F.type === 'expense' && !F.recurId ? `<div style="padding:4px 16px"><label class="switch-row"><div><b>大额支出</b><small>买车、装修这类一次性的大钱。是否计入统计跟着「大额支出」开关走</small></div><input type="checkbox" data-ch="fBig" ${F.big ? 'checked' : ''}></label></div>` : ''}
     <div class="fld"><label>标签 <small>可多选，可不选</small></label><div class="chips wrap" id="fTags"></div></div>
@@ -1064,7 +1187,16 @@ function renderForm() {
 function renderFormParts(keepScroll) {
   if (!F) return;
   renderSelCat(); if (F.type !== 'transfer') renderCatBox(keepScroll);
-  renderAccChips(); renderTagChips(); if (F.mode !== 'template') renderPhotos();
+  renderAccChips(); renderPersonBox(); renderTagChips(); if (F.mode !== 'template') renderPhotos();
+}
+/** 选到人情往来/红包礼金或已填人名时，自动显示往来对象输入框与常用人名快捷选项 */
+function renderPersonBox() {
+  const box = $('#fPersonBox', F.el); if (!box) return;
+  const show = !!(F.person || Store.isRenqingCat(F.categoryId));
+  if (!show) { box.innerHTML = ''; return; }
+  const recent = Store.recentPersons(10);
+  box.innerHTML = `<div class="fld row"><label>往来对象</label><input data-in="fPerson" value="${esc(F.person)}" placeholder="填姓名，如张三（方便按人查人情账）" maxlength="20" autocomplete="off"></div>
+    ${recent.length ? `<div class="chips" style="padding:0 16px 6px">${recent.map(n => `<div class="chip ${F.person === n ? 'on' : ''}" data-act="fPickPerson" data-n="${esc(n)}">👤 ${esc(n)}</div>`).join('')}</div>` : ''}`;
 }
 function renderSelCat() {
   const box = $('#fSelCat', F.el); if (!box) return;
@@ -1121,6 +1253,8 @@ function renderPhotos() {
 }
 IN.fAmount = el => { F.amount = el.value; $('#fErr', F.el).classList.remove('show'); };
 IN.fNote = el => { F.note = el.value; };
+IN.fPerson = el => { F.person = el.value; };
+ACT.fPickPerson = el => { F.person = F.person === el.dataset.n ? '' : el.dataset.n; renderPersonBox(); };
 CH.fBig = el => { F.big = el.checked; };
 IN.fDate = el => { F.date = el.value; };
 IN.fTplName = el => { F.tplName = el.value; };
@@ -1135,7 +1269,7 @@ ACT.fPickCat = el => {
   F.categoryId = el.dataset.id;
   F.el.querySelectorAll('.ci.on').forEach(x => x.classList.remove('on'));
   F.el.querySelectorAll(`.ci[data-id="${el.dataset.id}"]`).forEach(x => x.classList.add('on'));
-  renderSelCat(); $('#fErr', F.el).classList.remove('show');
+  renderSelCat(); renderPersonBox(); $('#fErr', F.el).classList.remove('show');
 };
 ACT.catJump = el => {
   const sc = F.el.querySelector('.cat-scroll'), g = sc.querySelector(`.cg[data-k="${el.dataset.k}"]`);
@@ -1178,14 +1312,14 @@ ACT.fSave = async el => {
     const newIds = [];
     for (const src of F.newPhotos) { const id = uid(); await Storage.put('photos', {id, data: src}); PHOTO_CACHE.set(id, src); newIds.push(id); }
     F.savedRec = Store.saveRecord({id: F.id, type: F.type, amount: p.cents, categoryId: F.categoryId, accountId: F.accountId, toAccountId: F.toAccountId,
-      date: F.date, note: F.note.trim(), tagIds: [...F.tagIds], photoIds: [...F.photoIds, ...newIds], big: F.type === 'expense' && F.big});
+      date: F.date, note: F.note.trim(), person: (F.person || '').trim(), tagIds: [...F.tagIds], photoIds: [...F.photoIds, ...newIds], big: F.type === 'expense' && F.big});
     S.settings.lastAccountId = F.accountId; Store.saveSettings();
   } catch (e) { F.saving = false; return fErr('保存失败：' + errOf(e)); }
   const wasEdit = !!F.id; checkBudget(F.savedRec);
   if (!wasEdit) { UI.homeMonth = ymOf(F.date); UI.selDay = F.date; }
   toast(wasEdit ? '已保存修改' : '已记一笔 ✓', 1200);
   if (again) {
-    Object.assign(F, {saving: false, amount: '', note: '', categoryId: null, tagIds: [], photoIds: [], newPhotos: [], removedPhotos: [], big: false});
+    Object.assign(F, {saving: false, amount: '', note: '', person: '', categoryId: null, tagIds: [], photoIds: [], newPhotos: [], removedPhotos: [], big: false});
     renderForm(); setTimeout(() => $('#fAmt', F?.el)?.focus(), 50);
   } else Layers.closeEl(F.el);
   refreshAll();
@@ -1382,7 +1516,7 @@ function filterRecords(f) {
     && (!f.accs.length || f.accs.includes(r.accountId) || f.accs.includes(r.toAccountId))
     && (!f.tags.length || (r.tagIds || []).some(t => f.tags.includes(t)))
     && (f.min == null || r.amount >= f.min) && (f.max == null || r.amount <= f.max)
-    && (!kw || (r.note || '').toLowerCase().includes(kw)));
+    && (!kw || (r.note || '').toLowerCase().includes(kw) || (r.person || '').toLowerCase().includes(kw)));
 }
 function activeCount(f) { return (f.type !== 'all') + (f.cats.length > 0) + (f.accs.length > 0) + (f.tags.length > 0) + (f.min != null || f.max != null); }
 function filterSummary(f) {
@@ -1565,7 +1699,7 @@ function renderReport() {
   const table = `<table class="tb"><tr><th>${unit === 'day' ? '日期' : unit === 'month' ? '月份' : '年份'}</th><th>支出</th><th>收入</th><th>结余</th></tr>
     ${rows.map(x => `<tr data-act="rpRow" data-k="${x.k}"><td>${unit === 'day' ? md(x.key) + ' ' + WEEK[x.wd] : unit === 'month' ? x.key.replace('-', '/') : x.key}</td><td class="exp">${money(x.e)}</td><td class="inc">${money(x.i)}</td><td>${money(x.i - x.e)}</td></tr>`).join('')}</table>
     ${rows.length < bk.length ? `<div class="list-tip" style="text-align:center;padding-top:6px">表格只列有收支的${unit === 'day' ? '日子' : unit === 'month' ? '月份' : '年份'}</div>` : ''}`;
-  return `<div class="topbar"><h1>报表</h1></div>
+  return `<div class="topbar"><h1>报表</h1><div class="top-tools"><button class="pill-btn" data-act="openRenqing">🧧 人情账簿</button><button class="pill-btn" data-act="openPoker">🀄 牌局统计</button></div></div>
   <div class="card pad rp-ctl" style="margin-top:4px">${gseg}
     <div class="rp-row" style="justify-content:center;position:relative">${back}${nav}</div>
     ${cards}
@@ -1703,18 +1837,28 @@ ACT.accMore = el => accMenu(el.dataset.id);
 
 /* ================= 设置 ================= */
 ACT.openSettings = () => {
-  const row = (go, t, val = '', danger = false) => `<div class="mrow" data-act="setGo" data-go="${go}"><div class="nm" ${danger ? 'style="color:var(--danger)"' : ''}>${t}</div>${val ? `<span style="color:var(--sub);font-size:14px">${val}</span>` : ''}<span class="chev">${IC.chev}</span></div>`;
-  openPage('设置', () => { const st = S.settings; return `
-    <div class="card">${row('recur', '周期账（自动记账）', S.recurring.filter(b => b.status === 'active').length + ' 个进行中')}${row('budget', '预算', st.budget ? '¥' + money(st.budget) : '未设置')}${row('recycle', '回收站', S.records.filter(r => r.deletedAt).length + ' 条')}</div>
+  const row = (go, t, val = '', danger = false) => `<div class="mrow" data-act="setGo" data-go="${go}"><div class="nm" ${danger ? 'style="color:var(--danger)"' : ''}>${t}</div>${val ? `<span style="color:var(--sub);font-size:13.5px">${val}</span>` : ''}<span class="chev">${IC.chev}</span></div>`;
+  openPage('设置', () => {
+    const st = S.settings, bk = st.backup || DEFAULT_BACKUP();
+    const bkVal = bk.dirty ? '<span style="color:var(--warn-ink)">待同步</span>' : (st.lastBackup ? '上次 ' + st.lastBackup : '未备份');
+    return `
+    <div class="card">${row('backup', '💾 数据备份与同步（本地 + 坚果云）', bkVal)}${row('wacai', '📥 导入挖财旧账（Excel / CSV）')}${row('csvExp', '📤 导出 Excel 表格（CSV）')}</div>
+    <div class="card">${row('renqing', '🧧 人情账簿（按人名查往来）')}${row('poker', '🀄 牌局娱乐统计')}${row('recur', '周期账（自动记账）', S.recurring.filter(b => b.status === 'active').length + ' 个进行中')}${row('budget', '预算', st.budget ? '¥' + money(st.budget) : '未设置')}${row('recycle', '回收站', S.records.filter(r => r.deletedAt).length + ' 条')}</div>
     <div class="card">${row('cats', '分类管理', S.categories.length + ' 个')}${row('accs', '账户管理', S.accounts.length + ' 个')}${row('tags', '标签管理', S.tags.length + ' 个')}${row('tpls', '记账模板', S.templates.length + ' 个')}</div>
     <div class="card">${row('theme', '深色模式', {system: '跟随系统', light: '浅色', dark: '深色'}[st.theme] || '跟随系统')}${row('colors', '收支配色', st.colors === 'swap' ? '支出红 · 收入绿' : '支出绿 · 收入红')}${row('remind', '每日记账提醒', st.remind?.on ? st.remind.time : '关闭')}</div>
-    <div class="card">${row('export', '导出备份', S.settings.lastBackup ? '上次 ' + S.settings.lastBackup : '还没备份过')}${row('import', '导入备份')}${row('demo', '载入演示数据（4 个月）')}${row('clear', '清空所有数据', '', true)}</div>
-    <div class="card pad" style="font-size:13px;color:var(--sub);line-height:1.7">小账本 · ${IS_APP ? '安卓版 v' + APP_VERSION : '网页试用版'}<br>共 ${Store.live().length} 条记录。数据保存在${IS_APP ? '手机' : '本机浏览器'}里，没有上传到任何地方。${IS_APP ? '<br>卸载 App 会删除数据，请定期导出备份。' : ''}<br>
-    ${Storage.persistent ? '' : '<span style="color:var(--danger)">当前环境无法持久保存，关闭页面数据会丢失。</span>'}</div>`; });
+    <div class="card">${row('demo', '载入演示数据（4 个月）')}${row('clear', '清空所有数据', '', true)}</div>
+    <div class="card pad" style="font-size:13px;color:var(--sub);line-height:1.7">小账本 · ${IS_APP ? '安卓完全版 v' + APP_VERSION : '网页完全版 v' + APP_VERSION}<br>共 ${Store.live().length} 条记录。数据保存在${IS_APP ? '手机本地' : '本机浏览器'}里${bk.webdavOn && bk.webdavUser ? '，已开启坚果云自动同步' : '，未开启云同步时不会上传到任何地方'}。${IS_APP ? '<br>卸载 App 会清空手机应用内数据，请保持本地或坚果云自动备份开启。' : ''}<br>
+    ${Storage.persistent ? '' : '<span style="color:var(--danger)">当前环境无法持久保存，关闭页面数据会丢失。</span>'}</div>`;
+  });
 };
 ACT.setGo = el => {
   const g = el.dataset.go;
-  if (g === 'budget') openBudget();
+  if (g === 'backup') openBackupCenter();
+  else if (g === 'wacai') openWacaiImport();
+  else if (g === 'csvExp') exportCsvAction();
+  else if (g === 'renqing') openRenqingPage();
+  else if (g === 'poker') openPokerPage();
+  else if (g === 'budget') openBudget();
   else if (g === 'recur') openRecurList();
   else if (g === 'recycle') openRecycle();
   else if (g === 'theme') themeMenu();
@@ -1725,8 +1869,6 @@ ACT.setGo = el => {
   else if (g === 'accs') { while (Layers.stack.length) Layers.closeTop(); UI.tab = 'accounts'; renderMain(); }
   else if (g === 'tags') openTagManager();
   else if (g === 'tpls') openTplManager();
-  else if (g === 'export') openExport();
-  else if (g === 'import') openImport();
   else if (g === 'clear') clearAllFlow();
 };
 function openCatManager() {
@@ -1763,51 +1905,438 @@ function openTplManager() {
 ACT.tplRow = el => { const t = S.templates.find(x => x.id === el.dataset.id); if (t) openRecordForm({mode: 'template', tpl: t}); };
 ACT.tplAdd = () => openRecordForm({mode: 'template'});
 
-/* ---- 备份 ---- */
-let EXPORT_CACHE = '';
-async function openExport() {
-  toast('正在打包数据…', 5000);
-  EXPORT_CACHE = await Store.exportAll();
-  const kb = (new Blob([EXPORT_CACHE]).size / 1024);
-  toast('打包好了', 600);
-  openPage('导出备份', () => `<div class="card pad" style="line-height:1.7;font-size:14px">
-      <p style="margin:0 0 8px">备份内容：${Store.live().length} 条记录、全部分类/账户/标签/模板${EXPORT_CACHE.includes('"photos":[{') ? '、照片' : ''}，大小约 <b>${kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : kb.toFixed(0) + ' KB'}</b>。</p>
-      <button class="btn pri block" data-act="copyBackup">复制备份内容</button>
-      <p class="tip">复制后粘贴到微信「文件传输助手」或备忘录里存着，需要时在「导入备份」里粘贴回来。</p>
-      <button class="btn block" style="margin-top:12px" data-act="dlBackup">下载为文件</button>
-      <p class="tip">网页试用版里下载可能没反应，属正常；打包成 APK 后会直接保存到手机文件夹，并支持坚果云自动备份。</p>
-      <textarea id="bkText" readonly style="display:none;margin-top:12px"></textarea></div>`);
+/* ================= 双备份引擎（本地文件夹 + 坚果云 WebDAV） ================= */
+function nowTimeLabel() { const d = new Date(); return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function markBackup(kind) {
+  const lbl = nowTimeLabel(), ts = Date.now(), bk = S.settings.backup || (S.settings.backup = DEFAULT_BACKUP());
+  S.settings.lastBackup = lbl; S.settings.lastBackupTs = ts;
+  if (kind === 'local') { bk.lastLocalTs = ts; bk.lastLocalLabel = lbl; }
+  if (kind === 'cloud') { bk.lastCloudTs = ts; bk.lastCloudLabel = lbl; bk.lastCloudErr = ''; bk.dirty = false; }
+  Store.saveSettings();
 }
-function markBackup() { const d = new Date(); S.settings.lastBackup = `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; S.settings.lastBackupTs = Date.now(); Store.saveSettings(); }
-ACT.copyBackup = async el => {
-  try { await navigator.clipboard.writeText(EXPORT_CACHE); toast('已复制，去粘贴保存吧', 2500); markBackup(); }
-  catch (e) {
-    const ta = el.closest('.page').querySelector('#bkText'); ta.style.display = 'block'; ta.value = EXPORT_CACHE.length > 3e6 ? '数据太大，无法显示，请等 APK 版用文件备份' : EXPORT_CACHE;
-    ta.focus(); ta.select(); toast('自动复制失败：已全选下方内容，请长按手动复制', 3500); markBackup();
+function getFsPlugin() { return IS_APP && window.Capacitor?.Plugins?.Filesystem ? window.Capacitor.Plugins.Filesystem : null; }
+function getNetPlugin() { return IS_APP && window.Capacitor?.Plugins?.Network ? window.Capacitor.Plugins.Network : null; }
+function cleanDirName(s, def) { return (String(s || '').trim().replace(/[\\/:*?"<>|]/g, '') || def); }
+
+/** DataURL 与二进制互转，用于把照片以真实 .jpg 原图存到坚果云按月文件夹 */
+function dataUrlToBytes(dataUrl) {
+  const idx = dataUrl.indexOf(',');
+  const b64 = idx >= 0 ? dataUrl.slice(idx + 1) : dataUrl;
+  const bin = atob(b64), out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function bytesToDataUrl(bytes, mime = 'image/jpeg') {
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  let bin = ''; const step = 8192;
+  for (let i = 0; i < u8.length; i += step) bin += String.fromCharCode(...u8.subarray(i, i + step));
+  return `data:${mime};base64,` + btoa(bin);
+}
+function b64Utf8(str) {
+  const u8 = new TextEncoder().encode(str);
+  let bin = ''; for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
+  return btoa(bin);
+}
+
+/** 本地文件备份模块（安卓 Capacitor Filesystem + 网页降级下载） */
+const LocalBackup = {
+  dir() { return cleanDirName(S.settings.backup?.localDir, '小账本备份'); },
+  hasNative() { return !!getFsPlugin(); },
+  async ensureDir(fs) {
+    try { await fs.mkdir({path: this.dir(), directory: 'DOCUMENTS', recursive: true}); } catch (_) {}
+  },
+  async writeNative(filename, content) {
+    const fs = getFsPlugin(); if (!fs) throw new Error('当前为网页版，不支持直接写入手机文件夹');
+    await this.ensureDir(fs);
+    const full = `${this.dir()}/${filename}`;
+    await fs.writeFile({path: full, data: content, directory: 'DOCUMENTS', encoding: 'utf8', recursive: true});
+    return `Documents/${full}`;
+  },
+  async autoSave() {
+    const fs = getFsPlugin(); if (!fs) return false;
+    const json = await Store.exportAll();
+    await this.writeNative('auto-backup.json', json);
+    // 每天保留一份独立快照，自动保留最近 7 天，防止误操作覆盖
+    const dayFile = `daily-${today()}.json`;
+    await this.writeNative(dayFile, json);
+    try {
+      const res = await fs.readdir({path: this.dir(), directory: 'DOCUMENTS'});
+      const dailies = (res.files || []).map(f => typeof f === 'string' ? f : f.name).filter(n => /^daily-\d{4}-\d{2}-\d{2}\.json$/.test(n)).sort();
+      while (dailies.length > 7) { const old = dailies.shift(); await fs.deleteFile({path: `${this.dir()}/${old}`, directory: 'DOCUMENTS'}).catch(() => {}); }
+    } catch (_) {}
+    markBackup('local');
+    return true;
+  },
+  async manualSave() {
+    const json = await Store.exportAll();
+    const d = new Date();
+    const fname = `小账本备份_${today()}_${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+    if (this.hasNative()) {
+      const path = await this.writeNative(fname, json);
+      markBackup('local');
+      return {native: true, path, size: json.length};
+    }
+    const url = URL.createObjectURL(new Blob([json], {type: 'application/json'}));
+    const a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
+    markBackup('local');
+    return {native: false, path: fname, size: json.length};
+  },
+  async listNativeFiles() {
+    const fs = getFsPlugin(); if (!fs) return [];
+    await this.ensureDir(fs);
+    const res = await fs.readdir({path: this.dir(), directory: 'DOCUMENTS'});
+    return (res.files || []).map(f => (typeof f === 'string' ? {name: f, size: 0, mtime: 0} : {name: f.name, size: f.size || 0, mtime: f.mtime || 0}))
+      .filter(f => f.name.endsWith('.json')).sort((a, b) => (b.mtime || 0) - (a.mtime || 0) || (a.name < b.name ? 1 : -1));
+  },
+  async readNativeFile(name) {
+    const fs = getFsPlugin(); if (!fs) throw new Error('仅安卓版可直接读取手机备份目录');
+    const r = await fs.readFile({path: `${this.dir()}/${name}`, directory: 'DOCUMENTS', encoding: 'utf8'});
+    return r.data;
+  },
+};
+
+/** 坚果云 WebDAV 模块（使用 fetch，安卓 APK 内已开启 CapacitorHttp 原生直连无跨域限制） */
+const WebDAV = {
+  cfg() { return S.settings.backup || DEFAULT_BACKUP(); },
+  isConfigured() { const c = this.cfg(); return !!(c.webdavUrl?.trim() && c.webdavUser?.trim() && c.webdavPass?.trim()); },
+  baseUrl() { let u = (this.cfg().webdavUrl || 'https://dav.jianguoyun.com/dav/').trim(); if (!u.endsWith('/')) u += '/'; return u; },
+  rootPath() { return cleanDirName(this.cfg().webdavDir, '小账本'); },
+  joinUrl(...parts) { return this.baseUrl() + parts.filter(Boolean).map(p => p.split('/').map(encodeURIComponent).join('/')).join('/'); },
+  authHeader() { const c = this.cfg(); return 'Basic ' + b64Utf8(`${c.webdavUser.trim()}:${c.webdavPass.trim()}`); },
+  async req(method, url, {headers = {}, body = null, expectBin = false} = {}) {
+    const h = {'Authorization': this.authHeader(), ...headers};
+    const res = await fetch(url, {method, headers: h, body});
+    if (expectBin) return {status: res.status, ok: res.ok, buf: res.ok ? await res.arrayBuffer() : null};
+    const text = await res.text().catch(() => '');
+    return {status: res.status, ok: res.ok, text};
+  },
+  async mkcol(relPath) {
+    const segs = relPath.split('/').filter(Boolean);
+    let cur = '';
+    for (const s of segs) {
+      cur = cur ? `${cur}/${s}` : s;
+      const r = await this.req('MKCOL', this.joinUrl(cur) + '/');
+      // 201 创建成功，405/301/200 表示目录已存在，均属正常
+      if (![200, 201, 204, 301, 405].includes(r.status)) {
+        if (r.status === 401 || r.status === 403) throw new Error('账号或应用密码不对（401/403），请检查坚果云「应用密码」');
+        throw new Error(`创建云端目录失败（状态码 ${r.status}）`);
+      }
+    }
+  },
+  async test() {
+    if (!this.isConfigured()) throw new Error('请先填写坚果云账号和应用密码');
+    const r = await this.req('PROPFIND', this.baseUrl(), {headers: {'Depth': '0'}});
+    if (r.status === 401 || r.status === 403) throw new Error('认证失败：请确认用的是坚果云「第三方应用密码」（不是登录密码）');
+    if (r.status >= 400) throw new Error(`连接失败（状态码 ${r.status}）`);
+    await this.mkcol(`${this.rootPath()}/photos`);
+    return true;
+  },
+  /** 上传核心业务数据 + 按月增量上传新照片 */
+  async syncUp() {
+    if (!this.isConfigured()) throw new Error('尚未配置坚果云账号和应用密码');
+    const root = this.rootPath();
+    await this.mkcol(`${root}/photos`);
+    // 1. 上传核心 JSON（不含照片大图，秒传）
+    const core = Store.exportCoreObj();
+    const putCore = await this.req('PUT', this.joinUrl(root, 'backup-data.json'), {
+      headers: {'Content-Type': 'application/json; charset=utf-8'},
+      body: JSON.stringify(core),
+    });
+    if (![200, 201, 204].includes(putCore.status)) {
+      if (putCore.status === 401 || putCore.status === 403) throw new Error('坚果云账号或应用密码失效');
+      throw new Error(`上传账本数据失败（状态码 ${putCore.status}）`);
+    }
+    // 2. 照片按月份目录增量上传（已传过的跳过）
+    const uploaded = new Set(this.cfg().uploadedPhotos || []);
+    const allPhotos = await Storage.getAll('photos');
+    const monthMap = core.photoMonths || {};
+    const madeMonths = new Set();
+    let newPhotoCount = 0;
+    for (const ph of allPhotos) {
+      if (!ph?.id || !ph.data || uploaded.has(ph.id)) continue;
+      const ym = monthMap[ph.id] || 'other';
+      if (!madeMonths.has(ym)) { await this.mkcol(`${root}/photos/${ym}`); madeMonths.add(ym); }
+      const bytes = dataUrlToBytes(ph.data);
+      const pr = await this.req('PUT', this.joinUrl(root, 'photos', ym, `${ph.id}.jpg`), {
+        headers: {'Content-Type': 'image/jpeg'},
+        body: bytes,
+      });
+      if (![200, 201, 204].includes(pr.status)) throw new Error(`上传照片失败（状态码 ${pr.status}）`);
+      uploaded.add(ph.id); newPhotoCount++;
+    }
+    this.cfg().uploadedPhotos = [...uploaded];
+    markBackup('cloud');
+    return {records: Store.live().length, newPhotos: newPhotoCount};
+  },
+  /** 从坚果云完整恢复（核心 JSON + 按月拉取全部关联照片） */
+  async restoreDown() {
+    if (!this.isConfigured()) throw new Error('请先填写坚果云账号和应用密码');
+    const root = this.rootPath();
+    const r = await this.req('GET', this.joinUrl(root, 'backup-data.json'));
+    if (r.status === 404) throw new Error(`坚果云「${root}」目录里还没有备份文件`);
+    if (r.status === 401 || r.status === 403) throw new Error('账号或应用密码不对（401/403）');
+    if (!r.ok) throw new Error(`下载失败（状态码 ${r.status}）`);
+    let obj; try { obj = JSON.parse(r.text); } catch (_) { throw new Error('云端备份文件已损坏'); }
+    if (!obj || obj.app !== 'xiaozhangben' || !obj.data) throw new Error('云端文件不是小账本的备份');
+    const monthMap = obj.photoMonths || {};
+    const needIds = new Set();
+    (obj.data.records || []).forEach(rec => (rec.photoIds || []).forEach(id => needIds.add(id)));
+    const photos = [];
+    for (const pid of needIds) {
+      const ym = monthMap[pid] || 'other';
+      const pr = await this.req('GET', this.joinUrl(root, 'photos', ym, `${pid}.jpg`), {expectBin: true});
+      if (pr.ok && pr.buf && pr.buf.byteLength > 0) photos.push({id: pid, data: bytesToDataUrl(pr.buf, 'image/jpeg')});
+    }
+    obj.photos = photos;
+    return obj;
+  },
+};
+
+/** 自动同步协调器（防抖 + 断网缓存 + 联网补传） */
+const Sync = {
+  _timer: null, _busy: false, _online: navigator.onLine !== false,
+  markDirty() {
+    const bk = S.settings.backup || (S.settings.backup = DEFAULT_BACKUP());
+    if (bk.webdavOn && WebDAV.isConfigured()) { bk.dirty = true; Store.saveSettings(); }
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => this.autoRun(), 2600);
+  },
+  async isOnline() {
+    const np = getNetPlugin();
+    if (np) { try { const st = await np.getStatus(); this._online = !!st.connected; return this._online; } catch (_) {} }
+    this._online = navigator.onLine !== false;
+    return this._online;
+  },
+  async autoRun() {
+    if (this._busy) return;
+    const bk = S.settings.backup || DEFAULT_BACKUP();
+    this._busy = true;
+    try {
+      if (bk.localAuto && LocalBackup.hasNative()) {
+        try { await LocalBackup.autoSave(); } catch (e) { console.warn('本地自动备份失败', e); }
+      }
+      if (bk.webdavOn && WebDAV.isConfigured() && bk.dirty) {
+        if (await this.isOnline()) {
+          try { await WebDAV.syncUp(); }
+          catch (e) { bk.lastCloudErr = errOf(e); Store.saveSettings(); }
+        }
+      }
+    } finally {
+      this._busy = false;
+      Layers.stack.forEach(l => l.refresh && l.refresh());
+    }
+  },
+  async flushPending(silent = true) {
+    const bk = S.settings.backup || DEFAULT_BACKUP();
+    if (!bk.webdavOn || !WebDAV.isConfigured() || !bk.dirty) return;
+    if (!(await this.isOnline())) return;
+    if (!silent) toast('网络已恢复，正在补传到坚果云…', 2500);
+    await this.autoRun();
+    if (!silent && !bk.dirty) toast('坚果云补传完成 ✓', 1800);
+  },
+  initListeners() {
+    window.addEventListener('online', () => this.flushPending(false));
+    const np = getNetPlugin();
+    if (np) { try { np.addListener('networkStatusChange', st => { this._online = !!st.connected; if (st.connected) this.flushPending(false); }); } catch (_) {} }
+  },
+};
+
+/* ---- 备份与同步中心页面 ---- */
+let BK_FORM = null;
+function openBackupCenter() {
+  const bk = S.settings.backup || (S.settings.backup = DEFAULT_BACKUP());
+  BK_FORM = {
+    localAuto: bk.localAuto !== false, localDir: bk.localDir || '小账本备份',
+    webdavOn: !!bk.webdavOn, webdavUrl: bk.webdavUrl || 'https://dav.jianguoyun.com/dav/',
+    webdavUser: bk.webdavUser || '', webdavPass: bk.webdavPass || '', webdavDir: bk.webdavDir || '小账本',
+  };
+  openPage('数据备份与同步', () => {
+    const cur = S.settings.backup || DEFAULT_BACKUP();
+    const localState = cur.lastLocalLabel ? `上次 ${cur.lastLocalLabel}` : '尚未备份';
+    const cloudBadge = !cur.webdavOn ? '<span class="sync-pill">未开启</span>'
+      : cur.lastCloudErr ? '<span class="sync-pill err">同步出错</span>'
+      : cur.dirty ? '<span class="sync-pill warn">待补传</span>'
+      : '<span class="sync-pill ok">已同步</span>';
+    return `
+    <div class="card pad">
+      <div style="font-weight:700;font-size:15px">当前备份状态</div>
+      <div class="st-grid">
+        <div class="st-box"><div class="st-t"><span>📱 本地备份</span><span class="sync-pill ${cur.localAuto ? 'ok' : ''}">${cur.localAuto ? '自动开' : '仅手动'}</span></div>
+          <div class="st-v">${localState}</div><div class="st-s">${IS_APP ? 'Documents/' + esc(LocalBackup.dir()) : '网页端通过下载/复制备份'}</div></div>
+        <div class="st-box"><div class="st-t"><span>☁️ 坚果云</span>${cloudBadge}</div>
+          <div class="st-v">${cur.lastCloudLabel ? '上次 ' + cur.lastCloudLabel : '尚未同步'}</div>
+          <div class="st-s">${cur.lastCloudErr ? `<span style="color:var(--danger)">${esc(cur.lastCloudErr)}</span>` : cur.dirty ? '有新变动，联网后自动补传' : '照片按月份分目录保存'}</div></div>
+      </div>
+    </div>
+
+    <div class="card pad">
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px">一、手机本地备份</div>
+      <label class="switch-row" style="padding:4px 0 8px"><div><b>开启本地自动备份</b><small>记账、修改、删除后自动保存到手机文件夹（保留最近 7 天每日快照）</small></div><input type="checkbox" data-ch="bkLocalAuto" ${BK_FORM.localAuto ? 'checked' : ''}></label>
+      <div class="fld row" style="padding:6px 0"><label>文件夹名</label><input data-in="bkLocalDir" value="${esc(BK_FORM.localDir)}" placeholder="默认：小账本备份" maxlength="24"></div>
+      <div class="btn-row">
+        <button class="btn pri" data-act="bkLocalNow">立即备份到本地</button>
+        <button class="btn" data-act="bkLocalRestore">从本地恢复</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn sm" data-act="bkCopyText">复制备份文本</button>
+        <button class="btn sm" data-act="bkCsvNow">导出 Excel (CSV)</button>
+      </div>
+    </div>
+
+    <div class="card pad">
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px">二、坚果云（WebDAV）云端备份</div>
+      <label class="switch-row" style="padding:4px 0 8px"><div><b>开启坚果云自动备份</b><small>变动后自动上传；断网时先存在本地，恢复网络自动补传</small></div><input type="checkbox" data-ch="bkDavOn" ${BK_FORM.webdavOn ? 'checked' : ''}></label>
+      <div class="fld" style="padding:4px 0"><label>服务器地址</label><input data-in="bkDavUrl" value="${esc(BK_FORM.webdavUrl)}" placeholder="https://dav.jianguoyun.com/dav/"></div>
+      <div class="fld" style="padding:4px 0"><label>坚果云账号（注册邮箱）</label><input data-in="bkDavUser" value="${esc(BK_FORM.webdavUser)}" placeholder="例如：yourname@qq.com" autocomplete="off"></div>
+      <div class="fld" style="padding:4px 0"><label>应用密码（不是登录密码）</label><input type="password" data-in="bkDavPass" value="${esc(BK_FORM.webdavPass)}" placeholder="坚果云网页版生成的第三方应用密码" autocomplete="off"></div>
+      <div class="fld row" style="padding:6px 0"><label>云端目录</label><input data-in="bkDavDir" value="${esc(BK_FORM.webdavDir)}" placeholder="默认：小账本" maxlength="24"></div>
+      <div class="btn-row">
+        <button class="btn" data-act="bkDavTest">保存并测试连接</button>
+        <button class="btn pri" data-act="bkDavUp">立即同步到坚果云</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn danger-o" data-act="bkDavDown">从坚果云恢复数据</button>
+      </div>
+      <details class="help-box"><summary>📖 零基础教程：3 步获取坚果云「应用密码」（完全免费）</summary>
+        1. 用浏览器登录坚果云官网（jianguoyun.com），免费注册/登录账号；<br>
+        2. 点右上角头像 →「账户信息」→「安全选项」→ 找到「第三方应用管理」；<br>
+        3. 点「添加应用」输入名称「小账本」→ 点「生成密码」，把生成的那串密码填到上面「应用密码」框里即可！<br>
+        <span style="color:var(--sub)">（注意：网页试用版受浏览器跨域限制无法直连坚果云，装成安卓 APK 后即可正常直连。）</span>
+      </details>
+    </div>
+
+    <div class="card pad">
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px">三、其他导入导出</div>
+      <div class="btn-row">
+        <button class="btn" data-act="goWacai">📥 导入挖财旧账 (Excel/CSV)</button>
+      </div>
+    </div>`;
+  });
+}
+function saveBkFormToSettings() {
+  if (!BK_FORM) return;
+  const bk = S.settings.backup || (S.settings.backup = DEFAULT_BACKUP());
+  Object.assign(bk, {
+    localAuto: !!BK_FORM.localAuto, localDir: cleanDirName(BK_FORM.localDir, '小账本备份'),
+    webdavOn: !!BK_FORM.webdavOn, webdavUrl: (BK_FORM.webdavUrl || 'https://dav.jianguoyun.com/dav/').trim(),
+    webdavUser: (BK_FORM.webdavUser || '').trim(), webdavPass: (BK_FORM.webdavPass || '').trim(),
+    webdavDir: cleanDirName(BK_FORM.webdavDir, '小账本'),
+  });
+  Store.saveSettings();
+}
+CH.bkLocalAuto = el => { BK_FORM.localAuto = el.checked; saveBkFormToSettings(); toast(el.checked ? '已开启本地自动备份' : '已关闭本地自动备份'); };
+IN.bkLocalDir = el => { BK_FORM.localDir = el.value; saveBkFormToSettings(); };
+CH.bkDavOn = el => { BK_FORM.webdavOn = el.checked; saveBkFormToSettings(); toast(el.checked ? '已开启坚果云自动备份' : '已关闭坚果云自动备份'); };
+IN.bkDavUrl = el => { BK_FORM.webdavUrl = el.value; saveBkFormToSettings(); };
+IN.bkDavUser = el => { BK_FORM.webdavUser = el.value; saveBkFormToSettings(); };
+IN.bkDavPass = el => { BK_FORM.webdavPass = el.value; saveBkFormToSettings(); };
+IN.bkDavDir = el => { BK_FORM.webdavDir = el.value; saveBkFormToSettings(); };
+
+ACT.bkLocalNow = async () => {
+  saveBkFormToSettings();
+  toast('正在打包备份…', 5000);
+  try {
+    const r = await LocalBackup.manualSave();
+    toast(r.native ? `已保存到手机：${r.path}` : `已导出文件：${r.path}`, 3000);
+    refreshAll();
+  } catch (e) { toast('本地备份失败：' + errOf(e), 3000); }
+};
+ACT.bkCopyText = async () => {
+  toast('正在打包…', 4000);
+  const txt = await Store.exportAll();
+  try { await navigator.clipboard.writeText(txt); markBackup('local'); toast('已复制到剪贴板，可粘贴到微信「文件传输助手」保存', 3000); refreshAll(); }
+  catch (_) {
+    await dialog({title: '复制备份内容', html: `<textarea id="cpTa" readonly style="width:100%;height:180px;font-size:12px">${esc(txt.length > 3e6 ? '包含较多照片，数据较大，请点「立即备份到本地」保存文件。' : txt)}</textarea>`,
+      onOpen: L => { const ta = $('#cpTa', L); ta.focus(); ta.select(); }});
   }
 };
-ACT.dlBackup = () => {
-  try {
-    const url = URL.createObjectURL(new Blob([EXPORT_CACHE], {type: 'application/json'}));
-    const a = document.createElement('a'); a.href = url; a.download = `小账本备份_${today()}.json`; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 8000); markBackup();
-  } catch (e) { toast('下载失败，请用「复制备份内容」'); }
-};
-function openImport() {
-  openPage('导入备份', () => `<div class="card pad" style="font-size:14px;line-height:1.7">
-    <p style="margin:0 0 8px;color:var(--danger)">注意：导入会<b>覆盖</b>当前所有数据。</p>
-    <label class="btn block" style="cursor:pointer">选择备份文件<input type="file" accept=".json,.txt,application/json,text/plain" data-ch="impFile" hidden></label>
-    <p class="tip" style="text-align:center">或者把复制保存的备份内容粘贴到下面</p>
-    <textarea id="impText" placeholder="在这里长按粘贴备份内容"></textarea>
-    <button class="btn pri block" style="margin-top:10px" data-act="doImport">导入粘贴的内容</button>
-    <p class="tip">从挖财导入旧账（Excel/CSV）是另一个功能，等你把导出文件发给我之后再做。</p></div>`);
+ACT.bkCsvNow = () => exportCsvAction();
+async function exportCsvAction() {
+  const csv = Store.exportCsv();
+  const fname = `小账本明细_${today()}.csv`;
+  if (LocalBackup.hasNative()) {
+    try { const path = await LocalBackup.writeNative(fname, csv); toast(`已导出表格到：${path}`, 3000); return; } catch (_) {}
+  }
+  const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
+  const a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 8000);
+  toast(`已导出 ${fname}（可直接用 Excel 打开）`, 2500);
 }
+ACT.bkLocalRestore = async () => {
+  let nativeFiles = [];
+  if (LocalBackup.hasNative()) { try { nativeFiles = await LocalBackup.listNativeFiles(); } catch (_) {} }
+  openPage('从本地恢复备份', () => `
+    ${nativeFiles.length ? `<div class="card"><div class="card-h"><span>手机备份目录里的文件</span><small>点一下导入</small></div>
+      ${nativeFiles.map(f => `<div class="bk-file" data-act="bkPickNative" data-name="${esc(f.name)}"><div class="bf-mid"><b>${esc(f.name)}</b><small>${f.size ? (f.size >= 1048576 ? (f.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(f.size / 1024)) + ' KB') : '点击恢复'}</small></div><span class="chev">${IC.chev}</span></div>`).join('')}</div>` : ''}
+    <div class="card pad" style="font-size:14px;line-height:1.7">
+      <p style="margin:0 0 8px;color:var(--danger)">注意：导入恢复会<b>覆盖</b>当前所有记账数据。</p>
+      <label class="btn pri block" style="cursor:pointer">从文件管理器选择 .json 备份文件<input type="file" accept=".json,.txt,application/json,text/plain" data-ch="impFile" hidden></label>
+      <p class="tip" style="text-align:center">或者把之前复制保存的备份文本粘贴到下面</p>
+      <textarea id="impText" placeholder="在这里长按粘贴备份内容"></textarea>
+      <button class="btn block" style="margin-top:10px" data-act="doImport">导入粘贴的内容</button>
+    </div>`);
+};
+ACT.bkPickNative = async el => {
+  try { const txt = await LocalBackup.readNativeFile(el.dataset.name); await importText(txt); }
+  catch (e) { toast('读取备份失败：' + errOf(e), 3000); }
+};
+ACT.bkDavTest = async () => {
+  saveBkFormToSettings();
+  toast('正在测试坚果云连接…', 8000);
+  try {
+    await WebDAV.test();
+    S.settings.backup.lastCloudErr = ''; Store.saveSettings();
+    toast('连接成功！坚果云目录已就绪 ✓', 2500);
+    refreshAll();
+  } catch (e) {
+    const msg = errOf(e);
+    S.settings.backup.lastCloudErr = msg; Store.saveSettings();
+    toast(msg.includes('Failed to fetch') ? '连接受限：网页版浏览器限制跨域，请安装 APK 后测试' : msg, 4000);
+    refreshAll();
+  }
+};
+ACT.bkDavUp = async () => {
+  saveBkFormToSettings();
+  toast('正在同步到坚果云…', 15000);
+  try {
+    const r = await WebDAV.syncUp();
+    toast(`同步成功！已上传 ${r.records} 条账目${r.newPhotos ? `、${r.newPhotos} 张新照片` : ''}`, 3000);
+    refreshAll();
+  } catch (e) {
+    const msg = errOf(e);
+    S.settings.backup.lastCloudErr = msg; Store.saveSettings();
+    toast(msg.includes('Failed to fetch') ? '同步失败：网页版受跨域限制，请在安卓 APK 中使用' : '同步失败：' + msg, 4000);
+    refreshAll();
+  }
+};
+ACT.bkDavDown = async () => {
+  saveBkFormToSettings();
+  toast('正在从坚果云拉取备份…', 15000);
+  try {
+    const obj = await WebDAV.restoreDown();
+    const n = (obj.data?.records || []).filter(r => !r.deletedAt).length;
+    const pn = (obj.photos || []).length;
+    if (!await confirmDlg(`云端备份里有 <b>${n}</b> 条记录${pn ? `、<b>${pn}</b> 张照片` : ''}。<br>恢复后会覆盖手机当前数据，确定吗？`, '确认恢复', true)) return;
+    await Store.importAll(obj, {keepBackupCfg: true});
+    S.settings.backup.uploadedPhotos = (obj.photos || []).map(p => p.id);
+    markBackup('cloud');
+    while (Layers.stack.length) Layers.closeTop();
+    UI.tab = 'home'; UI.homeMonth = ymOf(today()); UI.selDay = today(); UI.filter = defaultFilter();
+    renderMain(); toast('已从坚果云完整恢复 ✓', 2500);
+  } catch (e) {
+    const msg = errOf(e);
+    toast(msg.includes('Failed to fetch') ? '连接失败：网页版受跨域限制，请在安卓 APK 中使用' : '恢复失败：' + msg, 4000);
+  }
+};
+ACT.goWacai = () => openWacaiImport();
+
 async function importText(txt) {
   let obj; try { obj = JSON.parse(txt); } catch (e) { return toast('内容格式不对，请确认是完整的备份内容'); }
   if (!obj || obj.app !== 'xiaozhangben') return toast('这不是小账本的备份');
   const n = (obj.data?.records || []).filter(r => !r.deletedAt).length;
   if (!await confirmDlg(`备份里有 ${n} 条记录。<br>导入后当前的数据会被覆盖，确定吗？`, '覆盖导入', true)) return;
-  try { await Store.importAll(obj); } catch (e) { return toast('导入失败：' + errOf(e)); }
+  try { await Store.importAll(obj, {keepBackupCfg: true}); } catch (e) { return toast('导入失败：' + errOf(e)); }
   while (Layers.stack.length) Layers.closeTop(); UI.tab = 'home'; UI.homeMonth = ymOf(today()); UI.selDay = today(); UI.filter = defaultFilter();
   renderMain(); toast('导入成功', 2000);
 }
@@ -1815,10 +2344,503 @@ ACT.doImport = el => { const t = el.closest('.page').querySelector('#impText').v
 CH.impFile = async inp => { const f = inp.files[0]; inp.value = ''; if (!f) return; importText(await f.text()); };
 async function clearAllFlow() {
   if (!await confirmDlg('清空所有记录、分类、账户、标签、模板，恢复成刚安装的样子？<br><b>此操作不能撤销。</b>', '下一步', true)) return;
-  if (!await confirmDlg('真的要清空吗？建议先导出备份。', '确认清空', true)) return;
+  if (!await confirmDlg('真的要清空吗？建议先做一次本地或坚果云备份。', '确认清空', true)) return;
   await Store.clearAll();
   while (Layers.stack.length) Layers.closeTop(); UI.tab = 'home'; UI.filter = defaultFilter(); renderMain(); toast('已清空');
 }
+
+/* ================= 挖财旧账导入（零依赖 Excel .xlsx + .csv） ================= */
+const TableParser = {
+  /** 解析 CSV（自动兼容 UTF-8 / BOM / GB18030 中文编码） */
+  decodeText(buf) {
+    const u8 = new Uint8Array(buf);
+    if (u8.length >= 3 && u8[0] === 0xEF && u8[1] === 0xBB && u8[2] === 0xBF) return new TextDecoder('utf-8').decode(u8.subarray(3));
+    try { return new TextDecoder('utf-8', {fatal: true}).decode(u8); }
+    catch (_) { return new TextDecoder('gb18030').decode(u8); }
+  },
+  parseCsv(text) {
+    const rows = []; let row = [], cell = '', inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (inQ) {
+        if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+        else if (ch === '"') inQ = false;
+        else cell += ch;
+      } else {
+        if (ch === '"') inQ = true;
+        else if (ch === ',') { row.push(cell.trim()); cell = ''; }
+        else if (ch === '\n' || ch === '\r') {
+          if (ch === '\r' && text[i + 1] === '\n') i++;
+          row.push(cell.trim()); if (row.some(x => x !== '')) rows.push(row);
+          row = []; cell = '';
+        } else cell += ch;
+      }
+    }
+    row.push(cell.trim()); if (row.some(x => x !== '')) rows.push(row);
+    return rows;
+  },
+  /** 零依赖解析 .xlsx（基于浏览器原生 DecompressionStream 解压 ZIP） */
+  async parseXlsx(buf) {
+    const dv = new DataView(buf), u8 = new Uint8Array(buf);
+    // 查找 ZIP 中央目录结尾 EOCD
+    let eocd = -1;
+    for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65558); i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error('这不是有效的 .xlsx Excel 文件（如果是旧版 .xls，请先用 Excel 另存为 .xlsx 或 .csv）');
+    const cdSize = dv.getUint32(eocd + 12, true), cdOff = dv.getUint32(eocd + 16, true);
+    const entries = new Map();
+    let p = cdOff;
+    while (p < cdOff + cdSize) {
+      if (dv.getUint32(p, true) !== 0x02014b50) break;
+      const method = dv.getUint16(p + 10, true), compSize = dv.getUint32(p + 20, true);
+      const fnLen = dv.getUint16(p + 28, true), exLen = dv.getUint16(p + 30, true), cmLen = dv.getUint16(p + 32, true);
+      const lfhOff = dv.getUint32(p + 42, true);
+      const name = new TextDecoder('utf-8').decode(u8.subarray(p + 46, p + 46 + fnLen));
+      entries.set(name, {method, compSize, lfhOff});
+      p += 46 + fnLen + exLen + cmLen;
+    }
+    async function readEntry(name) {
+      const e = entries.get(name); if (!e) return null;
+      const o = e.lfhOff, fnL = dv.getUint16(o + 26, true), exL = dv.getUint16(o + 28, true);
+      const raw = u8.subarray(o + 30 + fnL + exL, o + 30 + fnL + exL + e.compSize);
+      if (e.method === 0) return new TextDecoder('utf-8').decode(raw);
+      if (e.method === 8) {
+        if (typeof DecompressionStream === 'undefined') throw new Error('当前环境不支持直接解压 .xlsx，请在 Excel 里另存为 CSV 后导入');
+        const ds = new DecompressionStream('deflate-raw');
+        const w = ds.writable.getWriter(); w.write(raw); w.close();
+        const ab = await new Response(ds.readable).arrayBuffer();
+        return new TextDecoder('utf-8').decode(ab);
+      }
+      throw new Error('不支持的 Excel 压缩格式');
+    }
+    const ssXml = await readEntry('xl/sharedStrings.xml');
+    const shared = [];
+    if (ssXml) {
+      const doc = new DOMParser().parseFromString(ssXml, 'application/xml');
+      doc.querySelectorAll('si').forEach(si => {
+        let t = ''; si.querySelectorAll('t').forEach(n => t += n.textContent || ''); shared.push(t);
+      });
+    }
+    const sheetNames = [...entries.keys()].filter(k => /^xl\/worksheets\/sheet\d+\.xml$/i.test(k)).sort();
+    if (!sheetNames.length) throw new Error('Excel 文件里没有找到工作表');
+    const colIdx = ref => { let n = 0; for (const ch of ref.replace(/\d+$/, '')) n = n * 26 + (ch.charCodeAt(0) - 64); return n - 1; };
+    const allRows = [];
+    for (const sName of sheetNames) {
+      const xml = await readEntry(sName); if (!xml) continue;
+      const doc = new DOMParser().parseFromString(xml, 'application/xml');
+      const sheetRows = [];
+      doc.querySelectorAll('sheetData > row').forEach(rEl => {
+        const arr = [];
+        rEl.querySelectorAll('c').forEach(cEl => {
+          const ref = cEl.getAttribute('r') || '';
+          const ci = ref ? colIdx(ref) : arr.length;
+          const t = cEl.getAttribute('t');
+          let val = '';
+          if (t === 's') { const idx = +(cEl.querySelector('v')?.textContent || -1); val = shared[idx] ?? ''; }
+          else if (t === 'inlineStr') { cEl.querySelectorAll('t').forEach(n => val += n.textContent || ''); }
+          else val = cEl.querySelector('v')?.textContent ?? '';
+          arr[ci] = String(val).trim();
+        });
+        for (let i = 0; i < arr.length; i++) if (arr[i] == null) arr[i] = '';
+        if (arr.some(x => x !== '')) sheetRows.push(arr);
+      });
+      if (sheetRows.length > allRows.length) { allRows.length = 0; allRows.push(...sheetRows); }
+    }
+    return allRows;
+  },
+  async parseFile(file) {
+    const buf = await file.arrayBuffer();
+    if (/\.xlsx$/i.test(file.name)) return this.parseXlsx(buf);
+    if (/\.xls$/i.test(file.name)) throw new Error('暂不支持老式 .xls 二进制格式，请在 Excel/WPS 里「另存为 .xlsx 或 .csv」再导入');
+    return this.parseCsv(this.decodeText(buf));
+  },
+};
+
+const WACAI_ALIAS = {
+  '餐饮': ['三餐', '早午晚餐', '饮食', '吃喝', '伙食', '饭费', '聚餐'],
+  '买菜': ['蔬菜', '生鲜', '肉蛋', '粮油'],
+  '水果零食': ['零食', '水果', '小吃', '甜品'],
+  '饮料奶茶': ['酒水饮料', '饮品', '咖啡', '奶茶'],
+  '交通': ['交通出行', '出行', '车费'],
+  '公交地铁': ['公交', '地铁', '公共交通'],
+  '打车': ['出租车', '滴滴', '网约车'],
+  '日用品': ['居家日用', '百货', '超市', '生活用品', '日用百货'],
+  '衣服': ['服饰', '服装', '鞋帽', '衣服饰品'],
+  '美妆护肤': ['美容', '化妆品', '护肤'],
+  '房租': ['租房', '住宿'],
+  '话费': ['手机话费', '通讯', '电话费'],
+  '旅游': ['旅行', '度假', '酒店'],
+  '医疗健康': ['医疗', '看病', '医药'],
+  '红包礼金': ['人情', '随礼', '红包', '礼金', '份子钱'],
+  '牌局娱乐': ['麻将', '牌局', '打牌', '扑克', '棋牌'],
+  '工资': ['薪水', '工资薪水', '月薪', '基本工资'],
+};
+let WC = null;
+function openWacaiImport() {
+  WC = {step: 1, fileName: '', headers: [], rows: [], col: {}, catMap: {}, accMap: {}, skipDup: true, preview: null};
+  openPage('导入挖财旧账', renderWacaiBody);
+}
+function normImportDate(v) {
+  if (v == null || v === '') return '';
+  const s = String(v).trim();
+  // Excel 序列日期（如 45612 或 45612.5）
+  if (/^\d{5}(\.\d+)?$/.test(s)) {
+    const n = Math.floor(parseFloat(s));
+    const d = new Date(Date.UTC(1899, 11, 30) + n * 864e5);
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  }
+  const m = s.match(/(\d{4})[\/\-\.年](\d{1,2})[\/\-\.月](\d{1,2})/);
+  if (m) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+  return '';
+}
+function guessWacaiCols(headers) {
+  const find = re => headers.findIndex(h => re.test(h));
+  return {
+    date: find(/日期|时间|date/i),
+    type: find(/收支|类型|账目类型|交易类型|方向|type/i),
+    amount: find(/金额|消费金额|数额|amount/i),
+    cat1: find(/大类|一级分类|支出大类|类别|主分类/i),
+    cat2: find(/小类|二级分类|支出小类|子类|分类/i),
+    acc: find(/^(账户|资金账户|转出账户|支付方式|付款账户|account)$/i) >= 0 ? find(/^(账户|资金账户|转出账户|支付方式|付款账户|account)$/i) : find(/账户|支付|account/i),
+    toAcc: find(/转入账户|对方账户|目标账户/i),
+    note: find(/备注|说明|描述|摘要|note/i),
+    tag: find(/标签|成员|项目|tag/i),
+  };
+}
+function autoMatchCat(type, c2, c1) {
+  const leaf = Store.leafCats(type, true);
+  const tryNames = [c2, c1].map(x => (x || '').trim()).filter(Boolean);
+  for (const nm of tryNames) {
+    const exact = leaf.find(c => c.name === nm); if (exact) return exact.id;
+  }
+  for (const nm of tryNames) {
+    for (const [targetName, aliases] of Object.entries(WACAI_ALIAS)) {
+      if (aliases.some(a => nm.includes(a) || a.includes(nm))) {
+        const hit = leaf.find(c => c.name === targetName) || Store.parents(type, true).find(p => p.name === targetName);
+        if (hit) { const ch = Store.children(hit.id, true); return ch.length ? ch[0].id : hit.id; }
+      }
+    }
+    const fuzzy = leaf.find(c => nm.includes(c.name) || c.name.includes(nm)); if (fuzzy) return fuzzy.id;
+  }
+  return '__new__';
+}
+function autoMatchAcc(name) {
+  name = (name || '').trim(); if (!name) return firstAcc() || '__new__';
+  const accs = Store.accounts(true);
+  const exact = accs.find(a => a.name === name); if (exact) return exact.id;
+  if (/微信|wechat/i.test(name)) { const a = accs.find(x => x.name.includes('微信')); if (a) return a.id; }
+  if (/支付宝|花呗|余额宝|alipay/i.test(name)) { const a = accs.find(x => x.name.includes('支付宝')); if (a) return a.id; }
+  if (/现金|钱包/i.test(name)) { const a = accs.find(x => x.name.includes('现金')); if (a) return a.id; }
+  if (/银行|储蓄|借记|信用|卡/i.test(name)) { const a = accs.find(x => x.name.includes('银行')); if (a) return a.id; }
+  return '__new__';
+}
+function parseWacaiType(rawType, rawAmt) {
+  const s = (rawType || '').trim();
+  if (/转|互转|还款/.test(s)) return 'transfer';
+  if (/收|进|入/.test(s)) return 'income';
+  if (/支|出|花/.test(s)) return 'expense';
+  if (String(rawAmt || '').trim().startsWith('-')) return 'expense';
+  return 'expense';
+}
+function buildWacaiPreview() {
+  const {rows, col} = WC;
+  const parsed = [], bad = [], dupSet = new Set();
+  Store.live().forEach(r => dupSet.add(`${r.date}|${r.type}|${r.amount}|${Store.accName(r.accountId)}|${(r.note || '').trim()}`));
+  const seenCats = new Map(), seenAccs = new Set();
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const date = normImportDate(col.date >= 0 ? r[col.date] : '');
+    const rawAmt = col.amount >= 0 ? r[col.amount] : '';
+    const cleanAmt = String(rawAmt || '').replace(/[¥￥,，\s]/g, '').replace(/^[+-]/, '');
+    const amtP = parseAmount(cleanAmt);
+    if (!date || amtP.err) { bad.push(i + 2); continue; }
+    const type = parseWacaiType(col.type >= 0 ? r[col.type] : '', rawAmt);
+    const c1 = col.cat1 >= 0 ? (r[col.cat1] || '').trim() : '';
+    const c2 = col.cat2 >= 0 ? (r[col.cat2] || '').trim() : '';
+    const accName = (col.acc >= 0 ? (r[col.acc] || '').trim() : '') || '默认账户';
+    let toAccName = col.toAcc >= 0 ? (r[col.toAcc] || '').trim() : '';
+    if (type === 'transfer' && !toAccName && accName.includes('->')) {
+      const sp = accName.split('->'); toAccName = (sp[1] || '').trim();
+    }
+    const note = col.note >= 0 ? (r[col.note] || '').trim() : '';
+    const tagStr = col.tag >= 0 ? (r[col.tag] || '').trim() : '';
+    if (type !== 'transfer') {
+      const catKey = `${type}|${c2 || c1 || '未分类'}`;
+      if (!seenCats.has(catKey)) {
+        seenCats.set(catKey, {key: catKey, type, c1, c2, label: c2 || c1 || '未分类'});
+        if (!WC.catMap[catKey]) WC.catMap[catKey] = autoMatchCat(type, c2, c1);
+      }
+    }
+    const fromAcc = accName.includes('->') ? accName.split('->')[0].trim() : accName;
+    seenAccs.add(fromAcc); if (!WC.accMap[fromAcc]) WC.accMap[fromAcc] = autoMatchAcc(fromAcc);
+    if (toAccName) { seenAccs.add(toAccName); if (!WC.accMap[toAccName]) WC.accMap[toAccName] = autoMatchAcc(toAccName); }
+    const dupKey = `${date}|${type}|${amtP.cents}|${fromAcc}|${note}`;
+    const isDup = dupSet.has(dupKey);
+    parsed.push({date, type, amount: amtP.cents, catKey: `${type}|${c2 || c1 || '未分类'}`, c1, c2, fromAcc, toAcc: toAccName, note, tagStr, isDup});
+  }
+  WC.preview = {parsed, bad, cats: [...seenCats.values()], accs: [...seenAccs]};
+}
+function renderWacaiBody() {
+  if (WC.step === 1) {
+    return `<div class="card pad" style="line-height:1.7;font-size:14px">
+      <p style="margin:0 0 10px">支持导入从<b>挖财记账</b>（或其他记账软件）导出的 <b>Excel (.xlsx)</b> 或 <b>CSV (.csv)</b> 账单表格。</p>
+      <label class="btn pri block" style="cursor:pointer">选择 .xlsx 或 .csv 文件<input type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" data-ch="wcFile" hidden></label>
+      <div class="help-box" style="margin-top:12px">
+        <b>导入说明：</b><br>
+        · 自动识别日期、金额、收支类型、分类、账户、备注、标签；<br>
+        · 分类名可自动匹配，也可手动指定转换关系或一键新建；<br>
+        · 转账记录单独识别处理，不算支出也不算收入；<br>
+        · 自动检测重复记录并默认跳过，不会重复入账。
+      </div>
+    </div>`;
+  }
+  if (WC.step === 2) {
+    const opts = sel => `<option value="-1" ${sel < 0 ? 'selected' : ''}>（不导入此项）</option>` + WC.headers.map((h, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>第${i + 1}列：${esc(h || '空')}</option>`).join('');
+    const fields = [['date', '日期（必选）'], ['amount', '金额（必选）'], ['type', '收支类型'], ['cat2', '小类 / 分类'], ['cat1', '大类（可选）'], ['acc', '账户 / 转出账户'], ['toAcc', '转入账户（转账用）'], ['note', '备注'], ['tag', '标签']];
+    const sample = WC.rows.slice(0, 3);
+    return `<div class="card pad">
+      <div style="font-weight:700;margin-bottom:6px">第 1 步：核对表格列对应关系</div>
+      <div style="font-size:12.5px;color:var(--sub);margin-bottom:8px">文件：${esc(WC.fileName)}（共 ${WC.rows.length} 行数据）</div>
+      ${fields.map(([k, lbl]) => `<div class="map-row"><span class="m-src">${lbl}</span><select data-ch="wcCol" data-k="${k}">${opts(WC.col[k])}</select></div>`).join('')}
+      <table class="pv-tb"><tr>${WC.headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr>${sample.map(r => `<tr>${WC.headers.map((_, i) => `<td>${esc(r[i] || '')}</td>`).join('')}</tr>`).join('')}</table>
+      <div class="btn-row"><button class="btn" data-act="wcBack1">重选文件</button><button class="btn pri" data-act="wcNext3">下一步：核对分类与重复项</button></div>
+    </div>`;
+  }
+  const pv = WC.preview;
+  const dupN = pv.parsed.filter(x => x.isDup).length;
+  const todo = WC.skipDup ? pv.parsed.filter(x => !x.isDup) : pv.parsed;
+  let exp = 0, inc = 0, tr = 0;
+  todo.forEach(x => { if (x.type === 'expense') exp += x.amount; else if (x.type === 'income') inc += x.amount; else tr++; });
+  const accOpts = sel => `<option value="__new__" ${sel === '__new__' ? 'selected' : ''}>＋ 自动新建同名账户</option>` + Store.accounts(true).map(a => `<option value="${a.id}" ${sel === a.id ? 'selected' : ''}>${a.icon} ${esc(a.name)}</option>`).join('');
+  return `<div class="card pad">
+    <div style="font-weight:700;margin-bottom:8px">第 2 步：确认分类映射与导入统计</div>
+    <div class="rq-sum">
+      <div><span>本次将导入</span><b>${todo.length} 笔</b></div>
+      <div><span>支出合计</span><b class="exp">${short(exp)}</b></div>
+      <div><span>收入合计</span><b class="inc">${short(inc)}</b></div>
+    </div>
+    <div style="font-size:12.5px;color:var(--sub);margin-top:8px">转账 ${tr} 笔 · 检测到疑似重复 <b>${dupN}</b> 笔${pv.bad.length ? ` · 跳过格式异常行 ${pv.bad.length} 行` : ''}</div>
+    ${dupN ? `<label class="switch-row" style="padding:8px 0 0"><div><b>跳过疑似重复记录</b><small>同日期、同类型、同金额、同账户且同备注视为重复</small></div><input type="checkbox" data-ch="wcSkipDup" ${WC.skipDup ? 'checked' : ''}></label>` : ''}
+  </div>
+  <div class="card pad">
+    <div style="font-weight:700;margin-bottom:6px">分类对照转换（${pv.cats.length} 个）</div>
+    ${pv.cats.map(c => `<div class="map-row"><span class="m-src">${c.type === 'income' ? '收' : '支'} · ${esc(c.label)}</span>
+      <select data-ch="wcCatMap" data-k="${esc(c.key)}"><option value="__new__" ${WC.catMap[c.key] === '__new__' ? 'selected' : ''}>＋ 自动新建「${esc(c.label.slice(0, 12))}」</option>${catOptions(c.type, WC.catMap[c.key])}</select></div>`).join('')}
+  </div>
+  <div class="card pad">
+    <div style="font-weight:700;margin-bottom:6px">账户对照转换（${pv.accs.length} 个）</div>
+    ${pv.accs.map(a => `<div class="map-row"><span class="m-src">${esc(a)}</span><select data-ch="wcAccMap" data-k="${esc(a)}">${accOpts(WC.accMap[a])}</select></div>`).join('')}
+    <div class="btn-row"><button class="btn" data-act="wcBack2">上一步</button><button class="btn pri" data-act="wcCommit">确认导入 ${todo.length} 笔</button></div>
+  </div>`;
+}
+CH.wcFile = async inp => {
+  const f = inp.files[0]; inp.value = ''; if (!f) return;
+  toast('正在解析表格…', 5000);
+  try {
+    const all = await TableParser.parseFile(f);
+    if (all.length < 2) return toast('表格里没有找到足够的数据行');
+    // 自动寻找表头行（含“日期/金额/分类”的行）
+    let hIdx = all.findIndex(r => r.some(c => /日期|时间/i.test(c)) && r.some(c => /金额|数额/i.test(c)));
+    if (hIdx < 0) hIdx = 0;
+    WC.fileName = f.name; WC.headers = all[hIdx]; WC.rows = all.slice(hIdx + 1);
+    WC.col = guessWacaiCols(WC.headers); WC.step = 2;
+    toast(`解析成功，共 ${WC.rows.length} 行`, 1200);
+    Layers.stack.forEach(l => l.refresh && l.refresh());
+  } catch (e) { toast(errOf(e), 4000); }
+};
+CH.wcCol = el => { WC.col[el.dataset.k] = +el.value; };
+ACT.wcBack1 = el => { WC.step = 1; fdRefresh(el); };
+ACT.wcBack2 = el => { WC.step = 2; fdRefresh(el); };
+ACT.wcNext3 = el => {
+  if (WC.col.date < 0 || WC.col.amount < 0) return toast('请至少选择「日期」和「金额」对应的列');
+  buildWacaiPreview(); WC.step = 3; fdRefresh(el);
+};
+CH.wcSkipDup = el => { WC.skipDup = el.checked; fdRefresh(el); };
+CH.wcCatMap = el => { WC.catMap[el.dataset.k] = el.value; };
+CH.wcAccMap = el => { WC.accMap[el.dataset.k] = el.value; };
+ACT.wcCommit = async () => {
+  const pv = WC.preview; const todo = WC.skipDup ? pv.parsed.filter(x => !x.isDup) : pv.parsed;
+  if (!todo.length) return toast('没有可导入的新记录');
+  toast(`正在导入 ${todo.length} 笔…`, 8000);
+  _suspendSync = true;
+  try {
+    // 1. 创建缺失账户
+    const accIdMap = {};
+    for (const aName of pv.accs) {
+      let target = WC.accMap[aName];
+      if (!target || target === '__new__') {
+        const clean = aName.slice(0, 12) || '导入账户';
+        const exist = S.accounts.find(a => a.name === clean);
+        target = exist ? exist.id : Store.saveAccount({name: clean, init: 0, icon: '💳'}).id;
+      }
+      accIdMap[aName] = target;
+    }
+    // 2. 创建缺失分类
+    const catIdMap = {};
+    for (const c of pv.cats) {
+      let target = WC.catMap[c.key];
+      if (!target || target === '__new__') {
+        const clean = (c.label || '其他').slice(0, 12);
+        const exist = Store.leafCats(c.type, true).find(x => x.name === clean);
+        if (exist) target = exist.id;
+        else {
+          const otherP = c.type === 'expense' ? S.categories.find(x => x.type === 'expense' && !x.parentId && x.name === '其他') : null;
+          target = Store.saveCategory({type: c.type, parentId: otherP?.id || null, name: clean, icon: '📌'}).id;
+        }
+      }
+      catIdMap[c.key] = target;
+    }
+    // 3. 批量写入记录
+    const now = Date.now(), newRecs = [];
+    todo.forEach((x, idx) => {
+      const tagIds = [];
+      if (x.tagStr) {
+        x.tagStr.split(/[,，、;\s]+/).map(s => s.trim()).filter(Boolean).forEach(tn => {
+          const clean = tn.slice(0, 12);
+          let tg = S.tags.find(t => t.name === clean);
+          if (!tg) tg = Store.saveTag({name: clean});
+          if (!tagIds.includes(tg.id)) tagIds.push(tg.id);
+        });
+      }
+      const fromId = accIdMap[x.fromAcc] || firstAcc();
+      let toId = x.type === 'transfer' ? (accIdMap[x.toAcc] || Store.accounts().find(a => a.id !== fromId)?.id || fromId) : null;
+      const r = {
+        id: uid(), createdAt: now + idx, updatedAt: now + idx, type: x.type, amount: x.amount,
+        categoryId: x.type === 'transfer' ? null : (catIdMap[x.catKey] || null),
+        accountId: fromId, toAccountId: toId, date: x.date, note: x.note, person: '',
+        tagIds, photoIds: [], big: false,
+      };
+      S.records.push(r); newRecs.push(r);
+    });
+    if (newRecs.length) await Storage.putMany('records', newRecs);
+    reindex();
+  } finally { _suspendSync = false; }
+  Sync.markDirty('import');
+  while (Layers.stack.length) Layers.closeTop();
+  UI.tab = 'home'; renderMain();
+  toast(`成功导入 ${todo.length} 笔挖财旧账 ✓`, 3000);
+};
+
+/* ================= 人情账簿（按人名双向查账） ================= */
+const RQ_UI = {kw: '', sort: 'total'};
+ACT.openRenqing = () => openRenqingPage();
+function openRenqingPage() {
+  openPage('人情账簿', renderRenqingBody, {right: '<button class="tbtn" data-act="rqQuickAdd">记一笔</button>'});
+}
+function getRenqingRecords() {
+  return Store.live().filter(r => r.type !== 'transfer' && (r.person || Store.isRenqingCat(r.categoryId)));
+}
+function renderRenqingBody() {
+  const rs = getRenqingRecords();
+  let sumOut = 0, sumIn = 0;
+  const byPerson = new Map();
+  rs.forEach(r => {
+    if (r.type === 'expense') sumOut += r.amount; else sumIn += r.amount;
+    const p = (r.person || '').trim() || '未填姓名';
+    const o = byPerson.get(p) || {name: p, out: 0, inc: 0, count: 0, lastDate: '', list: []};
+    if (r.type === 'expense') o.out += r.amount; else o.inc += r.amount;
+    o.count++; if (r.date > o.lastDate) o.lastDate = r.date;
+    o.list.push(r); byPerson.set(p, o);
+  });
+  let list = [...byPerson.values()];
+  const kw = (RQ_UI.kw || '').trim().toLowerCase();
+  if (kw) list = list.filter(x => x.name.toLowerCase().includes(kw) || x.list.some(r => (r.note || '').toLowerCase().includes(kw)));
+  if (RQ_UI.sort === 'out') list.sort((a, b) => b.out - a.out);
+  else if (RQ_UI.sort === 'inc') list.sort((a, b) => b.inc - a.inc);
+  else if (RQ_UI.sort === 'recent') list.sort((a, b) => a.lastDate < b.lastDate ? 1 : -1);
+  else list.sort((a, b) => (b.out + b.inc) - (a.out + a.inc));
+  const net = sumIn - sumOut;
+  return `<div class="card pad">
+    <div class="rq-sum">
+      <div><span>累计送出</span><b class="exp">${money(sumOut)}</b></div>
+      <div><span>累计收到</span><b class="inc">${money(sumIn)}</b></div>
+      <div><span>净差额(收-支)</span><b class="${net >= 0 ? 'inc' : 'exp'}">${net >= 0 ? '+' : ''}${money(net)}</b></div>
+    </div>
+    <div class="srch" style="margin-top:10px"><div class="srch-in">${IC.search}<input data-in="rqKw" placeholder="搜姓名或备注（如：张三、婚礼）" value="${esc(RQ_UI.kw)}" autocomplete="off"></div></div>
+    <div class="chips" style="margin-top:8px">${[['total', '按往来总额'], ['out', '我送出最多'], ['inc', '我收到最多'], ['recent', '最近往来']].map(([k, t]) =>
+      `<div class="chip ${RQ_UI.sort === k ? 'on' : ''}" data-act="rqSort" data-s="${k}">${t}</div>`).join('')}</div>
+  </div>
+  <div class="card">${list.length ? list.map(o => {
+    const diff = o.inc - o.out;
+    return `<div class="mrow" data-act="rqPerson" data-n="${esc(o.name)}"><div class="ic">🧧</div>
+      <div class="nm"><b>${esc(o.name)}</b><small>送出 ¥${money(o.out)} · 收到 ¥${money(o.inc)} · 共 ${o.count} 笔</small></div>
+      <div class="val ${diff >= 0 ? 'inc' : 'exp'}">${diff >= 0 ? '+' : ''}${money(diff)}</div></div>`;
+  }).join('') : '<div class="empty">还没有人情往来记录<br><small>记账选「人情往来」或「红包礼金」并填上对方姓名，这里会自动按人名汇总</small></div>'}</div>`;
+}
+IN.rqKw = el => { RQ_UI.kw = el.value; fdRefresh(el); };
+ACT.rqSort = el => { RQ_UI.sort = el.dataset.s; fdRefresh(el); };
+ACT.rqQuickAdd = () => {
+  const cat = S.categories.find(c => c.type === 'expense' && c.name === '红包礼金') || S.categories.find(c => Store.isRenqingCat(c.id));
+  openRecordForm({type: 'expense', categoryId: cat?.id || null, date: today()});
+};
+ACT.rqPerson = el => {
+  const name = el.dataset.n;
+  openPage(`人情 · ${esc(name)}`, () => {
+    const list = getRenqingRecords().filter(r => ((r.person || '').trim() || '未填姓名') === name)
+      .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.createdAt - a.createdAt);
+    let out = 0, inc = 0; list.forEach(r => { if (r.type === 'expense') out += r.amount; else inc += r.amount; });
+    const diff = inc - out;
+    return `<div class="card pad"><div class="rq-sum">
+      <div><span>我送给 TA</span><b class="exp">${money(out)}</b></div>
+      <div><span>TA 送给我</span><b class="inc">${money(inc)}</b></div>
+      <div><span>净差额</span><b class="${diff >= 0 ? 'inc' : 'exp'}">${diff >= 0 ? '+' : ''}${money(diff)}</b></div>
+    </div></div>
+    <div class="card">${list.map(r => `<div class="grp-h"><span>${r.date.replace(/-/g, '/')}</span></div>${recItem(r)}`).join('') || '<div class="empty">暂无记录</div>'}</div>`;
+  }, {right: name !== '未填姓名' ? `<button class="tbtn" data-act="rqAddFor" data-n="${esc(name)}">记一笔</button>` : ''});
+};
+ACT.rqAddFor = el => {
+  const cat = S.categories.find(c => c.type === 'expense' && c.name === '红包礼金') || S.categories.find(c => Store.isRenqingCat(c.id));
+  openRecordForm({type: 'expense', categoryId: cat?.id || null, person: el.dataset.n, date: today()});
+};
+
+/* ================= 牌局娱乐统计（麻将/扑克输赢看板） ================= */
+ACT.openPoker = () => openPokerPage();
+function ensurePokerCats() {
+  let expCat = S.categories.find(c => c.type === 'expense' && Store.isGameCat(c.id));
+  if (!expCat) {
+    const p = S.categories.find(c => c.type === 'expense' && !c.parentId && c.name === '文教娱乐');
+    expCat = Store.saveCategory({type: 'expense', parentId: p?.id || null, name: '牌局娱乐', icon: '🀄'});
+  }
+  let incCat = S.categories.find(c => c.type === 'income' && Store.isGameCat(c.id));
+  if (!incCat) incCat = Store.saveCategory({type: 'income', parentId: null, name: '牌局赢钱', icon: '🀄'});
+  return {expCat, incCat};
+}
+function getPokerRecords() {
+  return Store.live().filter(r => {
+    if (r.type === 'transfer') return false;
+    if (Store.isGameCat(r.categoryId)) return true;
+    const tagHit = (r.tagIds || []).some(id => /麻将|牌局|扑克|打牌|棋牌/.test(Store.tag(id)?.name || ''));
+    return tagHit || /麻将|斗地主|掼蛋|牌局|扑克/.test(r.note || '');
+  }).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.createdAt - a.createdAt);
+}
+function openPokerPage() {
+  openPage('牌局娱乐统计', () => {
+    const list = getPokerRecords();
+    let win = 0, lose = 0, winN = 0, loseN = 0;
+    list.forEach(r => { if (r.type === 'income') { win += r.amount; winN++; } else { lose += r.amount; loseN++; } });
+    const net = win - lose, totalN = winN + loseN, rate = totalN ? Math.round(winN / totalN * 100) : 0;
+    return `<div class="card pad">
+      <div class="rq-sum">
+        <div><span>累计净盈亏</span><b class="${net >= 0 ? 'inc' : 'exp'}">${net >= 0 ? '+' : ''}${money(net)}</b></div>
+        <div><span>总赢 (${winN}场)</span><b class="inc">${money(win)}</b></div>
+        <div><span>总输 (${loseN}场)</span><b class="exp">${money(lose)}</b></div>
+      </div>
+      <div style="text-align:center;font-size:13px;color:var(--sub);margin-top:8px">共统计 <b>${totalN}</b> 场 · 胜率 <b>${rate}%</b></div>
+      <div class="btn-row">
+        <button class="btn pri" data-act="pkAdd" data-t="income">🀄 记一局赢钱</button>
+        <button class="btn danger-o" data-act="pkAdd" data-t="expense">🀄 记一局输钱</button>
+      </div>
+    </div>
+    <div class="card">${list.length ? list.map(r => `<div class="grp-h"><span>${r.date.replace(/-/g, '/')}</span></div>${recItem(r)}`).join('')
+      : '<div class="empty">还没有牌局记录<br><small>点上方按钮 3 秒记录一局麻将/扑克输赢</small></div>'}</div>`;
+  });
+}
+ACT.pkAdd = el => {
+  const {expCat, incCat} = ensurePokerCats();
+  const t = el.dataset.t;
+  openRecordForm({type: t, categoryId: t === 'income' ? incCat.id : expCat.id, date: today()});
+};
 
 /* ================= 第二阶段：周期账 ================= */
 function dueOf(ym, day) { const [y, m] = ym.split('-').map(Number); return `${ym}-${pad(Math.min(day, new Date(y, m, 0).getDate()))}`; }
@@ -2161,21 +3183,49 @@ async function colorMenu() {
   if (!v) return; S.settings.colors = v; Store.saveSettings(); applyTheme(); refreshAll();
 }
 
-/* ================= 每日提醒、备份提醒 ================= */
+/* ================= 每日提醒（含安卓系统通知）、备份提醒 ================= */
+const Reminder = {
+  ID: 202601,
+  plugin() { return IS_APP && window.Capacitor?.Plugins?.LocalNotifications ? window.Capacitor.Plugins.LocalNotifications : null; },
+  async sync(askPerm = false) {
+    const p = this.plugin(); if (!p) return;
+    const r = S.settings.remind || {on: false, time: '20:30'};
+    try { await p.cancel({notifications: [{id: this.ID}]}); } catch (_) {}
+    if (!r.on) return;
+    try {
+      let perm = await p.checkPermissions();
+      if (perm.display !== 'granted' && askPerm) perm = await p.requestPermissions();
+      if (perm.display !== 'granted') return;
+      const [h, m] = (r.time || '20:30').split(':').map(Number);
+      await p.schedule({
+        notifications: [{
+          id: this.ID, title: '小账本 · 记账提醒', body: '今天过得怎么样？花 10 秒记一笔账吧～',
+          schedule: {on: {hour: isNaN(h) ? 20 : h, minute: isNaN(m) ? 30 : m}, repeats: true, allowWhileIdle: true},
+        }],
+      });
+    } catch (e) { console.warn('通知调度失败', e); }
+  },
+};
 async function remindDialog() {
   const r = S.settings.remind || {on: true, time: '20:30'};
   const v = await dialog({title: '每日记账提醒', html: `<label class="switch-row" style="padding:0 0 12px"><div><b>开启提醒</b></div><input type="checkbox" id="dOn" ${r.on ? 'checked' : ''}></label>
     <div class="fld" style="padding:0"><label>提醒时间</label><input type="time" id="dTime" class="inp" value="${r.time}"></div>
-    <p class="tip">网页版：过了这个时间打开 App、当天还没记账，首页顶部会提示。打包成 APK 后会变成手机通知栏提醒。</p>`,
+    <p class="tip">${IS_APP ? '开启后每天到点会在手机通知栏推送记账提醒（首次开启会申请通知权限）。' : '网页版：过了这个时间打开 App、当天还没记账，首页顶部会提示。装成 APK 后会变成手机系统通知。'}</p>`,
     buttons: [{text: '取消'}, {text: '保存', cls: 'pri', onClick: L => ({on: $('#dOn', L).checked, time: $('#dTime', L).value || '20:30'})}]});
-  if (!v) return; S.settings.remind = v; Store.saveSettings(); toast(v.on ? `每天 ${v.time} 提醒` : '已关闭提醒'); refreshAll();
+  if (!v) return;
+  S.settings.remind = v; Store.saveSettings();
+  await Reminder.sync(true);
+  toast(v.on ? `每天 ${v.time} 提醒` : '已关闭提醒'); refreshAll();
 }
 function homeBanners() {
-  const st = S.settings, t = today(), now = new Date(), out = [];
+  const st = S.settings, bk = st.backup || DEFAULT_BACKUP(), t = today(), now = new Date(), out = [];
   const r = st.remind || {};
   if (r.on && `${pad(now.getHours())}:${pad(now.getMinutes())}` >= (r.time || '20:30') && st.remindDismissed !== t
       && !S.records.some(x => !x.deletedAt && !x.recurId && x.date === t)) {
     out.push(`<div class="banner">⏰<span>今天还没记账，现在记一笔？</span><button class="btn sm pri" data-act="addRec">记一笔</button><button class="x" data-act="dismissRemind">✕</button></div>`);
+  }
+  if (bk.webdavOn && WebDAV.isConfigured() && bk.dirty) {
+    out.push(`<div class="banner">☁️<span>有新变动待同步到坚果云</span><button class="btn sm" data-act="flushCloudNow">立即同步</button></div>`);
   }
   const live = S.records.filter(x => !x.deletedAt);
   if (live.length && st.backupSnooze !== t) {
@@ -2187,7 +3237,8 @@ function homeBanners() {
 }
 ACT.dismissRemind = () => { S.settings.remindDismissed = today(); Store.saveSettings(); renderMain(); };
 ACT.snoozeBackup = () => { S.settings.backupSnooze = today(); Store.saveSettings(); renderMain(); };
-ACT.goBackup = () => openExport();
+ACT.goBackup = () => openBackupCenter();
+ACT.flushCloudNow = async () => { await Sync.flushPending(false); renderMain(); };
 
 /* ================= 演示数据（近 4 个月的模拟账） ================= */
 const Demo = {
@@ -2261,20 +3312,23 @@ const Demo = {
     add(`${y}-10-03`, 'expense', 138, '送礼', '支付宝', '给家里带特产', T, 17);
     add(`${y}-10-04`, 'expense', 368, '火车高铁', '支付宝', '高铁回程', T, 16); add(`${y}-10-04`, 'expense', 75, '午餐', '微信', '', T, 12);
     add(`${y}-10-05`, 'expense', 120, '买菜', '微信', '补冰箱', [], 18);
-    // 其他特别支出
-    add(`${y}-08-16`, 'expense', 800, '红包礼金', '微信', '同事婚礼随礼', [], 11);
+    // 其他特别支出（附带人情对象与牌局演示）
+    const rq1 = add(`${y}-08-16`, 'expense', 800, '红包礼金', '微信', '同事婚礼随礼', [], 11); if (rq1) rq1.person = '王明';
     add(`${y}-08-22`, 'expense', 1299, '家电', '支付宝', '扫地机器人', [], 20);
     add(`${y}-09-08`, 'expense', 150, '门诊', '微信', '牙科检查', [], 10);
-    add(`${y}-09-13`, 'expense', 356, '请客吃饭', '微信', '请朋友吃饭', [], 20);
+    const rq2 = add(`${y}-09-13`, 'expense', 356, '请客吃饭', '微信', '请朋友吃饭', [], 20); if (rq2) rq2.person = '李芳';
     add(`${y}-09-20`, 'expense', 600, '物业费', '银行卡', '第四季度物业费', [], 10);
-    add(`${y}-09-24`, 'expense', 1000, '孝敬长辈', '银行卡', '中秋给爸妈', [], 20); add(`${y}-09-24`, 'expense', 268, '送礼', '支付宝', '月饼礼盒', [], 13);
+    const rq3 = add(`${y}-09-24`, 'expense', 1000, '孝敬长辈', '银行卡', '中秋给爸妈', [], 20); if (rq3) rq3.person = '爸妈';
+    add(`${y}-09-24`, 'expense', 268, '送礼', '支付宝', '月饼礼盒', [], 13);
+    add(`${y}-10-12`, 'expense', 160, '牌局娱乐', '微信', '周末麻将', [], 22);
     const E = [tag11];
     add(`${y}-11-11`, 'expense', 1599, '数码产品', '支付宝', '平板电脑', E, 0); add(`${y}-11-11`, 'expense', 389, '衣服', '支付宝', '羽绒服', E, 0);
     add(`${y}-11-11`, 'expense', 236, '日用品', '支付宝', '囤纸巾洗衣液', E, 1); add(`${y}-11-11`, 'expense', 168, '美妆护肤', '支付宝', '护肤品', E, 1);
     // 其他收入
     add(`${y}-09-02`, 'income', 460, '报销款', '银行卡', '差旅报销', [], 11);
     add(`${y}-09-30`, 'income', 3000, '奖金', '银行卡', '季度奖金', [], 15);
-    add(`${y}-10-07`, 'income', 200, '红包礼金', '微信', '国庆长辈红包', [], 19);
+    const rq4 = add(`${y}-10-07`, 'income', 200, '红包礼金', '微信', '国庆长辈红包', [], 19); if (rq4) rq4.person = '王明';
+    add(`${y}-10-19`, 'income', 320, '牌局赢钱', '微信', '朋友打麻将手气好', [], 21);
     add(`${y}-10-20`, 'income', 800, '兼职副业', '微信', '周末兼职', [], 19);
     add(`${y}-11-13`, 'income', 89, '退款', '支付宝', '双十一退货', E, 12);
     const reno = add(`${y}-10-18`, 'expense', 18000, '装修', '银行卡', '厨房翻新（大额）', [], 15); if (reno) reno.big = true;
@@ -2346,16 +3400,28 @@ document.addEventListener('touchend', e => {
   try { await Store.init(); } catch (e) { console.error(e); toast('数据读取出错：' + errOf(e), 4000); }
   applyTheme();
   renderMain();
-  setTimeout(() => runRecurring(), 400);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { runRecurring(); if (!Layers.stack.length) renderMain(); } });
+  Sync.initListeners();
+  setTimeout(() => { runRecurring(); Reminder.sync(false); Sync.flushPending(true); }, 500);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      runRecurring();
+      Sync.flushPending(true);
+      if (!Layers.stack.length) renderMain();
+    }
+  });
   if (!S.settings.introDone) {
-    await dialog({title: '欢迎使用小账本', html: IS_APP ? `<p>数据保存在这台手机里，不上传到任何地方。</p>
-      <p>· <b>卸载 App 会删除所有数据</b>，换手机或重装前，先在「设置 → 导出备份」备份一份。</p>
-      <p>· 网页版试用时记过账的，可以在网页版导出备份，再在这里「设置 → 导入备份」粘贴进来。</p>` : `<p>这是<b>网页试用版</b>，先熟悉操作、提修改意见用：</p>
-      <p>· 数据只存在这台手机的这个浏览器里，清理缓存或换手机就没了。</p>
-      <p>· 试用期间可以随便记几笔试试；正式记账建议等打包成 APK、接好坚果云备份之后再开始。</p>
-      <p>· 想留着试用数据，可以在「设置 → 导出备份」复制一份。</p>`, buttons: [{text: '知道了，开始试用', cls: 'pri'}]});
+    const goBk = await dialog({
+      title: '欢迎使用小账本完全版',
+      html: IS_APP ? `<p>你的记账数据全部保存在本机里，安全私密、零广告。</p>
+        <p>· <b>重要提醒：卸载 App 会清空应用内数据！</b></p>
+        <p>· 建议现在就去开启<b>「手机本地自动备份」</b>或配置免费的<b>「坚果云自动备份」</b>，以后换手机、重装都不怕丢账。</p>`
+        : `<p>当前为<b>网页预览版</b>，全部功能已就绪：</p>
+        <p>· 支持首页月历、两级分类、周期账、预算提醒、挖财 Excel/CSV 导入、人情账簿与牌局统计；</p>
+        <p>· 安装安卓 APK 后，自动开启手机文件夹备份、坚果云 WebDAV 自动同步与每日系统通知。</p>`,
+      buttons: [{text: '稍后再说', onClick: () => false}, {text: '去设置备份（推荐）', cls: 'pri', onClick: () => true}],
+    });
     S.settings.introDone = true; Store.saveSettings();
+    if (goBk) openBackupCenter();
   }
 })();
 </script>

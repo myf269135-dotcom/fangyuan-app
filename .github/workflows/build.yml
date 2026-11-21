@@ -23,37 +23,72 @@ jobs:
       - name: 接受安卓 SDK 许可
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
-      - name: 生成安卓工程
+      - name: 生成安卓工程与插件配置
         run: |
+          VER_CODE=$((100 + ${{ github.run_number }}))
+          VER_NAME="2.0.${{ github.run_number }}"
           mkdir -p www && cp index.html www/index.html
+          sed -i "s/const APP_VERSION = '[^']*'/const APP_VERSION = '${VER_NAME}'/" www/index.html
           cat > package.json <<'EOF'
-          {"name":"xiaozhangben","version":"1.0.0","private":true,
-           "dependencies":{"@capacitor/android":"^7.0.0","@capacitor/app":"^7.0.0","@capacitor/core":"^7.0.0"},
-           "devDependencies":{"@capacitor/cli":"^7.0.0"}}
+          {
+            "name": "xiaozhangben",
+            "version": "2.0.0",
+            "private": true,
+            "dependencies": {
+              "@capacitor/android": "^7.0.0",
+              "@capacitor/app": "^7.0.0",
+              "@capacitor/core": "^7.0.0",
+              "@capacitor/filesystem": "^7.0.0",
+              "@capacitor/local-notifications": "^7.0.0",
+              "@capacitor/network": "^7.0.0"
+            },
+            "devDependencies": {
+              "@capacitor/cli": "^7.0.0"
+            }
+          }
           EOF
           cat > capacitor.config.json <<'EOF'
-          {"appId":"com.xiaozhangben.app","appName":"小账本","webDir":"www",
-           "android":{"backgroundColor":"#F3F2EE","adjustMarginsForEdgeToEdge":"force"}}
+          {
+            "appId": "com.xiaozhangben.app",
+            "appName": "小账本",
+            "webDir": "www",
+            "android": {
+              "backgroundColor": "#F3F2EE",
+              "adjustMarginsForEdgeToEdge": "force"
+            },
+            "plugins": {
+              "CapacitorHttp": {
+                "enabled": true
+              },
+              "LocalNotifications": {
+                "iconColor": "#2D4B7C"
+              }
+            }
+          }
           EOF
           npm install
           npx cap add android
           npx cap sync android
 
-      - name: 图标、相机权限、版本号
+      - name: 图标、权限与版本号
         run: |
+          VER_CODE=$((100 + ${{ github.run_number }}))
+          VER_NAME="2.0.${{ github.run_number }}"
           RES=android/app/src/main/res
           rm -rf $RES/mipmap-anydpi-v26
           for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
             for f in ic_launcher ic_launcher_round ic_launcher_foreground; do cp icon.png $RES/mipmap-$d/$f.png; done
           done
-          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.CAMERA" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
-          sed -i -E "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]*\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+          PERMS='    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />'
+          sed -i "s#</manifest>#${PERMS}\n</manifest>#" android/app/src/main/AndroidManifest.xml
+          sed -i -E "s/versionCode [0-9]+/versionCode ${VER_CODE}/; s/versionName \"[^\"]*\"/versionName \"${VER_NAME}\"/" android/app/build.gradle
 
       - name: 打包并签名
         run: |
+          VER_NAME="2.0.${{ github.run_number }}"
           cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon && cd ..
           BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
-          OUT=xiaozhangben-1.0.${{ github.run_number }}.apk
+          OUT=xiaozhangben-v${VER_NAME}.apk
           $BT/zipalign -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
           $BT/apksigner sign --ks release.jks --ks-key-alias xiaozhangben --ks-pass pass:xzb-2026-key --key-pass pass:xzb-2026-key --out $OUT aligned.apk
           $BT/apksigner verify $OUT
@@ -61,8 +96,16 @@ jobs:
       - name: 发布安装包
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: 小账本 v1.0.${{ github.run_number }}
-          body: 下载下面的 apk 文件，在手机上点开安装。装在旧版上面会保留数据。
-          files: xiaozhangben-1.0.${{ github.run_number }}.apk
+          tag_name: v2.0.${{ github.run_number }}
+          name: 小账本完全版 v2.0.${{ github.run_number }}
+          body: |
+            下载下面的 apk 文件，在安卓手机上直接点开安装（覆盖装在旧版上面会自动保留历史数据）。
+
+            本版包含：
+            - 本地自动/手动备份（手机 Documents 文件夹）与超 7 天提醒
+            - 坚果云 WebDAV 自动/手动备份（断网缓存、联网补传、照片按月归档）
+            - 挖财旧账 Excel(.xlsx) / CSV 导入向导（分类映射、转账识别、重复拦截）
+            - 安卓每日定时系统通知提醒
+            - 人情往来按人名双向查账 & 牌局娱乐输赢统计
+          files: xiaozhangben-v2.0.${{ github.run_number }}.apk
           make_latest: true
