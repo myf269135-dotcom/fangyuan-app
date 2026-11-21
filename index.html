@@ -513,6 +513,21 @@ html[data-theme=dark] .tool-ic.c7{background:#3A2416} html[data-theme=dark] .too
 .debt-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .debt-meta{font-size:12px;color:var(--sub);margin-top:4px;display:flex;justify-content:space-between;gap:8px}
 .sumbar{bottom:calc(78px + env(safe-area-inset-bottom))}
+
+/* v4.0 智能增强：AI 快捷条、搜索单字命中分布、AI 识图拆合卡片 */
+.ai-bar{display:flex;gap:8px;margin:10px 14px 0}
+.ai-bar button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--pri-soft),var(--card));border:1.5px solid var(--dash);color:var(--pri);font-weight:700;font-size:13.5px;box-shadow:var(--shadow)}
+.ai-bar button:active{transform:scale(.97)}
+.kw-box{margin:8px 14px 0;padding:10px 12px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.kw-head{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--sub);margin-bottom:6px}
+.kw-head b{color:var(--ink)}
+.ai-item{border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px;background:var(--inp)}
+.ai-item.off{opacity:.48}
+.ai-item-top{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.ai-item-top label{display:flex;align-items:center;gap:6px;font-weight:700;font-size:14px;cursor:pointer}
+.ai-item-meta{font-size:12.5px;color:var(--sub);margin-top:5px;line-height:1.5}
+.ai-ans{white-space:pre-wrap;line-height:1.75;font-size:14px;color:var(--ink2);background:var(--bg);border-radius:14px;padding:12px 14px}
+.guess-btn{flex:none;height:36px;padding:0 10px;border-radius:10px;background:var(--pri-soft);color:var(--pri);font-size:12.5px;font-weight:600;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -669,10 +684,16 @@ const DEFAULT_BACKUP = () => ({
   webdavOn: false, webdavUrl: 'https://dav.jianguoyun.com/dav/', webdavUser: '', webdavPass: '', webdavDir: '小账本',
   lastCloudTs: null, lastCloudLabel: null, lastCloudErr: '', dirty: false, uploadedPhotos: [],
 });
+const DEFAULT_AI = () => ({
+  enabled: false, textOn: true, visionOn: true, autoCatOn: true, reportOn: true,
+  notifyOn: false, notifyAutoSave: false, pendingCaptures: [],
+  provider: 'zhipu', apiUrl: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+  apiKey: '', textModel: 'glm-4-flash', visionModel: 'glm-4v-flash',
+});
 const DEFAULT_SETTINGS = () => ({id: 'settings', budget: 0, catBudgets: {}, introDone: false, lastAccountId: null, lastBackup: null, lastBackupTs: null,
   incFixed: false, incBig: false, theme: 'system', skin: 'ocean', colors: 'default', hideMoney: false,
   remind: {on: true, time: '20:30'}, remindDismissed: null, backupSnooze: null,
-  backup: DEFAULT_BACKUP()});
+  backup: DEFAULT_BACKUP(), ai: DEFAULT_AI()});
 const S = {categories: [], accounts: [], tags: [], templates: [], records: [], recurring: [], debts: [], settings: DEFAULT_SETTINGS()};
 const IDX = {cat: new Map(), acc: new Map(), tag: new Map()};
 function reindex() { IDX.cat = new Map(S.categories.map(c => [c.id, c])); IDX.acc = new Map(S.accounts.map(a => [a.id, a])); IDX.tag = new Map(S.tags.map(t => [t.id, t])); }
@@ -689,6 +710,7 @@ const Store = {
     if (st) {
       Object.assign(S.settings, st);
       S.settings.backup = {...DEFAULT_BACKUP(), ...(st.backup || {})};
+      S.settings.ai = {...DEFAULT_AI(), ...(st.ai || {})};
       if (!Array.isArray(S.settings.backup.uploadedPhotos)) S.settings.backup.uploadedPhotos = [];
     }
     if (!S.categories.length && !S.accounts.length) await this.seed();
@@ -884,14 +906,13 @@ const Store = {
     }
     return m;
   },
-  /** 核心业务数据导出（不含坚果云明文密码与照片大图，适合云端增量同步） */
+  /** 核心业务数据导出（不含坚果云明文密码、AI 密钥与照片大图，适合云端增量同步） */
   exportCoreObj() {
     const safeSettings = {...S.settings};
-    if (safeSettings.backup) {
-      safeSettings.backup = {...safeSettings.backup, webdavPass: ''};
-    }
+    if (safeSettings.backup) safeSettings.backup = {...safeSettings.backup, webdavPass: ''};
+    if (safeSettings.ai) safeSettings.ai = {...safeSettings.ai, apiKey: ''};
     return {
-      app: 'xiaozhangben', version: 3, exportedAt: new Date().toISOString(),
+      app: 'xiaozhangben', version: 4, exportedAt: new Date().toISOString(),
       data: {categories: S.categories, accounts: S.accounts, tags: S.tags, templates: S.templates, records: S.records, recurring: S.recurring, debts: S.debts, settings: safeSettings},
       photoMonths: this.photoMonthMap(),
     };
@@ -917,6 +938,7 @@ const Store = {
   async importAll(obj, {keepBackupCfg = true} = {}) {
     if (!obj || obj.app !== 'xiaozhangben' || !obj.data) throw '这不是本 App 的备份文件';
     const prevBk = keepBackupCfg ? JSON.parse(JSON.stringify(S.settings.backup || DEFAULT_BACKUP())) : DEFAULT_BACKUP();
+    const prevAi = keepBackupCfg ? JSON.parse(JSON.stringify(S.settings.ai || DEFAULT_AI())) : DEFAULT_AI();
     _suspendSync = true;
     try {
       for (const k of ['categories', 'accounts', 'tags', 'templates', 'records', 'recurring', 'debts']) {
@@ -929,7 +951,8 @@ const Store = {
       }
       const inSet = obj.data.settings || {};
       S.settings = {...DEFAULT_SETTINGS(), ...inSet, id: 'settings', introDone: true,
-        backup: keepBackupCfg ? {...DEFAULT_BACKUP(), ...prevBk, dirty: false} : {...DEFAULT_BACKUP(), ...(inSet.backup || {})}};
+        backup: keepBackupCfg ? {...DEFAULT_BACKUP(), ...prevBk, dirty: false} : {...DEFAULT_BACKUP(), ...(inSet.backup || {})},
+        ai: keepBackupCfg ? {...DEFAULT_AI(), ...prevAi} : {...DEFAULT_AI(), ...(inSet.ai || {})}};
       this.saveSettings();
       reindex();
     } finally { _suspendSync = false; }
@@ -1004,7 +1027,7 @@ const Layers = {
 /* 安卓返回键：先关最上面的弹窗/页面；没有弹窗时，不在首页就回首页，在首页就退到后台 */
 window.appBack = () => Layers.closeTop();
 const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '4.0.0';
 try {
   const AppPlugin = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
   if (AppPlugin) AppPlugin.addListener('backButton', () => {
@@ -1137,6 +1160,9 @@ function renderHome() {
   const prevYm = addMonth(ym, -1);
   const anim = UI.anim ? (UI.anim > 0 ? 'anim-l' : 'anim-r') : ''; UI.anim = 0;
   const openDebts = S.debts.filter(d => d.status !== 'settled').length;
+  const aiCfg = S.settings.ai || DEFAULT_AI();
+  const aiBarHtml = aiCfg.enabled && (aiCfg.textOn || aiCfg.visionOn)
+    ? `<div class="ai-bar">${aiCfg.textOn ? '<button data-act="openAiText">🗣️ 语音/文字智能记账</button>' : ''}${aiCfg.visionOn ? '<button data-act="openAiReceipt">📷 拍小票/截屏识图</button>' : ''}</div>` : '';
   const budgetBar = budget
     ? `<div class="hd-prog" data-act="openBudget">
         <div class="hd-prog-t"><span>🎯 ${m}月预算 · 已用 ${pct}%${catOver ? `（${catOver}类超支）` : ''}</span>
@@ -1167,6 +1193,7 @@ function renderHome() {
   ${Storage.persistent ? '' : '<div class="warn-bar">⚠️ 当前环境无法保存数据，关闭页面后记录会丢失。</div>'}
   <div class="card cal" data-swipe="hmSwipe"><div class="cal-wk">${['一', '二', '三', '四', '五', '六', '日'].map(w => `<div>${w}</div>`).join('')}</div><div class="cal-g ${anim}">${cells}</div>
     <div class="cal-tip">左右滑动换月 · 点日期直达当天账单</div></div>
+  ${aiBarHtml}
   <div class="card">
     <div class="tool-grid">
       <button class="tool-item" data-act="openRenqing"><div class="tool-ic c1">🧧</div><span>人情账簿</span></button>
@@ -1328,7 +1355,7 @@ function renderForm() {
           : `<div class="catbox" id="fCat"></div><div class="fld"><label>账户</label><div class="chips" id="fAccFrom"></div></div>`}
     ${tpl ? '' : `<div class="fld row"><label>日期</label><input type="date" data-in="fDate" value="${F.date}"></div>`}
     ${tpl || isT ? '' : '<div id="fPersonBox"></div>'}
-    <div class="fld row"><label>备注</label><input data-in="fNote" value="${esc(F.note)}" placeholder="写点什么（可不填）" maxlength="100"></div>
+    <div class="fld row"><label>备注</label><input data-in="fNote" value="${esc(F.note)}" placeholder="写点什么（可不填）" maxlength="100">${!tpl && !isT && S.settings.ai?.enabled && S.settings.ai?.autoCatOn ? '<button type="button" class="guess-btn" data-act="fGuessCat">✨ 猜分类</button>' : ''}</div>
     ${F.type === 'expense' && !F.recurId ? `<div style="padding:4px 16px"><label class="switch-row"><div><b>大额支出</b><small>买车、装修这类一次性的大钱。是否计入统计跟着「大额支出」开关走</small></div><input type="checkbox" data-ch="fBig" ${F.big ? 'checked' : ''}></label></div>` : ''}
     <div class="fld"><label>标签 <small>可多选，可不选</small></label><div class="chips wrap" id="fTags"></div></div>
     ${tpl ? '' : '<div class="fld"><label>照片 <small>最多 9 张，会自动压缩</small></label><div class="photos" id="fPhotos"></div></div>'}
@@ -1704,17 +1731,23 @@ async function tagMenu(id) {
 }
 LP.tagMenu = el => tagMenu(el.dataset.id);
 
-/* ================= 明细查询 ================= */
+/* ================= 明细查询（全维度单字/多词不漏搜） ================= */
+function recordSearchText(r) {
+  const c = Store.cat(r.categoryId), p = c?.parentId ? Store.cat(c.parentId) : null;
+  const tags = (r.tagIds || []).map(id => Store.tag(id)?.name || '').join(' ');
+  return [r.note || '', r.person || '', c?.name || '', p?.name || '', tags,
+    Store.accName(r.accountId), r.toAccountId ? Store.accName(r.toAccountId) : '', TYPE_NAME[r.type] || ''].join(' ').toLowerCase();
+}
 function filterRecords(f) {
   let catSet = null;
   if (f.cats.length) { catSet = new Set(); f.cats.forEach(id => { catSet.add(id); Store.children(id, true).forEach(c => catSet.add(c.id)); }); }
-  const kw = (f.kw || '').trim().toLowerCase();
+  const terms = (f.kw || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
   return S.records.filter(r => !r.deletedAt && (!f.start || r.date >= f.start) && (!f.end || r.date <= f.end)
     && (f.type === 'all' || r.type === f.type) && (!catSet || catSet.has(r.categoryId))
     && (!f.accs.length || f.accs.includes(r.accountId) || f.accs.includes(r.toAccountId))
     && (!f.tags.length || (r.tagIds || []).some(t => f.tags.includes(t)))
     && (f.min == null || r.amount >= f.min) && (f.max == null || r.amount <= f.max)
-    && (!kw || (r.note || '').toLowerCase().includes(kw) || (r.person || '').toLowerCase().includes(kw)));
+    && (!terms.length || (() => { const hay = recordSearchText(r); return terms.every(w => hay.includes(w)); })()));
 }
 function activeCount(f) { return (f.type !== 'all') + (f.cats.length > 0) + (f.accs.length > 0) + (f.tags.length > 0) + (f.min != null || f.max != null); }
 function filterSummary(f) {
@@ -1734,7 +1767,7 @@ function renderDetail() {
   <div class="card pad" style="margin-top:4px">
     <div class="chips">${PERIODS.map(([k, t]) => `<div class="chip ${f.period === k ? 'on' : ''}" data-act="period" data-p="${k}">${t}</div>`).join('')}</div>
     ${f.period === 'custom' ? `<div class="range"><input type="date" data-ch="fStart" value="${f.start}"><span>至</span><input type="date" data-ch="fEnd" value="${f.end}"></div>` : ''}
-    <div class="srch"><div class="srch-in">${IC.search}<input data-in="kw" placeholder="搜备注关键词" value="${esc(f.kw)}" autocomplete="off"></div>
+    <div class="srch"><div class="srch-in">${IC.search}<input data-in="kw" placeholder="搜单字或词（如：蛋、果、买菜、超市、张三）" value="${esc(f.kw)}" autocomplete="off"></div>
       <button class="btn sm ${n ? 'pri' : ''}" data-act="openFilter">筛选${n ? ' · ' + n : ''}</button></div>
     ${n ? `<div class="fsum">${filterSummary(f)}<a data-act="clearFilter">清除筛选</a></div>` : ''}
   </div>
@@ -1746,13 +1779,31 @@ function renderDetailList() {
   let e = 0, i = 0, ex = 0; rs.forEach(r => { if (r.type === 'income') i += r.amount; else if (r.type === 'expense') { if (countsExp(r)) e += r.amount; else ex += r.amount; } });
   const LIMIT = 500, shown = rs.slice(0, LIMIT), groups = [];
   shown.forEach(r => { const g = groups[groups.length - 1]; if (g && g.date === r.date) g.list.push(r); else groups.push({date: r.date, list: [r]}); });
-  box.innerHTML = rs.length ? groups.map(g => {
+  let kwCard = '';
+  const kwTxt = (UI.filter.kw || '').trim();
+  if (kwTxt && rs.length) {
+    const byCat = new Map();
+    rs.forEach(r => {
+      const k = r.type === 'transfer' ? '__tr__' : (r.categoryId || '__none__');
+      const cur = byCat.get(k) || {k, name: r.type === 'transfer' ? '转账' : Store.catFull(r.categoryId), ic: r.type === 'transfer' ? '🔁' : Store.catIcon(r.categoryId), n: 0, sum: 0};
+      cur.n++; cur.sum += r.amount; byCat.set(k, cur);
+    });
+    const chips = [...byCat.values()].sort((a, b) => b.sum - a.sum).slice(0, 12);
+    kwCard = `<div class="kw-box"><div class="kw-head"><span>🔍 含「<b>${esc(kwTxt)}</b>」涉及 ${byCat.size} 个品类（共 ${rs.length} 笔）</span><span>点品类可聚焦</span></div>
+      <div class="chips wrap">${chips.map(c => `<div class="chip ${UI.filter.cats.includes(c.k) ? 'on' : ''}" data-act="kwPickCat" data-id="${c.k}">${c.ic} ${esc(c.name)} · ¥${vShort(c.sum)} (${c.n})</div>`).join('')}</div></div>`;
+  }
+  box.innerHTML = kwCard + (rs.length ? groups.map(g => {
     let ge = 0, gi = 0; g.list.forEach(r => { if (countsExp(r)) ge += r.amount; else if (r.type === 'income') gi += r.amount; });
-    return `<div class="card"><div class="grp-h"><span>${dateLabel(g.date)}</span><span>${ge ? '支 ' + money(ge) : ''}${ge && gi ? '　' : ''}${gi ? '收 ' + money(gi) : ''}</span></div>${g.list.map(recItem).join('')}<div style="height:4px"></div></div>`;
+    return `<div class="card"><div class="grp-h"><span>${dateLabel(g.date)}</span><span>${ge ? '支 ' + vMoney(ge) : ''}${ge && gi ? '　' : ''}${gi ? '收 ' + vMoney(gi) : ''}</span></div>${g.list.map(recItem).join('')}<div style="height:4px"></div></div>`;
   }).join('') + (rs.length > LIMIT ? `<div class="more-tip">只显示最近 ${LIMIT} 条，底部合计按全部 ${rs.length} 条计算</div>` : '')
-    : '<div class="card"><div class="empty">没有符合条件的记录</div></div>';
-  sum.innerHTML = `<span>共 <b>${rs.length}</b> 笔</span><span>支出 <b class="exp">${money(e)}</b>${ex ? `<small style="color:var(--sub)"> +未计入${short(ex)}</small>` : ''}</span><span>收入 <b class="inc">${money(i)}</b></span>`;
+    : '<div class="card"><div class="empty">没有符合条件的记录</div></div>');
+  sum.innerHTML = `<span>共 <b>${rs.length}</b> 笔</span><span>支出 <b class="exp">${vMoney(e)}</b>${ex ? `<small style="color:var(--sub)"> +未计入${vShort(ex)}</small>` : ''}</span><span>收入 <b class="inc">${vMoney(i)}</b></span>`;
 }
+ACT.kwPickCat = el => {
+  const id = el.dataset.id; if (!id || id === '__tr__' || id === '__none__') return;
+  UI.filter.cats = UI.filter.cats.includes(id) ? UI.filter.cats.filter(x => x !== id) : [id];
+  renderMain();
+};
 ACT.period = el => {
   const p = el.dataset.p, f = UI.filter; f.period = p;
   const r = periodRange(p);
@@ -1914,7 +1965,7 @@ function renderReport() {
   const maxOne = expList[0];
   const top10 = expList.slice(0, 10);
   const insightCard = `<div class="card pad">
-    <div style="font-weight:700;font-size:15px;margin-bottom:10px">📊 本期财务体检</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-weight:700;font-size:15px">📊 本期财务体检</span>${S.settings.ai?.enabled && S.settings.ai?.reportOn ? '<button class="pill-btn" data-act="openAiReport">✨ AI 诊断</button>' : ''}</div>
     <div class="insight-grid">
       <div class="ins-box"><span>日均支出</span><b class="exp">¥${vMoney(dailyAvg)}</b>${prevDeltaHtml}</div>
       <div class="ins-box"><span>储蓄率（结余占比）</span><b class="${saveRate != null && saveRate >= 20 ? 'inc' : ''}">${saveRate == null ? '—' : saveRate + '%'}</b><small>${saveRate == null ? '本期无收入' : saveRate >= 30 ? '理财达人 👍' : saveRate >= 0 ? '保持收支平衡' : '本期入不敷出'}</small></div>
@@ -2087,10 +2138,11 @@ ACT.accMore = el => accMenu(el.dataset.id);
 ACT.openSettings = () => {
   const row = (go, t, val = '', danger = false) => `<div class="mrow" data-act="setGo" data-go="${go}"><div class="nm" ${danger ? 'style="color:var(--danger)"' : ''}>${t}</div>${val ? `<span style="color:var(--sub);font-size:13.5px">${val}</span>` : ''}<span class="chev">${IC.chev}</span></div>`;
   openPage('设置', () => {
-    const st = S.settings, bk = st.backup || DEFAULT_BACKUP();
+    const st = S.settings, bk = st.backup || DEFAULT_BACKUP(), ai = st.ai || DEFAULT_AI();
     const bkVal = bk.dirty ? '<span style="color:var(--warn-ink)">待同步</span>' : (st.lastBackup ? '上次 ' + st.lastBackup : '未备份');
+    const aiVal = (ai.enabled || ai.notifyOn) ? [ai.enabled ? 'AI已开' : '', ai.notifyOn ? '通知捕账开' : ''].filter(Boolean).join(' · ') : '默认关闭';
     return `
-    <div class="card">${row('backup', '💾 数据备份与同步（本地 + 坚果云）', bkVal)}${row('wacai', '📥 导入挖财旧账（Excel / CSV）')}${row('csvExp', '📤 导出 Excel 表格（CSV）')}</div>
+    <div class="card">${row('ai', '🤖 智能助手与微信/支付宝自动捕账', aiVal)}${row('backup', '💾 数据备份与同步（本地 + 坚果云）', bkVal)}${row('wacai', '📥 导入挖财旧账（Excel / CSV）')}${row('csvExp', '📤 导出 Excel 表格（CSV）')}</div>
     <div class="card">${row('renqing', '🧧 人情账簿（按人名查往来）')}${row('poker', '🀄 牌局娱乐统计')}${row('debts', '🤝 借入借出 / 欠款备忘', S.debts.filter(d => d.status !== 'settled').length + ' 笔未结清')}${row('recur', '周期账（自动记账）', S.recurring.filter(b => b.status === 'active').length + ' 个进行中')}${row('budget', '预算', st.budget ? '¥' + money(st.budget) : '未设置')}${row('recycle', '回收站', S.records.filter(r => r.deletedAt).length + ' 条')}</div>
     <div class="card">${row('cats', '分类管理', S.categories.length + ' 个')}${row('accs', '账户管理', S.accounts.length + ' 个')}${row('tags', '标签管理', S.tags.length + ' 个')}${row('tpls', '记账模板', S.templates.length + ' 个')}</div>
     <div class="card">${row('skin', '🎨 主题皮肤', {ocean: '深海蓝', jade: '翡翠绿', amber: '暖阳金', violet: '暮光紫'}[st.skin] || '深海蓝')}${row('theme', '深色模式', {system: '跟随系统', light: '浅色', dark: '深色'}[st.theme] || '跟随系统')}${row('colors', '收支配色', st.colors === 'swap' ? '支出红 · 收入绿' : '支出绿 · 收入红')}${row('remind', '每日记账提醒', st.remind?.on ? st.remind.time : '关闭')}</div>
@@ -2101,7 +2153,8 @@ ACT.openSettings = () => {
 };
 ACT.setGo = el => {
   const g = el.dataset.go;
-  if (g === 'backup') openBackupCenter();
+  if (g === 'ai') openAiSettings();
+  else if (g === 'backup') openBackupCenter();
   else if (g === 'wacai') openWacaiImport();
   else if (g === 'csvExp') exportCsvAction();
   else if (g === 'renqing') openRenqingPage();
@@ -3195,6 +3248,514 @@ ACT.debtDetail = async el => {
   }
 };
 
+/* ================= 智能助手（AI 四件套）+ 微信/支付宝付款通知自动捕账 ================= */
+const AI_PRESETS = {
+  zhipu: {name: '智谱清言（免翻墙 · 长期免费）', apiUrl: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', textModel: 'glm-4-flash', visionModel: 'glm-4v-flash'},
+  qwen: {name: '通义千问（免翻墙 · 识图极准）', apiUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', textModel: 'qwen-flash', visionModel: 'qwen-vl-plus'},
+  custom: {name: '自定义（兼容 OpenAI / DeepSeek / Gemini）', apiUrl: '', textModel: '', visionModel: ''},
+};
+/** 零延迟本地关键词猜分类（兼用于付款通知自动归类与离线兜底） */
+const LOCAL_CAT_RULES = [
+  ['饮料奶茶', /瑞幸|星巴克|喜茶|奈雪|蜜雪|霸王茶姬|古茗|茶百道|咖啡|奶茶|饮料/],
+  ['外卖', /美团外卖|饿了么|外卖|点餐/],
+  ['早餐', /早餐|包子|豆浆|油条|煎饼|早饭/],
+  ['买菜', /买菜|菜场|菜市场|蔬菜|青菜|猪肉|牛肉|鸡蛋|肉蛋|海鲜|鱼|盒马|叮咚|朴朴|永辉|大润发|沃尔玛|山姆/],
+  ['水果零食', /水果|苹果|香蕉|橙子|葡萄|西瓜|草莓|榴莲|芒果|零食|坚果|蛋糕|面包|甜品|百果园|鲜丰/],
+  ['餐饮', /火锅|烧烤|肯德基|麦当劳|海底捞|拉面|面馆|饭店|餐厅|食堂|午餐|晚餐|聚餐|小吃/],
+  ['打车', /滴滴|高德打车|曹操|T3|花小猪|打车|出租车|网约车/],
+  ['公交地铁', /地铁|公交|通卡|乘车码|一卡通|通勤/],
+  ['加油', /中石化|中石油|加油|壳牌|油站/],
+  ['充电', /特来电|星星充电|国家电网|充电桩|充电/],
+  ['火车高铁', /12306|铁路|高铁|火车票/],
+  ['日用品', /超市|便利店|711|全家|罗森|屈臣氏|纸巾|洗衣液|牙膏|洗发水|日用|名创/],
+  ['快递费', /顺丰|圆通|中通|韵达|申通|极兔|京东快递|菜鸟|寄快递|运费/],
+  ['话费', /中国移动|中国联通|中国电信|话费|流量/],
+  ['宽带', /宽带|光纤/],
+  ['会员订阅', /腾讯视频|爱奇艺|优酷|芒果|网易云|QQ音乐|会员|VIP|iCloud/],
+  ['电影演出', /猫眼|淘票票|电影|影院|演唱会|演出/],
+  ['牌局娱乐', /麻将|斗地主|掼蛋|扑克|牌局|棋牌/],
+  ['药品', /药房|药店|大药房|买药|感冒药/],
+  ['门诊', /医院|门诊|挂号|诊所|牙科/],
+  ['红包礼金', /红包|随礼|份子钱|礼金|婚礼|满月/],
+  ['请客吃饭', /请客|请朋友/],
+  ['送礼', /送礼|礼盒|伴手礼|礼物/],
+  ['衣服', /优衣库|ZARA|海澜|波司登|衣服|外套|裤子|羽绒服|T恤/],
+  ['电费', /电费|国网/], ['水费', /水费|自来水/], ['燃气费', /燃气|天然气|煤气/],
+];
+function guessLocalCategory(text, type = 'expense') {
+  const s = String(text || '').trim();
+  const leaves = Store.leafCats(type);
+  if (!leaves.length) return null;
+  if (s) {
+    // 1. 直接命中用户自定义分类名（支持用户自建如“蔬菜”“肉蛋”）
+    const direct = leaves.find(c => s.includes(c.name) || c.name.includes(s));
+    if (direct) return direct.id;
+    // 2. 命中内置常见商户/商品规则
+    for (const [catName, re] of LOCAL_CAT_RULES) {
+      if (re.test(s)) {
+        const hit = leaves.find(c => c.name === catName) || Store.parents(type).find(p => p.name === catName);
+        if (hit) { const ch = Store.children(hit.id); return ch.length ? ch[0].id : hit.id; }
+      }
+    }
+  }
+  const other = leaves.find(c => c.name.includes('其他')) || leaves[leaves.length - 1];
+  return other?.id || null;
+}
+function matchCategoryByName(name, type = 'expense') {
+  const n = String(name || '').trim();
+  const leaves = Store.leafCats(type);
+  if (!n) return guessLocalCategory('', type);
+  const seg = n.includes('-') ? n.split('-').pop().trim() : n.includes('·') ? n.split('·').pop().trim() : n;
+  return leaves.find(c => c.name === seg)?.id || leaves.find(c => c.name === n)?.id
+    || leaves.find(c => seg.includes(c.name) || c.name.includes(seg))?.id || guessLocalCategory(n, type);
+}
+function matchAccountByName(name) {
+  const n = String(name || '').trim(), accs = Store.accounts();
+  if (!n) return Store.acc(S.settings.lastAccountId) ? S.settings.lastAccountId : firstAcc();
+  return accs.find(a => a.name === n)?.id || accs.find(a => n.includes(a.name) || a.name.includes(n))?.id
+    || (Store.acc(S.settings.lastAccountId) ? S.settings.lastAccountId : firstAcc());
+}
+function extractJsonBlock(text) {
+  const s = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+  try { return JSON.parse(s); } catch (_) {}
+  const m = s.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+  if (m) return JSON.parse(m[1]);
+  throw new Error('AI 返回格式无法解析，请重试一次');
+}
+
+const AI = {
+  cfg() { return S.settings.ai || (S.settings.ai = DEFAULT_AI()); },
+  ready() { const c = this.cfg(); return !!(c.apiUrl?.trim() && c.apiKey?.trim() && c.textModel?.trim()); },
+  schemaContext() {
+    const expTree = Store.parents('expense').map(p => {
+      const ch = Store.children(p.id);
+      return ch.length ? `${p.name}(${ch.map(x => x.name).join('/')})` : p.name;
+    }).join('；');
+    const incList = Store.leafCats('income').map(c => c.name).join('、');
+    const accList = Store.accounts().map(a => a.name).join('、');
+    return `今天日期：${today()}。\n支出分类（严格从括号内二级分类选）：${expTree}\n收入分类：${incList}\n账户：${accList}`;
+  },
+  async chat(messages, {vision = false, maxTokens = 1200} = {}) {
+    const c = this.cfg();
+    if (!c.apiUrl?.trim() || !c.apiKey?.trim()) throw new Error('请先在「设置 → 智能助手」里填写 API Key');
+    const model = vision ? (c.visionModel?.trim() || c.textModel?.trim()) : c.textModel?.trim();
+    if (!model) throw new Error('请先填写模型名称');
+    const res = await fetch(c.apiUrl.trim(), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${c.apiKey.trim()}`},
+      body: JSON.stringify({model, messages, temperature: 0.15, max_tokens: maxTokens}),
+    });
+    const raw = await res.text().catch(() => '');
+    if (!res.ok) {
+      let msg = `请求失败（${res.status}）`;
+      try { const j = JSON.parse(raw); if (j.error?.message) msg = j.error.message; } catch (_) {}
+      throw new Error(msg);
+    }
+    const j = JSON.parse(raw);
+    const content = j.choices?.[0]?.message?.content;
+    if (!content) throw new Error('AI 未返回有效内容');
+    return typeof content === 'string' ? content : content.map(x => x.text || '').join('');
+  },
+  async test() {
+    const reply = await this.chat([{role: 'user', content: '只回复“连接成功”四个字'}], {maxTokens: 32});
+    return reply.trim();
+  },
+  async parseText(input) {
+    const sys = `你是个人记账解析助手。请把用户输入的一句或多句消费/收入/转账/人情/借钱拆成严格 JSON 数组，不要输出任何额外解释。\n${this.schemaContext()}\n每项格式：\n- 普通记账：{"kind":"record","type":"expense|income|transfer","amount":数字(元),"category":"二级分类名","account":"账户名","toAccount":"转入账户(仅转账)","date":"YYYY-MM-DD","person":"往来人名(人情/红包时填，否则空字符串)","note":"简短备注","tags":["可选标签"]}\n- 借入借出（如借给某人/向某人借钱/垫付）：{"kind":"debt","dir":"lend|borrow","person":"对方姓名","amount":数字(元),"date":"YYYY-MM-DD","dueDate":"YYYY-MM-DD或空","account":"账户名","note":"备注"}`;
+    const txt = await this.chat([{role: 'system', content: sys}, {role: 'user', content: input}]);
+    const parsed = extractJsonBlock(txt);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  },
+  async parseReceipt(dataUrl) {
+    const sys = `你是小票与账单截图识别助手。请仔细识别图片中的商家、日期、账户（微信/支付宝/银行卡/现金）和每一笔商品或交易明细，返回严格 JSON 对象（不要多余文字）：\n${this.schemaContext()}\n返回格式：{"merchant":"商家或账单来源","date":"YYYY-MM-DD","account":"账户名","sceneTag":"适合打的短标签如超市采购/微信账单","items":[{"name":"商品名或消费描述","type":"expense|income","amount":数字(元),"category":"最匹配的二级分类名","person":"人名或空","note":"简短备注"}]}`;
+    const txt = await this.chat([
+      {role: 'system', content: sys},
+      {role: 'user', content: [{type: 'text', text: '请识别这张小票或账单截图里的全部明细，严格按 JSON 返回。'}, {type: 'image_url', image_url: {url: dataUrl}}]},
+    ], {vision: true, maxTokens: 1600});
+    return extractJsonBlock(txt);
+  },
+  async guessCategory(note, type) {
+    const leaves = Store.leafCats(type).map(c => c.name).join('、');
+    const txt = await this.chat([
+      {role: 'system', content: `只从以下分类里选最匹配的一个名字原样返回，不要解释：${leaves}`},
+      {role: 'user', content: `消费描述：${note}`},
+    ], {maxTokens: 32});
+    return matchCategoryByName(txt.trim(), type);
+  },
+  /** 严格脱敏财务分析：只发汇总数字与大类金额，绝不传备注、人名、账户余额 */
+  async analyzeReport(summary) {
+    const sys = '你是专业又接地气的个人理财顾问。根据提供的脱敏汇总数据（不含任何个人隐私与明细备注），用简明中文分 3 点给出：1. 本期收支亮点与风险；2. 主要花销结构点评；3. 下个月最容易落地的 2 条省钱建议。控制在 260 字以内。';
+    return await this.chat([{role: 'system', content: sys}, {role: 'user', content: JSON.stringify(summary)}], {maxTokens: 600});
+  },
+};
+
+/* ---- AI 设置中心（全部默认关闭 + 每项独立开关） ---- */
+let AI_FORM = null;
+function openAiSettings() {
+  const c = AI.cfg();
+  AI_FORM = {...c};
+  openPage('智能助手与自动捕账', () => {
+    const cur = AI.cfg();
+    const pendingN = (cur.pendingCaptures || []).length;
+    return `
+    <div class="card pad">
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px">一、AI 智能助手（默认关闭，按需开启）</div>
+      <label class="switch-row" style="padding:4px 0 8px"><div><b>开启 AI 智能助手</b><small>关闭时隐藏全部 AI 按钮，App 保持 100% 离线纯净</small></div><input type="checkbox" data-ch="aiSw" data-k="enabled" ${AI_FORM.enabled ? 'checked' : ''}></label>
+      ${AI_FORM.enabled ? `
+        <div style="border-top:1px solid var(--line);margin-top:6px;padding-top:6px">
+          <label class="switch-row"><div><b>🗣️ 一句话 / 语音智能拆账</b><small>一次说多笔日常账、人情往来和借钱，自动拆单填好</small></div><input type="checkbox" data-ch="aiSw" data-k="textOn" ${AI_FORM.textOn ? 'checked' : ''}></label>
+          <label class="switch-row"><div><b>📷 拍小票 / 账单截图批量识图</b><small>支持整单合并（明细写备注）或按品类拆单+打场景标签</small></div><input type="checkbox" data-ch="aiSw" data-k="visionOn" ${AI_FORM.visionOn ? 'checked' : ''}></label>
+          <label class="switch-row"><div><b>🧠 手动记账智能猜分类</b><small>填备注时一键自动选中最匹配的二级分类</small></div><input type="checkbox" data-ch="aiSw" data-k="autoCatOn" ${AI_FORM.autoCatOn ? 'checked' : ''}></label>
+          <label class="switch-row"><div><b>📊 脱敏 AI 月度财务诊断</b><small>仅发大类汇总数字，绝不上传备注、人名与余额</small></div><input type="checkbox" data-ch="aiSw" data-k="reportOn" ${AI_FORM.reportOn ? 'checked' : ''}></label>
+        </div>
+        <div style="border-top:1px solid var(--line);margin-top:10px;padding-top:10px">
+          <div class="fld" style="padding:0 0 8px"><label>选择 AI 服务商</label><select data-ch="aiProv">${Object.entries(AI_PRESETS).map(([k, v]) => `<option value="${k}" ${AI_FORM.provider === k ? 'selected' : ''}>${v.name}</option>`).join('')}</select></div>
+          <div class="fld" style="padding:0 0 8px"><label>API Key（仅保存在本机）</label><input type="password" data-in="aiIn" data-k="apiKey" value="${esc(AI_FORM.apiKey)}" placeholder="粘贴从官网获取的 API Key" autocomplete="off"></div>
+          <div class="fld" style="padding:0 0 8px"><label>接口地址</label><input data-in="aiIn" data-k="apiUrl" value="${esc(AI_FORM.apiUrl)}" placeholder="https://.../chat/completions"></div>
+          <div class="btn-row" style="margin-top:0">
+            <div class="fld" style="padding:0;flex:1"><label>文字模型</label><input data-in="aiIn" data-k="textModel" value="${esc(AI_FORM.textModel)}" placeholder="如 glm-4-flash"></div>
+            <div class="fld" style="padding:0;flex:1"><label>看图模型</label><input data-in="aiIn" data-k="visionModel" value="${esc(AI_FORM.visionModel)}" placeholder="如 glm-4v-flash"></div>
+          </div>
+          <div class="btn-row"><button class="btn pri" data-act="aiTest">保存并测试连接</button></div>
+          <details class="help-box"><summary>📖 零基础教程：免费获取智谱 API Key（免翻墙）</summary>
+            1. 手机或电脑打开智谱开放平台 <b>bigmodel.cn</b>，微信扫码登录；<br>
+            2. 点右上角「API 密钥」→「添加新的 API Key」→ 复制这串密钥；<br>
+            3. 粘贴到上方「API Key」框里，点「保存并测试连接」即可免费使用文字拆账与拍小票识图！
+          </details>
+        </div>` : ''}
+    </div>
+
+    <div class="card pad">
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px">二、🔔 微信 / 支付宝付款通知自动捕账（独立开关）</div>
+      <label class="switch-row" style="padding:4px 0 8px"><div><b>开启付款通知自动捕账</b><small>安卓后台监听微信、支付宝、云闪付的付款/收款通知自动提取金额和账户</small></div><input type="checkbox" data-ch="aiSw" data-k="notifyOn" ${AI_FORM.notifyOn ? 'checked' : ''}></label>
+      ${AI_FORM.notifyOn ? `
+        <label class="switch-row" style="padding:4px 0 8px"><div><b>捕获后直接自动入账</b><small>关闭＝先放入待确认列表让你选分类；开启＝按商户名自动猜分类直接记账</small></div><input type="checkbox" data-ch="aiSw" data-k="notifyAutoSave" ${AI_FORM.notifyAutoSave ? 'checked' : ''}></label>
+        <div class="btn-row">
+          <button class="btn pri" data-act="pcOpenPerm">打开手机「通知读取权限」</button>
+          <button class="btn" data-act="pcSimTest">模拟一条付款通知</button>
+        </div>
+        ${pendingN ? `<div class="btn-row"><button class="btn" data-act="openCaptureQueue">查看待确认捕账（${pendingN} 笔）</button></div>` : ''}
+        <p class="tip">使用步骤：点上方「打开手机通知读取权限」→ 在列表里找到「小账本付款通知捕账」打开开关 → 建议在手机电池设置里给小账本设「无限制/允许后台运行」，即可在微信/支付宝付款后自动捕账。</p>
+      ` : '<p class="tip" style="margin:0">默认关闭，不申请通知权限也不占后台电量。想体验“付完款自动记账”时随时打开。</p>'}
+    </div>`;
+  });
+}
+function saveAiForm() {
+  if (!AI_FORM) return;
+  S.settings.ai = {...DEFAULT_AI(), ...S.settings.ai, ...AI_FORM};
+  Store.saveSettings();
+  PayCapture.syncEnabled();
+}
+CH.aiSw = el => {
+  AI_FORM[el.dataset.k] = el.checked;
+  saveAiForm();
+  fdRefresh(el);
+  renderMain();
+};
+CH.aiProv = el => {
+  const k = el.value, p = AI_PRESETS[k];
+  AI_FORM.provider = k;
+  if (p && k !== 'custom') { AI_FORM.apiUrl = p.apiUrl; AI_FORM.textModel = p.textModel; AI_FORM.visionModel = p.visionModel; }
+  saveAiForm(); fdRefresh(el);
+};
+IN.aiIn = el => { AI_FORM[el.dataset.k] = el.value; saveAiForm(); };
+ACT.aiTest = async () => {
+  saveAiForm();
+  toast('正在测试 AI 连接…', 8000);
+  try {
+    const r = await AI.test();
+    toast('AI 连接成功：' + r.slice(0, 20) + ' ✓', 2500);
+  } catch (e) {
+    const msg = errOf(e);
+    toast(msg.includes('Failed to fetch') ? '网页版受跨域限制，请安装安卓 APK 后测试' : '连接失败：' + msg, 4000);
+  }
+};
+
+/* ---- AI 一句话 / 语音拆账 + 拍小票/截屏识图（支持整单合并 ⇄ 按品类拆分） ---- */
+let AI_REVIEW = null;
+ACT.openAiText = () => openAiTextEntry();
+function openAiTextEntry() {
+  openPage('🗣️ 语音 / 一句话智能记账', () => `<div class="card pad">
+    <p style="margin:0 0 8px;font-size:13.5px;color:var(--sub);line-height:1.6">点输入框后直接用手机输入法的<b>麦克风语音输入</b>，或者打一句话（一次可说多笔，支持日常账、人情往来和借钱）：</p>
+    <textarea id="aiSayIn" style="height:130px;font-size:15px" placeholder="例如：早上买菜微信花了38块5，中午请张三吃饭120，借给老王500下个月还，晚上打麻将赢了200"></textarea>
+    <div class="btn-row"><button class="btn pri" data-act="aiRunText">✨ AI 智能解析</button></div>
+    <p class="tip">AI 会严格按照你手机里自定义的一级/二级分类来归类，解析完先给你预览核对，点确认才入账。</p>
+  </div>`);
+}
+ACT.aiRunText = async el => {
+  const txt = el.closest('.page').querySelector('#aiSayIn').value.trim();
+  if (!txt) return toast('请先说或输入一句记账内容');
+  toast('AI 正在解析拆分…', 15000);
+  try {
+    const rawItems = await AI.parseText(txt);
+    if (!rawItems.length) return toast('没有识别到有效账目');
+    const items = rawItems.map(x => normalizeAiItem(x)).filter(Boolean);
+    if (!items.length) return toast('没有解析出有效金额，请补充数字');
+    AI_REVIEW = {mode: 'split', source: 'text', merchant: '', sceneTag: '', rawItems: items, mergedItem: null};
+    openAiReviewPage();
+  } catch (e) { toast('解析失败：' + errOf(e), 3500); }
+};
+function normalizeAiItem(x, defDate, defAcc) {
+  const amt = Math.round(parseFloat(x?.amount) * 100);
+  if (!(amt > 0)) return null;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(x.date || '') ? x.date : (defDate || today());
+  if (x.kind === 'debt') {
+    return {checked: true, kind: 'debt', dir: x.dir === 'borrow' ? 'borrow' : 'lend', person: (x.person || '未命名').trim(),
+      amount: amt, date, dueDate: /^\d{4}-\d{2}-\d{2}$/.test(x.dueDate || '') ? x.dueDate : '',
+      accountId: matchAccountByName(x.account || defAcc), note: (x.note || '').trim()};
+  }
+  const type = ['expense', 'income', 'transfer'].includes(x.type) ? x.type : 'expense';
+  return {
+    checked: true, kind: 'record', type, amount: amt,
+    categoryId: type === 'transfer' ? null : matchCategoryByName(x.category || x.name || x.note, type),
+    accountId: matchAccountByName(x.account || defAcc),
+    toAccountId: type === 'transfer' ? matchAccountByName(x.toAccount) : null,
+    date, person: (x.person || '').trim(),
+    note: (x.note || x.name || '').trim(),
+    tagNames: Array.isArray(x.tags) ? x.tags.filter(Boolean) : [],
+  };
+}
+
+ACT.openAiReceipt = () => openAiReceiptEntry();
+function openAiReceiptEntry() {
+  openPage('📷 拍小票 / 账单截图识图', () => `<div class="card pad" style="line-height:1.7;font-size:14px">
+    <p style="margin:0 0 10px">拍一张<b>超市小票 / 餐馆账单</b>，或选一张<b>微信 / 支付宝账单截图</b>，AI 自动识别所有明细并按你的分类归类：</p>
+    <div class="btn-row">
+      <label class="btn pri" style="cursor:pointer">📷 现场拍照<input type="file" accept="image/*" capture="environment" data-ch="aiReceiptFile" hidden></label>
+      <label class="btn" style="cursor:pointer">🖼️ 从相册选图<input type="file" accept="image/*" data-ch="aiReceiptFile" hidden></label>
+    </div>
+    <div class="help-box" style="margin-top:12px">
+      <b>💡 买菜/超市小票防漏统计设计：</b><br>
+      识别完成后，你可以一键切换两种入账方式：<br>
+      · <b>整单合并 1 笔</b>：把小票全部商品名（如青菜、猪肉、苹果、洗衣液）自动写进备注，搜单个字「蛋」「果」「菜」都能搜出！<br>
+      · <b>按品类拆单 + 自动打标签</b>：蔬菜/水果/日用品各归各的二级分类，同时共用一个 <code>#超市采购</code> 标签，看大类、搜小类、看整单都不漏！
+    </div>
+  </div>`);
+}
+CH.aiReceiptFile = async inp => {
+  const f = inp.files[0]; inp.value = ''; if (!f) return;
+  toast('正在压缩并让 AI 识别图片…', 20000);
+  try {
+    const dataUrl = await compressImage(f, 1280, 0.78);
+    const res = await AI.parseReceipt(dataUrl);
+    const defDate = /^\d{4}-\d{2}-\d{2}$/.test(res.date || '') ? res.date : today();
+    const defAcc = res.account || '';
+    const sceneTag = (res.sceneTag || res.merchant || '小票采购').replace(/^#/, '').slice(0, 12);
+    const rawList = Array.isArray(res.items) ? res.items : [];
+    const splitItems = rawList.map(it => {
+      const n = normalizeAiItem({...it, kind: 'record', account: it.account || defAcc, date: it.date || defDate}, defDate, defAcc);
+      if (n && sceneTag) n.tagNames = [sceneTag];
+      return n;
+    }).filter(Boolean);
+    if (!splitItems.length) return toast('图片里没有识别到有效消费金额');
+    // 构造“整单合并 1 笔”方案（把全部商品名与金额自动写入备注，方便搜单字！）
+    const expItems = splitItems.filter(x => x.type === 'expense');
+    const mergeSrc = expItems.length ? expItems : splitItems;
+    const totalAmt = mergeSrc.reduce((s, x) => s + x.amount, 0);
+    // 选占比最大的分类作为主分类
+    const catSum = new Map();
+    mergeSrc.forEach(x => catSum.set(x.categoryId, (catSum.get(x.categoryId) || 0) + x.amount));
+    const topCat = [...catSum.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || mergeSrc[0].categoryId;
+    const detailStr = mergeSrc.map(x => `${x.note || Store.catName(x.categoryId)}${(x.amount / 100).toFixed(x.amount % 100 ? 1 : 0)}`).join('、');
+    const mergedNote = `${res.merchant ? res.merchant + '：' : ''}${detailStr}`.slice(0, 100);
+    const mergedItem = {
+      checked: true, kind: 'record', type: mergeSrc[0].type, amount: totalAmt, categoryId: topCat,
+      accountId: mergeSrc[0].accountId, toAccountId: null, date: defDate, person: '',
+      note: mergedNote, tagNames: sceneTag ? [sceneTag] : [],
+    };
+    AI_REVIEW = {mode: splitItems.length > 1 ? 'split' : 'merge', source: 'receipt', merchant: res.merchant || '', sceneTag, rawItems: splitItems, mergedItem};
+    openAiReviewPage();
+  } catch (e) { toast('识图失败：' + errOf(e), 4000); }
+};
+
+function openAiReviewPage() {
+  openPage('核对 AI 识别结果', () => {
+    const rv = AI_REVIEW;
+    const list = rv.mode === 'merge' && rv.mergedItem ? [rv.mergedItem] : rv.rawItems;
+    const checkedN = list.filter(x => x.checked).length;
+    const cardHtml = (it, idx) => {
+      if (it.kind === 'debt') {
+        return `<div class="ai-item ${it.checked ? '' : 'off'}">
+          <div class="ai-item-top"><label><input type="checkbox" data-ch="aiRvChk" data-i="${idx}" ${it.checked ? 'checked' : ''}>🤝 ${it.dir === 'lend' ? '借给 ' : '借自 '}${esc(it.person)}</label><b class="${it.dir === 'lend' ? 'inc' : 'exp'}">¥${money(it.amount)}</b></div>
+          <div class="ai-item-meta">${it.date}${it.dueDate ? ' · 预计还 ' + it.dueDate : ''} · ${esc(Store.accName(it.accountId))}${it.note ? ' · ' + esc(it.note) : ''}</div></div>`;
+      }
+      return `<div class="ai-item ${it.checked ? '' : 'off'}">
+        <div class="ai-item-top"><label><input type="checkbox" data-ch="aiRvChk" data-i="${idx}" ${it.checked ? 'checked' : ''}>${it.type === 'transfer' ? '🔁 转账' : Store.catIcon(it.categoryId) + ' ' + esc(Store.catFull(it.categoryId))}</label><b class="${it.type === 'expense' ? 'exp' : it.type === 'income' ? 'inc' : 'tr'}">${it.type === 'expense' ? '-' : '+'}${money(it.amount)}</b></div>
+        <div class="ai-item-meta">${it.date} · ${esc(Store.accName(it.accountId))}${it.person ? ` · 👤 ${esc(it.person)}` : ''}${it.tagNames?.length ? ` · #${it.tagNames.map(esc).join(' #')}` : ''}<br>备注：${esc(it.note || '无')}</div>
+        ${it.type !== 'transfer' ? `<div style="margin-top:6px"><select style="width:100%;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--card);padding:0 8px;font-size:13px" data-ch="aiRvCat" data-i="${idx}">${catOptions(it.type, it.categoryId)}</select></div>` : ''}</div>`;
+    };
+    return `${rv.source === 'receipt' && rv.rawItems.length > 1 ? `<div class="card pad">
+      <div style="font-size:13px;color:var(--sub);margin-bottom:6px">识别到 ${rv.rawItems.length} 项明细，选择入账方式：</div>
+      <div class="seg full">
+        <button class="${rv.mode === 'split' ? 'on' : ''}" data-act="aiRvMode" data-m="split">按品类拆分（${rv.rawItems.length} 笔 + #标签）</button>
+        <button class="${rv.mode === 'merge' ? 'on' : ''}" data-act="aiRvMode" data-m="merge">整单合并（1 笔 + 全明细备注）</button>
+      </div></div>` : ''}
+    <div class="card pad">${list.map(cardHtml).join('')}
+      <button class="btn pri block" style="margin-top:8px" data-act="aiRvSave">确认入账（已选 ${checkedN} 条）</button>
+    </div>`;
+  });
+}
+ACT.aiRvMode = el => { AI_REVIEW.mode = el.dataset.m; fdRefresh(el); };
+CH.aiRvChk = el => { const list = AI_REVIEW.mode === 'merge' && AI_REVIEW.mergedItem ? [AI_REVIEW.mergedItem] : AI_REVIEW.rawItems; list[+el.dataset.i].checked = el.checked; fdRefresh(el); };
+CH.aiRvCat = el => { const list = AI_REVIEW.mode === 'merge' && AI_REVIEW.mergedItem ? [AI_REVIEW.mergedItem] : AI_REVIEW.rawItems; list[+el.dataset.i].categoryId = el.value; fdRefresh(el); };
+ACT.aiRvSave = () => {
+  const list = (AI_REVIEW.mode === 'merge' && AI_REVIEW.mergedItem ? [AI_REVIEW.mergedItem] : AI_REVIEW.rawItems).filter(x => x.checked);
+  if (!list.length) return toast('请至少勾选一条');
+  let rn = 0, dn = 0;
+  for (const it of list) {
+    if (it.kind === 'debt') {
+      const d = {id: uid(), dir: it.dir, person: it.person, amount: it.amount, paid: 0, status: 'open', date: it.date, dueDate: it.dueDate || '', accountId: it.accountId, note: it.note, logs: [], createdAt: Date.now()};
+      S.debts.push(d); persist('debts', d); dn++;
+    } else {
+      const tagIds = [];
+      (it.tagNames || []).forEach(tn => {
+        const clean = tn.slice(0, 12); if (!clean) return;
+        let tg = S.tags.find(t => t.name === clean); if (!tg) tg = Store.saveTag({name: clean});
+        if (!tagIds.includes(tg.id)) tagIds.push(tg.id);
+      });
+      Store.saveRecord({type: it.type, amount: it.amount, categoryId: it.categoryId, accountId: it.accountId, toAccountId: it.toAccountId,
+        date: it.date, note: it.note, person: it.person || '', tagIds, photoIds: [], big: false});
+      rn++;
+    }
+  }
+  while (Layers.stack.length) Layers.closeTop();
+  renderMain();
+  toast(`入账成功：${rn ? rn + ' 笔账目' : ''}${rn && dn ? ' + ' : ''}${dn ? dn + ' 笔借还' : ''} ✓`, 2500);
+};
+
+/* ---- 记一笔「智能猜分类」 + 报表「脱敏 AI 诊断」 ---- */
+ACT.fGuessCat = async () => {
+  if (!F || F.type === 'transfer') return;
+  const note = (F.note || '').trim();
+  if (!note) return toast('请先在备注里写几个字（如：瑞幸咖啡、菜场买蛋）');
+  const localId = guessLocalCategory(note, F.type);
+  if (!AI.ready()) {
+    if (localId) { F.categoryId = localId; renderFormParts(true); toast('已按关键词匹配：' + Store.catName(localId), 1500); }
+    return;
+  }
+  toast('AI 正在匹配分类…', 6000);
+  try {
+    const cid = await AI.guessCategory(note, F.type);
+    if (cid && F) { F.categoryId = cid; renderFormParts(true); toast('AI 已匹配：' + Store.catName(cid) + ' ✨', 1500); }
+  } catch (e) {
+    if (localId && F) { F.categoryId = localId; renderFormParts(true); toast('已用本地规则匹配：' + Store.catName(localId), 1500); }
+    else toast(errOf(e));
+  }
+};
+ACT.openAiReport = async () => {
+  if (!AI.ready()) { toast('请先在「设置 → 智能助手」填写 API Key'); return openAiSettings(); }
+  const [a, b] = rpRange(), base = rpBase(a, b);
+  let exp = 0, inc = 0; const catMap = new Map();
+  base.forEach(r => {
+    if (r.type === 'income') inc += r.amount;
+    else if (countsExp(r)) {
+      exp += r.amount;
+      const top = Store.topOf(r.categoryId)?.name || '未分类';
+      const cur = catMap.get(top) || {name: top, yuan: 0, count: 0};
+      cur.yuan = Math.round((cur.yuan + r.amount / 100) * 100) / 100; cur.count++; catMap.set(top, cur);
+    }
+  });
+  // 严格脱敏：仅包含纯数字与大类名称，零备注、零人名、零余额
+  const summary = {
+    range: `${a} 至 ${b}`,
+    totalExpenseYuan: +(exp / 100).toFixed(2),
+    totalIncomeYuan: +(inc / 100).toFixed(2),
+    monthlyBudgetYuan: +(S.settings.budget / 100).toFixed(2),
+    saveRatePercent: inc > 0 ? Math.round((inc - exp) / inc * 100) : null,
+    topCategories: [...catMap.values()].sort((x, y) => y.yuan - x.yuan).slice(0, 8),
+  };
+  toast('AI 正在生成脱敏财务诊断…', 15000);
+  try {
+    const ans = await AI.analyzeReport(summary);
+    await dialog({title: '✨ AI 财务诊断报告', html: `<div class="ai-ans">${esc(ans)}</div><p class="tip">本次仅发送了脱敏后的大类汇总数字，未上传任何备注、人名与余额。</p>`, buttons: [{text: '收下建议', cls: 'pri'}]});
+  } catch (e) { toast('分析失败：' + errOf(e), 4000); }
+};
+
+/* ---- 安卓微信/支付宝付款通知自动捕账桥接 ---- */
+const PayCapture = {
+  plugin() { return IS_APP && window.Capacitor?.Plugins?.PayCapture ? window.Capacitor.Plugins.PayCapture : null; },
+  async syncEnabled() {
+    const p = this.plugin(); if (!p) return;
+    try { await p.setEnabled({enabled: !!S.settings.ai?.notifyOn}); } catch (_) {}
+  },
+  async openSettings() {
+    const p = this.plugin();
+    if (!p) return toast('网页版无法打开手机系统设置，请安装安卓 APK 后使用', 2800);
+    await p.openSettings();
+  },
+  ingestItems(items) {
+    if (!Array.isArray(items) || !items.length) return 0;
+    const ai = AI.cfg();
+    if (!Array.isArray(ai.pendingCaptures)) ai.pendingCaptures = [];
+    let autoSaved = 0;
+    for (const raw of items) {
+      const amount = Math.round(Number(raw.amount) || 0);
+      if (!(amount > 0)) continue;
+      const type = raw.type === 'income' ? 'income' : 'expense';
+      const merchant = (raw.merchant || '').trim();
+      const note = merchant || (raw.rawText || '').slice(0, 36) || `${raw.source || '支付'}自动捕获`;
+      const categoryId = guessLocalCategory(`${merchant} ${raw.rawText || ''}`, type);
+      const accountId = matchAccountByName(raw.source || '微信');
+      const date = raw.date || ymd(new Date(raw.ts || Date.now()));
+      if (ai.notifyAutoSave) {
+        Store.saveRecord({type, amount, categoryId, accountId, toAccountId: null, date, note, person: '', tagIds: [], photoIds: [], big: false});
+        autoSaved++;
+      } else {
+        ai.pendingCaptures.unshift({id: uid(), source: raw.source || '微信', type, amount, categoryId, accountId, date, note, merchant, rawText: raw.rawText || ''});
+      }
+    }
+    Store.saveSettings();
+    if (autoSaved) toast(`🔔 已自动捕获并记账 ${autoSaved} 笔`, 2800);
+    return items.length;
+  },
+  async poll() {
+    if (!S.settings.ai?.notifyOn) return 0;
+    const p = this.plugin(); if (!p) return 0;
+    try {
+      const res = await p.drainQueue();
+      const n = this.ingestItems(res?.items || []);
+      if (n) refreshAll();
+      return n;
+    } catch (_) { return 0; }
+  },
+};
+ACT.pcOpenPerm = () => PayCapture.openSettings();
+ACT.pcSimTest = () => {
+  PayCapture.ingestItems([{source: '微信', type: 'expense', amount: 1650, merchant: '瑞幸咖啡', rawText: '微信支付：向瑞幸咖啡付款16.50元', ts: Date.now()}]);
+  refreshAll();
+  if (!AI.cfg().notifyAutoSave) openCaptureQueuePage();
+};
+ACT.openCaptureQueue = () => openCaptureQueuePage();
+function openCaptureQueuePage() {
+  openPage('🔔 待确认付款捕账', () => {
+    const list = AI.cfg().pendingCaptures || [];
+    return `<div class="card pad">${list.length ? list.map((it, idx) => `
+      <div class="ai-item">
+        <div class="ai-item-top"><b>${esc(it.source)} · ${it.type === 'expense' ? '付款' : '收款'}</b><b class="${it.type === 'expense' ? 'exp' : 'inc'}">${it.type === 'expense' ? '-' : '+'}${money(it.amount)}</b></div>
+        <div class="ai-item-meta">${it.date} · ${esc(Store.accName(it.accountId))} · ${esc(it.note)}</div>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <select style="flex:1;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--card);padding:0 8px;font-size:13px" data-ch="pcCat" data-i="${idx}">${catOptions(it.type, it.categoryId)}</select>
+          <button class="btn sm pri" data-act="pcAccept" data-i="${idx}">入账</button>
+          <button class="btn sm danger-o" data-act="pcDrop" data-i="${idx}">忽略</button>
+        </div>
+      </div>`).join('') + '<button class="btn pri block" style="margin-top:8px" data-act="pcAcceptAll">一键全部入账</button>'
+      : '<div class="empty">暂时没有待确认的付款通知</div>'}</div>`;
+  });
+}
+CH.pcCat = el => { const list = AI.cfg().pendingCaptures || []; if (list[+el.dataset.i]) { list[+el.dataset.i].categoryId = el.value; Store.saveSettings(); } };
+ACT.pcAccept = el => {
+  const list = AI.cfg().pendingCaptures || [], i = +el.dataset.i, it = list[i]; if (!it) return;
+  Store.saveRecord({type: it.type, amount: it.amount, categoryId: it.categoryId, accountId: it.accountId, toAccountId: null, date: it.date, note: it.note, person: '', tagIds: [], photoIds: [], big: false});
+  list.splice(i, 1); Store.saveSettings(); toast('已入账 ✓'); refreshAll();
+};
+ACT.pcDrop = el => { const list = AI.cfg().pendingCaptures || []; list.splice(+el.dataset.i, 1); Store.saveSettings(); refreshAll(); };
+ACT.pcAcceptAll = () => {
+  const list = AI.cfg().pendingCaptures || []; if (!list.length) return;
+  list.forEach(it => Store.saveRecord({type: it.type, amount: it.amount, categoryId: it.categoryId, accountId: it.accountId, toAccountId: null, date: it.date, note: it.note, person: '', tagIds: [], photoIds: [], big: false}));
+  const n = list.length; AI.cfg().pendingCaptures = []; Store.saveSettings();
+  Layers.closeTop(); renderMain(); toast(`已入账 ${n} 笔付款 ✓`, 2000);
+};
+
 /* ================= 第二阶段：周期账 ================= */
 function dueOf(ym, day) { const [y, m] = ym.split('-').map(Number); return `${ym}-${pad(Math.min(day, new Date(y, m, 0).getDate()))}`; }
 const Recur = {
@@ -3602,6 +4163,10 @@ function homeBanners() {
   if (bk.webdavOn && WebDAV.isConfigured() && bk.dirty) {
     out.push(`<div class="banner">☁️<span>有新变动待同步到坚果云</span><button class="btn sm" data-act="flushCloudNow">立即同步</button></div>`);
   }
+  const capN = (st.ai?.pendingCaptures || []).length;
+  if (capN) {
+    out.push(`<div class="banner">🔔<span>捕获到 <b>${capN}</b> 笔微信/支付宝付款待确认</span><button class="btn sm pri" data-act="openCaptureQueue">去入账</button></div>`);
+  }
   const live = S.records.filter(x => !x.deletedAt);
   if (live.length && st.backupSnooze !== t) {
     const since = st.lastBackupTs || Math.min(...live.map(x => x.createdAt || Date.now()));
@@ -3782,11 +4347,12 @@ document.addEventListener('touchend', e => {
   applyTheme();
   renderMain();
   Sync.initListeners();
-  setTimeout(() => { runRecurring(); Reminder.sync(false); Sync.flushPending(true); }, 500);
+  setTimeout(() => { runRecurring(); Reminder.sync(false); Sync.flushPending(true); PayCapture.syncEnabled(); PayCapture.poll(); }, 500);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       runRecurring();
       Sync.flushPending(true);
+      PayCapture.poll();
       if (!Layers.stack.length) renderMain();
     }
   });

@@ -25,14 +25,13 @@ jobs:
 
       - name: 生成安卓工程与插件配置
         run: |
-          VER_CODE=$((200 + ${{ github.run_number }}))
-          VER_NAME="3.0.${{ github.run_number }}"
+          VER_NAME="4.0.${{ github.run_number }}"
           mkdir -p www && cp index.html www/index.html
           sed -i "s/const APP_VERSION = '[^']*'/const APP_VERSION = '${VER_NAME}'/" www/index.html
           cat > package.json <<'EOF'
           {
             "name": "xiaozhangben",
-            "version": "2.0.0",
+            "version": "4.0.0",
             "private": true,
             "dependencies": {
               "@capacitor/android": "^7.0.0",
@@ -53,7 +52,7 @@ jobs:
             "appName": "小账本",
             "webDir": "www",
             "android": {
-              "backgroundColor": "#F3F2EE",
+              "backgroundColor": "#F4F6FA",
               "adjustMarginsForEdgeToEdge": "force"
             },
             "plugins": {
@@ -61,7 +60,7 @@ jobs:
                 "enabled": true
               },
               "LocalNotifications": {
-                "iconColor": "#2D4B7C"
+                "iconColor": "#2555A6"
               }
             }
           }
@@ -70,22 +69,46 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: 图标、权限与版本号
+      - name: 注入原生插件、图标、权限与版本号
         run: |
-          VER_CODE=$((200 + ${{ github.run_number }}))
-          VER_NAME="3.0.${{ github.run_number }}"
+          VER_CODE=$((300 + ${{ github.run_number }}))
+          VER_NAME="4.0.${{ github.run_number }}"
           RES=android/app/src/main/res
           rm -rf $RES/mipmap-anydpi-v26
           for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
             for f in ic_launcher ic_launcher_round ic_launcher_foreground; do cp icon.png $RES/mipmap-$d/$f.png; done
           done
-          PERMS='    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />'
-          sed -i "s#</manifest>#${PERMS}\n</manifest>#" android/app/src/main/AndroidManifest.xml
+          cp android-src/*.java android/app/src/main/java/com/xiaozhangben/app/
+          python3 - <<'PY'
+          p = "android/app/src/main/AndroidManifest.xml"
+          s = open(p, encoding="utf-8").read()
+          perms = """    <uses-permission android:name="android.permission.CAMERA" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+              <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+              <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+          """
+          svc = """        <service
+                  android:name=".PayNotificationService"
+                  android:label="小账本付款通知捕账"
+                  android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+                  android:exported="true">
+                  <intent-filter>
+                      <action android:name="android.service.notification.NotificationListenerService" />
+                  </intent-filter>
+              </service>
+          """
+          s = s.replace("</manifest>", perms + "</manifest>", 1)
+          s = s.replace("</application>", svc + "</application>", 1)
+          open(p, "w", encoding="utf-8").write(s)
+          PY
           sed -i -E "s/versionCode [0-9]+/versionCode ${VER_CODE}/; s/versionName \"[^\"]*\"/versionName \"${VER_NAME}\"/" android/app/build.gradle
 
       - name: 打包并签名
         run: |
-          VER_NAME="3.0.${{ github.run_number }}"
+          VER_NAME="4.0.${{ github.run_number }}"
           cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon && cd ..
           BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
           OUT=xiaozhangben-v${VER_NAME}.apk
@@ -96,17 +119,17 @@ jobs:
       - name: 发布安装包
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.${{ github.run_number }}
-          name: 小账本 · 焕新旗舰版 v3.0.${{ github.run_number }}
+          tag_name: v4.0.${{ github.run_number }}
+          name: 小账本 · 智能增强版 v4.0.${{ github.run_number }}
           body: |
             下载下面的 apk 文件，在安卓手机上直接点开安装（覆盖旧版保留全部历史数据）。
 
-            焕新旗舰版 v3.0 全新升级：
-            - 全新现代金融美学设计：4 套主题皮肤（深海蓝/翡翠绿/暖阳金/暮光紫）+ 深浅模式 + 悬浮磨砂底栏
-            - 首页全面重构：流光预算进度条（含日均可花）、2×4 彩色金刚区、即将到期周期账预告、一键隐私打码模式
-            - 记一笔内置计算器数字键盘（支持 36+18.5 现场算账）+ 快捷模板一键直达条
-            - 全新「借入借出 / 欠款备忘本」（登记部分还款、一键结清、联动总资产看板）
-            - 报表升级「本期财务体检洞察（储蓄率/日均/环比涨跌）」+「消费 Top 10 排行榜」
-            - 完整保留：本地与坚果云双自动备份、挖财 Excel/CSV 导入、安卓每日通知、人情账簿、牌局统计
-          files: xiaozhangben-v3.0.${{ github.run_number }}.apk
+            智能增强版 v4.0 全新升级（全部智能与捕账功能默认关闭，每项独立开关）：
+            - 🔍 全维度单字/多词不漏搜：搜“蛋”“果”“买菜”“超市”同时检索大类、小类、备注、标签、人名、账户，顶部自动展示命中品类分布汇总
+            - 🤖 AI 智能助手（内置智谱免费版 + 通义千问 + 自定义接口，全独立开关）：
+              · 🗣️ 语音/一句话智能拆账（支持一次拆出日常消费 + 人情往来 + 借入借出）
+              · 📷 拍小票/账单截图批量识图（支持「整单合并写全明细备注」⇄「按品类拆单+打场景标签」一键切换）
+              · 🧠 手动记账智能猜分类 + 📊 脱敏 AI 月度财务诊断（零备注零人名上传）
+            - 🔔 安卓原生微信/支付宝/云闪付付款通知自动捕账（独立开关，支持先确认入账或自动分类入账）
+          files: xiaozhangben-v4.0.${{ github.run_number }}.apk
           make_latest: true
