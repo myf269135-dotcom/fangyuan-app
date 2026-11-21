@@ -103,6 +103,11 @@ jobs:
           s = s.replace("</manifest>", perms + "</manifest>", 1)
           s = s.replace("</application>", svc + "</application>", 1)
           open(p, "w", encoding="utf-8").write(s)
+          gp = "android/app/build.gradle"
+          gs = open(gp, encoding="utf-8").read()
+          if "okhttp3:okhttp" not in gs:
+              gs = gs.replace("dependencies {\n", 'dependencies {\n    implementation "com.squareup.okhttp3:okhttp:4.12.0"\n', 1)
+              open(gp, "w", encoding="utf-8").write(gs)
           PY
           sed -i -E "s/versionCode [0-9]+/versionCode ${VER_CODE}/; s/versionName \"[^\"]*\"/versionName \"${VER_NAME}\"/" android/app/build.gradle
 

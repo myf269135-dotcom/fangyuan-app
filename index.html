@@ -2328,6 +2328,24 @@ const WebDAV = {
   authHeader() { const c = this.cfg(); return 'Basic ' + b64Utf8(`${c.webdavUser.trim()}:${c.webdavPass.trim()}`); },
   async req(method, url, {headers = {}, body = null, expectBin = false} = {}) {
     const h = {'Authorization': this.authHeader(), ...headers};
+    const nativeDav = IS_APP && window.Capacitor?.Plugins?.WebDav ? window.Capacitor.Plugins.WebDav : null;
+    if (nativeDav) {
+      const payload = {method, url, headers: h, expectBin};
+      if (body instanceof Uint8Array) {
+        let bin = ''; const step = 8192;
+        for (let i = 0; i < body.length; i += step) bin += String.fromCharCode(...body.subarray(i, i + step));
+        payload.bodyBase64 = btoa(bin);
+      } else if (body != null) {
+        payload.body = String(body);
+      }
+      const r = await nativeDav.request(payload);
+      if (expectBin) {
+        const b64 = r.bodyBase64 || '';
+        const buf = r.ok && b64 ? dataUrlToBytes(b64).buffer : null;
+        return {status: r.status, ok: !!r.ok, buf};
+      }
+      return {status: r.status, ok: !!r.ok, text: r.text || ''};
+    }
     const res = await fetch(url, {method, headers: h, body});
     if (expectBin) return {status: res.status, ok: res.ok, buf: res.ok ? await res.arrayBuffer() : null};
     const text = await res.text().catch(() => '');
