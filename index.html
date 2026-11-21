@@ -121,16 +121,15 @@ svg{width:22px;height:22px;display:block}
 .ri-amt{font-weight:700;font-size:16px;white-space:nowrap}
 .exp{color:var(--exp)} .inc{color:var(--inc)} .tr{color:var(--tr)}
 
-/* 底部悬浮磨砂胶囊导航 */
-.tabbar{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));max-width:496px;margin:0 auto;height:62px;background:var(--tabbar);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(148,163,184,.16);border-radius:26px;
-  display:flex;align-items:center;z-index:20;box-shadow:0 10px 30px rgba(15,23,42,.12)}
+/* 底部贴底固定导航（实底无缝，不悬浮、不露底字） */
+.tabbar{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;height:calc(62px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);
+  background:var(--card);border-top:1px solid var(--line);display:flex;align-items:center;z-index:20;box-shadow:0 -2px 10px rgba(15,23,42,.05)}
 .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--sub)}
 .tabbar button.on{color:var(--pri);font-weight:700}
-.tabbar .plus{flex:none;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;margin:-28px 8px 0;
-  box-shadow:0 8px 20px rgba(245,158,11,.48), 0 0 0 4px var(--card);justify-content:center}
-.tabbar .plus svg{width:30px;height:30px}
-.tabbar .plus:active{transform:scale(.91)}
+.tabbar .plus{flex:none;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;margin:-20px 8px 0;
+  box-shadow:0 6px 16px rgba(245,158,11,.42), 0 0 0 3px var(--card);justify-content:center}
+.tabbar .plus svg{width:28px;height:28px}
+.tabbar .plus:active{transform:scale(.92)}
 
 /* 按钮 */
 .btn{height:44px;padding:0 18px;border-radius:12px;background:var(--bg);font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
@@ -512,7 +511,10 @@ html[data-theme=dark] .tool-ic.c7{background:#3A2416} html[data-theme=dark] .too
 .debt-card:last-child{border-bottom:0}
 .debt-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .debt-meta{font-size:12px;color:var(--sub);margin-top:4px;display:flex;justify-content:space-between;gap:8px}
-.sumbar{bottom:calc(78px + env(safe-area-inset-bottom))}
+.sumbar{bottom:calc(62px + env(safe-area-inset-bottom))}
+.ri.excluded{opacity:.58}
+.recur-jump{display:flex;align-items:center;justify-content:space-between;margin:6px 16px 2px;padding:10px 12px;border-radius:12px;background:var(--pri-soft);color:var(--pri);font-size:13px;font-weight:600}
+.recur-jump:active{filter:brightness(.95)}
 
 /* v4.0 智能增强：AI 快捷条、搜索单字命中分布、AI 识图拆合卡片 */
 .ai-bar{display:flex;gap:8px;margin:10px 14px 0}
@@ -1088,9 +1090,10 @@ function recItem(r) {
   if (r.note) sub.push(esc(r.note));
   const tags = (r.tagIds || []).map(id => Store.tag(id)).filter(Boolean);
   const sign = r.type === 'expense' ? '-' : r.type === 'income' ? '+' : '';
-  return `<div class="ri" data-act="editRec" data-id="${r.id}">
+  const excl = r.type === 'expense' && !countsExp(r);
+  return `<div class="ri ${excl ? 'excluded' : ''}" data-act="editRec" data-id="${r.id}">
     <div class="ri-ic ${cls}">${isT ? '🔁' : Store.catIcon(r.categoryId)}</div>
-    <div class="ri-mid"><div class="ri-t">${isT ? '转账' : esc(Store.catName(r.categoryId))}${r.person ? `<span class="person-tag">👤 ${esc(r.person)}</span>` : ''}${r.photoIds?.length ? ' <small>📷</small>' : ''}${isFixed(r) ? '<small class="b">🔁 固定</small>' : r.recurId && r.type === 'income' ? '<small class="b">🔁 周期</small>' : ''}${isBig(r) ? '<small class="b">💰 大额</small>' : ''}</div>
+    <div class="ri-mid"><div class="ri-t">${isT ? '转账' : esc(Store.catName(r.categoryId))}${r.person ? `<span class="person-tag">👤 ${esc(r.person)}</span>` : ''}${r.photoIds?.length ? ' <small>📷</small>' : ''}${isFixed(r) ? '<small class="b">🔁 固定</small>' : r.recurId && r.type === 'income' ? '<small class="b">🔁 周期</small>' : ''}${isBig(r) ? '<small class="b">💰 大额</small>' : ''}${excl ? '<small class="b">已隐藏</small>' : ''}</div>
       <div class="ri-s">${sub.join(' · ')}</div>${tags.length ? `<div class="ri-tags">${tags.map(t => `<span>#${esc(t.name)}</span>`).join('')}</div>` : ''}</div>
     <div class="ri-amt ${cls}">${S.settings.hideMoney ? '****' : sign + money(r.amount)}</div></div>`;
 }
@@ -1178,12 +1181,13 @@ function renderHome() {
       ${isCur ? '' : '<button data-act="hmNow" style="font-size:12px;width:auto;padding:0 8px;margin-left:4px;background:rgba(255,255,255,.16)">今</button>'}</div>
       <div class="hd-acts">
         <button class="ibtn light" data-act="togHideMoney" aria-label="隐私模式">${S.settings.hideMoney ? IC.eyeOff : IC.eye}</button>
+        <button class="ibtn light" data-act="openRecur" aria-label="周期账" style="font-size:17px">🔁</button>
         <button class="ibtn light" data-act="goDetail" aria-label="查询">${IC.search}</button>
         <button class="ibtn light" data-act="openSettings" aria-label="设置">${IC.set}</button>
       </div></div>
     <div class="hd-lbl"><span>${isCur ? '本月' : m + '月'}支出 (元)</span><span style="font-size:12px;opacity:.85">${monthRs.length} 笔账目</span></div>
     <div class="hd-big">${S.settings.hideMoney ? '****' : `${ei}<small>.${ed}</small>`}</div>
-    ${fx || bg || S.settings.incFixed || S.settings.incBig ? toggleChips(fx, bg, true) : ''}
+    ${toggleChips(fx, bg, true)}
     ${budgetBar}
     <div class="hd-row">
       <div><span>${isCur ? '本月' : m + '月'}收入</span><b>${vMoney(inc)}</b></div>
@@ -1194,18 +1198,6 @@ function renderHome() {
   <div class="card cal" data-swipe="hmSwipe"><div class="cal-wk">${['一', '二', '三', '四', '五', '六', '日'].map(w => `<div>${w}</div>`).join('')}</div><div class="cal-g ${anim}">${cells}</div>
     <div class="cal-tip">左右滑动换月 · 点日期直达当天账单</div></div>
   ${aiBarHtml}
-  <div class="card">
-    <div class="tool-grid">
-      <button class="tool-item" data-act="openRenqing"><div class="tool-ic c1">🧧</div><span>人情账簿</span></button>
-      <button class="tool-item" data-act="openPoker"><div class="tool-ic c2">🀄</div><span>牌局统计</span></button>
-      <button class="tool-item" data-act="openDebts"><div class="tool-ic c3">🤝</div><span>借还${openDebts ? `(${openDebts})` : '欠款'}</span></button>
-      <button class="tool-item" data-act="openRecur"><div class="tool-ic c4">🔁</div><span>周期账</span></button>
-      <button class="tool-item" data-act="openBudget"><div class="tool-ic c5">🎯</div><span>预算管理</span></button>
-      <button class="tool-item" data-act="goBackup"><div class="tool-ic c6">☁️</div><span>云备份</span></button>
-      <button class="tool-item" data-act="goWacai"><div class="tool-ic c7">📥</div><span>挖财导入</span></button>
-      <button class="tool-item" data-act="openRecycle"><div class="tool-ic c8">🗑️</div><span>回收站</span></button>
-    </div>
-  </div>
   ${upcomingRecurBanner()}
   ${homeBanners()}
   ${feed || `<div class="card"><div class="empty">${m}月还没有记录<br><button class="btn sm pri" data-act="addOnDay">＋ 记一笔</button></div></div>`}
@@ -1356,7 +1348,8 @@ function renderForm() {
     ${tpl ? '' : `<div class="fld row"><label>日期</label><input type="date" data-in="fDate" value="${F.date}"></div>`}
     ${tpl || isT ? '' : '<div id="fPersonBox"></div>'}
     <div class="fld row"><label>备注</label><input data-in="fNote" value="${esc(F.note)}" placeholder="写点什么（可不填）" maxlength="100">${!tpl && !isT && S.settings.ai?.enabled && S.settings.ai?.autoCatOn ? '<button type="button" class="guess-btn" data-act="fGuessCat">✨ 猜分类</button>' : ''}</div>
-    ${F.type === 'expense' && !F.recurId ? `<div style="padding:4px 16px"><label class="switch-row"><div><b>大额支出</b><small>买车、装修这类一次性的大钱。是否计入统计跟着「大额支出」开关走</small></div><input type="checkbox" data-ch="fBig" ${F.big ? 'checked' : ''}></label></div>` : ''}
+    ${F.type === 'expense' && !F.recurId ? `<div style="padding:4px 16px"><label class="switch-row"><div><b>大额支出</b><small>首付、买车、装修这类大额开销，可一键隐藏不计入日常统计</small></div><input type="checkbox" data-ch="fBig" ${F.big ? 'checked' : ''}></label></div>` : ''}
+    ${!tpl && !F.id && !isT ? `<button type="button" class="recur-jump" data-act="fToRecur"><span>🔁 这是每月固定/分期账（如房贷、会员）？去设周期账</span><span>›</span></button>` : ''}
     <div class="fld"><label>标签 <small>可多选，可不选</small></label><div class="chips wrap" id="fTags"></div></div>
     ${tpl ? '' : '<div class="fld"><label>照片 <small>最多 9 张，会自动压缩</small></label><div class="photos" id="fPhotos"></div></div>'}
   </div>
@@ -1370,6 +1363,13 @@ function renderForm() {
   renderFormParts();
 }
 ACT.fTogCalc = () => { if (!F) return; F.calcOpen = !F.calcOpen; renderForm(); };
+ACT.fToRecur = () => {
+  if (!F) return;
+  const pf = {name: (F.note || Store.catName(F.categoryId) || '').replace('未分类', '').slice(0, 16), type: F.type === 'income' ? 'income' : 'expense',
+    amountS: F.amount || '', day: +(F.date || today()).slice(8) || 1, accountId: F.accountId, categoryId: F.categoryId};
+  Layers.closeEl(F.el);
+  openRecurForm(null, pf);
+};
 ACT.fQuickTpl = el => {
   const t = S.templates.find(x => x.id === el.dataset.id); if (!t || !F) return;
   F.type = t.type; if (t.amount != null) F.amount = (t.amount / 100).toString();
@@ -3832,11 +3832,11 @@ function catOptions(type, sel, withParents = false) {
   if (c && !html.includes(`value="${sel}"`)) html = `<option value="${sel}" selected>${c.icon} ${esc(Store.catFull(sel))}（已隐藏）</option>` + html;
   return html;
 }
-function openRecurForm(b) {
+function openRecurForm(b, prefill = null) {
   const t = today(), lastAcc = Store.acc(S.settings.lastAccountId) ? S.settings.lastAccountId : firstAcc();
   UI.rfBill = b || null;
   UI.rf = b ? {name: b.name, type: b.type, amountS: '', day: b.day, periodsS: b.periods ? String(b.periods) : '', preS: '0', nextYm: ymOf(t), accountId: b.accountId, categoryId: b.categoryId, downS: '', inStats: b.inStats}
-    : {name: '', type: 'expense', amountS: '', day: +t.slice(8), periodsS: '', preS: '0', nextYm: ymOf(t), accountId: lastAcc, categoryId: null, downS: '', inStats: true};
+    : {name: prefill?.name || '', type: prefill?.type || 'expense', amountS: prefill?.amountS || '', day: prefill?.day || +t.slice(8), periodsS: '', preS: '0', nextYm: ymOf(t), accountId: prefill?.accountId || lastAcc, categoryId: prefill?.categoryId || null, downS: '', inStats: true};
   openPage(b ? '编辑周期账' : '新建周期账', recurFormBody, {foot: `<div class="fp-foot"><button class="btn pri grow" data-act="rfSave">${b ? '保存' : '创建'}</button></div>`});
 }
 function rfPreview(R) {
